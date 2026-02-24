@@ -1,0 +1,83 @@
+/* Basic layout and simple nav/footer styles */
+:root {
+    --bg: #ffffff;
+    --accent: #0b5fff;
+    --muted: #666;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-family: Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: #111
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee
+}
+
+.brand {
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 1.25rem
+}
+
+.nav-right a {
+    margin-left: 1rem;
+    color: var(--muted);
+    text-decoration: none
+}
+
+.hero {
+    padding: 3rem 0;
+    background: linear-gradient(180deg, #f8fbff, #fff)
+}
+
+.hero h1 {
+    margin: 0 0 .5rem;
+    font-size: 2rem
+}
+
+.btn {
+    display: inline-block;
+    padding: .5rem 1rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none
+}
+
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem
+}
+
+.card {
+    padding: 1rem;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fafafa
+}
+
+.site-footer {
+    border-top: 1px solid #eee;
+    padding: 1rem;
+    text-align: center;
+    color: var(--muted);
+    margin-top: 2rem
+}

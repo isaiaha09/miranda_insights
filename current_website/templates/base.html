@@ -1,0 +1,34 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Insights Website{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav">
+        <div class="nav-left">
+          <a class="brand" href="{% url 'home' %}">Insights</a>
+        </div>
+        <div class="nav-right">
+          <a href="{% url 'home' %}">Home</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="site-main">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>Copyright &copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC - All Rights Reserved</p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}"></script>
+  </body>
+</html>
