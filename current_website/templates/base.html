@@ -5,16 +5,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Insights Website{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/tailwind-build.css' %}" />
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   </head>
   <body>
     <header class="site-header">
-      <nav class="nav">
+      <nav class="nav" id="site-nav">
         <div class="nav-left">
           <a class="brand" href="{% url 'home' %}">Insights</a>
         </div>
 
-        <div class="nav-center">
+        <div class="nav-center" id="nav-menu">
           <a href="#">About</a>
           <a href="#">Download</a>
           <a href="#">Pricing</a>
@@ -23,11 +24,19 @@
 
         <div class="nav-right">
           <a class="signin" href="#">Sign In</a>
-          <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle light / dark">🌙</button>
-          <button class="nav-hamburger" aria-label="Menu">☰</button>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle light / dark">🌙</button>
+          <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Menu" aria-controls="nav-menu" aria-expanded="false">
+            <span class="hamburger" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
         </div>
       </nav>
     </header>
+
+    <div class="nav-overlay" id="nav-overlay" hidden></div>
 
     <main class="site-main">
       {% block content %}{% endblock %}
@@ -52,7 +61,7 @@
 
         <div class="footer-col footer-contact">
           <h4>Contact</h4>
-          <a href="mailto:example@email.com">example@email.com</a></p>
+          <p><a href="mailto:example@email.com">example@email.com</a></p>
           <p><a href="/contact/">Contact Us</a></p>
         </div>
       </div>

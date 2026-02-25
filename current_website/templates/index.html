@@ -7,25 +7,25 @@
   <div class="hero-block">
     <section class="hero-landing">
       <div class="hero-inner">
-      <div class="hero-left">
-        <h1>Welcome to Insights</h1>
+        <div class="hero-left">
+          <h1>Welcome to Insights</h1>
 
-        <form class="hero-search" action="#" role="search">
-          <input type="search" placeholder="Search insights, reports..." aria-label="Search" />
-        </form>
+          <form class="hero-search" action="#" role="search">
+            <input type="search" placeholder="Search insights, reports..." aria-label="Search" />
+          </form>
 
-        <p class="hero-cta">
-          <a class="btn btn-primary" href="#">Free Trial</a>
-          <a class="btn btn-ghost" href="#">See more</a>
-        </p>
-      </div>
-
-      <div class="hero-right">
-        <div class="hero-info">
-          <h3>Landing page</h3>
-          <p>Learn more about our platform and features. Engage, analyze, and collaborate with ease.</p>
+          <p class="hero-cta">
+            <a class="btn btn-primary" href="#">Free Trial</a>
+            <a class="btn btn-ghost" href="#">See more</a>
+          </p>
         </div>
-      </div>
+
+        <div class="hero-right">
+          <div class="hero-info">
+            <h3>Landing page</h3>
+            <p>Learn more about our platform and features. Engage, analyze, and collaborate with ease.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -35,6 +35,7 @@
         <h3>Subscribe to our newsletter</h3>
         <p>Get monthly insights and product updates delivered to your inbox.</p>
         <form class="subscribe-form" action="#" method="post">
+          {% csrf_token %}
           <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
           <button class="btn btn-primary" type="submit">Subscribe</button>
         </form>
@@ -42,9 +43,9 @@
     </section>
 
     <section class="features">
-    <div class="card">Latest news and updates</div>
-    <div class="card">Client insights</div>
-    <div class="card">Chat and collaboration</div>
+      <div class="card">Latest news and updates</div>
+      <div class="card">Client insights</div>
+      <div class="card">Chat and collaboration</div>
     </section>
   </div>
 {% endblock %}
