@@ -13,8 +13,18 @@
         <div class="nav-left">
           <a class="brand" href="{% url 'home' %}">Insights</a>
         </div>
+
+        <div class="nav-center">
+          <a href="#">About</a>
+          <a href="#">Download</a>
+          <a href="#">Pricing</a>
+          <a href="#">Features</a>
+        </div>
+
         <div class="nav-right">
-          <a href="{% url 'home' %}">Home</a>
+          <a class="signin" href="#">Sign In</a>
+          <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle light / dark">🌙</button>
+          <button class="nav-hamburger" aria-label="Menu">☰</button>
         </div>
       </nav>
     </header>
@@ -24,7 +34,30 @@
     </main>
 
     <footer class="site-footer">
-      <div class="container">
+      <div class="container footer-grid">
+        <div class="footer-col footer-our-goal">
+          <h4>Our Goal</h4>
+          <p>Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions.</p>
+        </div>
+
+        <div class="footer-col footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Features</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col footer-contact">
+          <h4>Contact</h4>
+          <a href="mailto:example@email.com">example@email.com</a></p>
+          <p><a href="/contact/">Contact Us</a></p>
+        </div>
+      </div>
+
+      <div class="container footer-bottom">
         <p>Copyright &copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC - All Rights Reserved</p>
       </div>
     </footer>

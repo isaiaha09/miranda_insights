@@ -1,20 +1,50 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Home — Insights{% endblock %}
+{% block title %}Welcome to Insights{% endblock %}
 
 {% block content %}
-  <section class="hero">
-    <div class="container">
-      <h1>Welcome to Insights</h1>
-      <p>Your analytics and content hub.</p>
-      <p><a class="btn" href="#">Learn more</a></p>
-    </div>
-  </section>
+  <div class="hero-block">
+    <section class="hero-landing">
+      <div class="hero-inner">
+      <div class="hero-left">
+        <h1>Welcome to Insights</h1>
 
-  <section class="features container">
+        <form class="hero-search" action="#" role="search">
+          <input type="search" placeholder="Search insights, reports..." aria-label="Search" />
+        </form>
+
+        <p class="hero-cta">
+          <a class="btn btn-primary" href="#">Free Trial</a>
+          <a class="btn btn-ghost" href="#">See more</a>
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-info">
+          <h3>Landing page</h3>
+          <p>Learn more about our platform and features. Engage, analyze, and collaborate with ease.</p>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- Subscribe / Newsletter -->
+    <section class="subscribe">
+      <div class="container subscribe-inner">
+        <h3>Subscribe to our newsletter</h3>
+        <p>Get monthly insights and product updates delivered to your inbox.</p>
+        <form class="subscribe-form" action="#" method="post">
+          <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="features">
     <div class="card">Latest news and updates</div>
     <div class="card">Client insights</div>
     <div class="card">Chat and collaboration</div>
-  </section>
+    </section>
+  </div>
 {% endblock %}
