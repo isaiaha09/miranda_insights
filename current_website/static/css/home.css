@@ -434,6 +434,17 @@ body.landing .hero-right {
         top: calc(100svh - var(--header-height));
     }
 
+    /* If landing header is at the bottom, open mobile drawer above it. */
+    body.landing #site-nav.menu-anchor-bottom .nav-center {
+        top: auto;
+        bottom: var(--header-height);
+        height: calc(100svh - var(--header-height));
+        justify-content: flex-end;
+        flex-direction: column;
+        padding-top: 0.9rem;
+        padding-bottom: 0.55rem;
+    }
+
     .hero h1 {
         font-size: 2.25rem;
     }

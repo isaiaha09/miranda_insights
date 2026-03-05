@@ -6,6 +6,7 @@
       if (!isLanding) return;
 
       var header = document.querySelector('.site-header');
+      var landingNav = document.getElementById('site-nav');
       var heroLeft = document.querySelector('.hero-left');
       var rafId = 0;
       var targetTop = null;
@@ -83,6 +84,13 @@
 
         // Move header bottom->top with subpixel precision for smoother scrollbar drag.
         header.style.top = clampedTop.toFixed(3) + 'px';
+
+        // Mobile landing: when header sits at the bottom, make the drawer open above it.
+        if (landingNav) {
+          var isMobileViewport = window.innerWidth <= 800;
+          var nearBottom = clampedTop >= (bottomOffset - 350);
+          landingNav.classList.toggle('menu-anchor-bottom', !!(isMobileViewport && nearBottom));
+        }
 
         // Keep layout stable while header transitions.
         var mainShift = Math.max(0, headerHeight * (1 - progress));
