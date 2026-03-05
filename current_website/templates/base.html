@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'css/tailwind-build.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+    {% block extra_css %}{% endblock %}
   </head>
   <body class="dark-mode {% block body_class %}{% endblock %}">
     <header class="site-header">
@@ -73,6 +74,7 @@
       </div>
     </footer>
 
-    <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/base.js' %}"></script>
+    {% block extra_js %}{% endblock %}
   </body>
 </html>

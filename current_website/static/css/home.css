@@ -1,0 +1,455 @@
+/* Home / landing page specific styles */
+
+body.landing .site-main {
+    /* Keep a constant layout height and use transform to avoid scroll fighting */
+    padding-top: var(--header-height);
+    transform: translateY(calc(-1 * var(--landing-main-shift, var(--header-height))));
+    will-change: transform;
+}
+
+body.landing .site-header {
+    top: calc(100dvh - var(--header-height));
+}
+
+/* Reduce expensive effects while actively scrolling for smoother landing motion */
+body.is-scrolling .hero-block::before {
+    animation-play-state: paused;
+}
+
+/* Hero / upper page sections */
+.hero {
+    padding: 3rem 0;
+    background: linear-gradient(180deg, var(--hero-start), var(--hero-end));
+}
+
+.hero h1 {
+    margin: 0 0 .5rem;
+    font-size: 3rem;
+    text-align: left;
+    line-height: 1.05;
+}
+
+/* Two-column layout wrapper: kept for home variants */
+.content-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.content-row .hero {
+    flex: 1 1 auto;
+    padding: 0;
+}
+
+.content-row .hero .container {
+    padding: 0;
+}
+
+/* Landing hero styles */
+.hero-block {
+    width: 100%;
+    background: linear-gradient(180deg, var(--hero-start) 0%, var(--hero-end) 100%);
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-block::before,
+.hero-block::after {
+    z-index: 0;
+}
+
+.hero-block > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Landing: subtle techy grid + glow */
+.hero-block::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    pointer-events: none;
+    opacity: 0.55;
+    background-image:
+        linear-gradient(to right, color-mix(in srgb, var(--accent) 14%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in srgb, var(--accent) 12%, transparent) 1px, transparent 1px),
+        radial-gradient(800px circle at 18% 18%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
+        radial-gradient(640px circle at 82% 30%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 52%);
+    background-size: 68px 68px, 68px 68px, auto, auto;
+    background-position: 0 0, 0 0, 0 0, 0 0;
+    animation: grid-pan 22s linear infinite;
+    filter: saturate(1.1);
+}
+
+.hero-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%),
+        radial-gradient(900px circle at 50% 0%, rgba(88, 166, 255, 0.10), transparent 60%);
+    opacity: 0.9;
+}
+
+@keyframes grid-pan {
+    from {
+        background-position: 0 0, 0 0, 0 0, 0 0;
+    }
+
+    to {
+        background-position: -136px -136px, -68px -68px, 0 0, 0 0;
+    }
+}
+
+.hero-landing {
+    width: 100%;
+    background: transparent;
+    color: var(--text);
+    padding: 3.5rem 0 1.5rem 0;
+}
+
+/* Landing: make room for the nav when it starts at the bottom */
+body.landing .hero-landing {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    padding-bottom: calc(1.5rem + var(--header-height));
+    transform: translateY(calc(-1 * var(--landing-hero-shift, 0px)));
+    will-change: transform;
+}
+
+.hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: clamp(1rem, 3vw, 2rem);
+}
+
+body.landing .hero-inner {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    max-width: 1400px;
+}
+
+body.landing .hero-left {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+body.landing .hero-right {
+    flex: 0 0 auto;
+    width: 100%;
+    justify-content: center;
+}
+
+body.landing .hero-info {
+    text-align: center;
+    max-width: 44rem;
+}
+
+body.landing .hero-cta {
+    justify-content: center;
+}
+
+.hero-left {
+    flex: 0 0 55%;
+    animation: fade-up 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.hero-left h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    margin: 0 0 1rem 0;
+    color: var(--text);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+}
+
+body.landing .hero-left h1 {
+    font-size: clamp(2.8rem, 6vw, 4.6rem);
+    max-width: 22ch;
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-right {
+    flex: 0 0 35%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fade-up 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.hero-search {
+    margin: 0 0 0.9rem 0;
+}
+
+.hero-search input[type="search"] {
+    width: min(100%, 34rem);
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+body.landing .hero-search {
+    width: min(100%, 80rem);
+    animation: fade-up 1750ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 650ms;
+}
+
+body.landing .hero-search input[type="search"] {
+    width: 100%;
+    max-width: none;
+    padding: 1rem 1.2rem;
+    font-size: 1.02rem;
+}
+
+.hero-search input[type="search"]:focus {
+    box-shadow: 0 0 0 3px var(--ring);
+}
+
+.hero-search input[type="search"]::placeholder {
+    color: var(--muted);
+}
+
+.hero-cta {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.hero-cta .btn-primary {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    padding: .65rem 1.1rem;
+    border-radius: var(--radius-lg);
+    border: 0;
+}
+
+body.landing .hero-cta {
+    animation: fade-up 1750ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 780ms;
+}
+
+body.landing .hero-cta .btn-primary,
+body.landing .hero-cta .btn-ghost {
+    padding: 0.75rem 1.25rem;
+    font-weight: 700;
+}
+
+body.landing .hero-cta .btn-primary {
+    box-shadow: 0 14px 34px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+body.landing .hero-left {
+    animation: fade-up 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 450ms;
+}
+
+body.landing .hero-right {
+    animation-delay: 950ms;
+}
+
+.hero-info {
+    color: var(--text);
+    max-width: 360px;
+    text-align: left;
+}
+
+.hero-info h3 {
+    margin: 0 0 .5rem;
+    font-size: 1.25rem;
+}
+
+.hero-info p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.subscribe {
+    padding: 1.5rem 0 2rem 0;
+}
+
+.subscribe-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.subscribe h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.subscribe p {
+    margin: 0 0 0.5rem 0;
+    color: var(--muted);
+}
+
+.subscribe-form {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.subscribe-form input[type="email"] {
+    padding: .75rem 1rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--input-border);
+    width: 320px;
+    max-width: 60vw;
+    background: var(--input-bg);
+    color: var(--text);
+    transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.subscribe-form input[type="email"]:focus {
+    box-shadow: 0 0 0 3px var(--ring);
+}
+
+.subscribe-form input[type="email"]::placeholder {
+    color: var(--muted);
+}
+
+.features {
+    background: transparent;
+    padding: 1.25rem 1rem 2.5rem 1rem;
+    margin-top: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.features .card {
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+}
+
+@media (max-width: 900px) {
+    .hero-inner {
+        flex-direction: column;
+        text-align: left;
+    }
+
+    .hero-left {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .hero-left h1 {
+        transform: none;
+    }
+
+    .hero-search input[type="search"] {
+        width: 100%;
+    }
+
+    .hero-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .hero-info {
+        text-align: left;
+        max-width: none;
+    }
+
+    .subscribe-form {
+        flex-direction: column;
+    }
+
+    .subscribe-form input[type="email"] {
+        width: 100%;
+    }
+
+    .features {
+        grid-template-columns: 1fr;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@media (max-width: 800px) {
+    .content-row {
+        display: block;
+        padding: 0 1rem;
+    }
+
+    /* Mobile landing: keep hero centered and avoid transform-created blank bands */
+    body.landing .hero-landing {
+        align-items: center;
+        min-height: 100svh;
+        transform: none;
+        padding-top: 0;
+    }
+
+    body.landing .hero-inner {
+        justify-content: center;
+        padding-top: clamp(1rem, 5vw, 2rem);
+    }
+
+    body.landing .site-main {
+        padding-top: 0;
+        transform: none;
+    }
+
+    body.landing .site-header {
+        top: calc(100svh - var(--header-height));
+    }
+
+    .hero h1 {
+        font-size: 2.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-search input[type="search"],
+    .subscribe-form input[type="email"] {
+        transition: none;
+    }
+
+    .hero-left,
+    .hero-right,
+    .hero-search,
+    .hero-cta,
+    .hero-block::before {
+        animation: none;
+    }
+}

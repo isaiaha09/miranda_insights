@@ -5,6 +5,10 @@
 
 {% block body_class %}landing{% endblock %}
 
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+{% endblock %}
+
 {% block content %}
   <div class="hero-block">
     <section class="hero-landing">
@@ -43,4 +47,8 @@
       <div class="card">Chat and collaboration</div>
     </section>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/home.js' %}"></script>
 {% endblock %}
