@@ -12,41 +12,6 @@ document.addEventListener('DOMContentLoaded', function(){
     console.error('Error setting site year', e);
   }
   
-  // Theme toggle: persistent light/dark mode
-  try {
-    var rootBody = document.body;
-    var toggle = document.getElementById('theme-toggle');
-
-    function applyTheme(theme) {
-      if (theme === 'dark') {
-        rootBody.classList.add('dark-mode');
-        if (toggle) toggle.textContent = '☀️';
-      } else {
-        rootBody.classList.remove('dark-mode');
-        if (toggle) toggle.textContent = '🌙';
-      }
-    }
-
-    // initialize from localStorage, or system preference if not set
-    var stored = localStorage.getItem('insights-theme');
-    if (stored === 'dark' || stored === 'light') {
-      applyTheme(stored);
-    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      applyTheme('dark');
-    }
-
-    if (toggle) {
-      toggle.addEventListener('click', function () {
-        var isDark = rootBody.classList.contains('dark-mode');
-        var next = isDark ? 'light' : 'dark';
-        applyTheme(next);
-        try { localStorage.setItem('insights-theme', next); } catch (e) { /* ignore */ }
-      });
-    }
-  } catch (e) {
-    console.error('Theme toggle init failed', e);
-  }
-
   // Mobile nav menu toggle
   try {
     var nav = document.getElementById('site-nav');
@@ -114,7 +79,19 @@ document.addEventListener('DOMContentLoaded', function(){
     if (isLanding) {
       var header = document.querySelector('.site-header');
       var heroLeft = document.querySelector('.hero-left');
-      var ticking = false;
+      var rafId = 0;
+      var targetTop = null;
+      var currentTop = null;
+      var currentProgress = 0;
+      var headerHeight = 0;
+      var scrollDistance = 500;
+      var scrollReleaseDistance = 500;
+      var EASE_FAST = 0.35;
+      var SNAP_THRESHOLD = 0.8;
+      var JUMP_SMOOTH_THRESHOLD = 56;
+      var lastWheelAt = 0;
+      var scrollIdleTimer = 0;
+      var lastScrollY = window.scrollY || window.pageYOffset || 0;
 
       function clamp01(n) {
         if (n < 0) return 0;
@@ -122,64 +99,190 @@ document.addEventListener('DOMContentLoaded', function(){
         return n;
       }
 
-      function updateLandingScroll() {
-        ticking = false;
+      function recomputeMetrics() {
         if (!header) return;
-
-        var scrollY = window.scrollY || window.pageYOffset || 0;
-        // Transition distance is capped to available scroll so the nav can always reach the top.
         var docEl = document.documentElement;
+        var viewportH = window.innerHeight || 800;
+        var isMobileViewport = window.innerWidth <= 800;
+        headerHeight = header.getBoundingClientRect().height || 0;
         var maxScrollable = 0;
         if (docEl) {
           maxScrollable = Math.max(0, (docEl.scrollHeight || 0) - (window.innerHeight || 0));
         }
-        // Complete the bottom->top transition within a moderate scroll.
-        // If the page is short, cap to the available scroll so it still reaches the top.
-        var desiredDistance = 500; // px
-        var scrollDistance = Math.max(1, Math.min(desiredDistance, maxScrollable || desiredDistance));
-        var progress = clamp01(scrollY / scrollDistance);
-        var headerHeight = header.getBoundingClientRect().height || 0;
+
+        // Mobile: move header out of the way quickly on scroll-down.
+        // Desktop: keep the longer cinematic travel.
+        var desiredDistance = isMobileViewport
+          ? Math.max(420, Math.round(viewportH * 0.65))
+          : Math.max(900, Math.round(viewportH * 1.2));
+        scrollDistance = Math.max(1, Math.min(desiredDistance, maxScrollable || desiredDistance));
+
+        // Mobile up-scroll release: keep header pinned at top until near page top.
+        scrollReleaseDistance = isMobileViewport
+          ? Math.max(220, Math.round(viewportH * 0.48))
+          : scrollDistance;
+      }
+
+      function computeTargetTop(scrollY, scrollingUp) {
+        if (!header) return 0;
+        var isMobileViewport = window.innerWidth <= 800;
+        var progress;
+
+        if (isMobileViewport && scrollingUp) {
+          if (scrollY > scrollReleaseDistance) {
+            progress = 1;
+          } else {
+            progress = clamp01(scrollY / Math.max(1, scrollReleaseDistance));
+          }
+        } else {
+          progress = clamp01(scrollY / scrollDistance);
+        }
+
         var bottomOffset = Math.max(0, window.innerHeight - headerHeight);
-        var topPx = progress >= 1 ? 0 : Math.round(bottomOffset * (1 - progress));
+        var topPx = progress >= 1 ? 0 : (bottomOffset * (1 - progress));
+        currentProgress = progress;
+        return topPx;
+      }
 
-        // Keep the hero from intersecting the moving navbar by shifting it up in sync
-        // with the navbar's travel from bottom -> top.
-        var heroShift = Math.max(0, bottomOffset - topPx);
-        document.documentElement.style.setProperty('--landing-hero-shift', Math.round(heroShift) + 'px');
+      function applyLandingState(topPx, progress) {
+        if (!header) return;
+        var clampedTop = Math.max(0, topPx);
+        var bottomOffset = Math.max(0, window.innerHeight - headerHeight);
 
-        // Move header between bottom -> top without using transforms (keeps fixed-position children working).
-        header.style.top = topPx + 'px';
+        // Keep the hero from intersecting with the traveling nav.
+        var heroShift = Math.max(0, bottomOffset - clampedTop);
+        document.documentElement.style.setProperty('--landing-hero-shift', heroShift.toFixed(3) + 'px');
 
-        // Make room for the header without changing document flow (avoids scrollHeight changes while scrolling).
-        var mainShift = Math.max(0, Math.round(headerHeight * (1 - progress)));
-        document.documentElement.style.setProperty('--landing-main-shift', mainShift + 'px');
+        // Move header bottom->top with subpixel precision for smoother scrollbar drag.
+        header.style.top = clampedTop.toFixed(3) + 'px';
 
-        // Fade out the hero content as you scroll.
+        // Keep layout stable while header transitions.
+        var mainShift = Math.max(0, headerHeight * (1 - progress));
+        document.documentElement.style.setProperty('--landing-main-shift', mainShift.toFixed(3) + 'px');
+
         if (heroLeft) {
           if (progress <= 0) {
-            // Preserve the initial CSS fade-in.
             heroLeft.style.opacity = '';
             heroLeft.style.transform = '';
             heroLeft.style.pointerEvents = '';
           } else {
             heroLeft.style.opacity = String(1 - progress);
-            // Avoid adding another translateY here since the whole hero section
-            // is already moving upward with the navbar.
             heroLeft.style.transform = '';
             heroLeft.style.pointerEvents = progress > 0.95 ? 'none' : '';
           }
         }
       }
 
-      function onLandingScroll() {
-        if (ticking) return;
-        ticking = true;
-        window.requestAnimationFrame(updateLandingScroll);
+      function animateLanding() {
+        rafId = 0;
+        if (targetTop === null || currentTop === null) return;
+
+        var delta = targetTop - currentTop;
+        currentTop += delta * EASE_FAST;
+
+        // Smooth progress based on the animated position, not the raw scroll sample.
+        var bottomOffset = Math.max(0, window.innerHeight - headerHeight);
+        var progressFromTop = 1 - clamp01(currentTop / Math.max(1, bottomOffset));
+        currentProgress = progressFromTop;
+        applyLandingState(currentTop, currentProgress);
+
+        if (Math.abs(delta) > SNAP_THRESHOLD) {
+          rafId = window.requestAnimationFrame(animateLanding);
+        } else {
+          currentTop = targetTop;
+          var bottomOffset2 = Math.max(0, window.innerHeight - headerHeight);
+          currentProgress = 1 - clamp01(currentTop / Math.max(1, bottomOffset2));
+          applyLandingState(currentTop, currentProgress);
+        }
       }
 
+      function scheduleLandingAnimation() {
+        var scrollYNow = window.scrollY || window.pageYOffset || 0;
+        var scrollingDown = scrollYNow > lastScrollY;
+        var scrollingUp = scrollYNow < lastScrollY;
+        lastScrollY = scrollYNow;
+
+        targetTop = computeTargetTop(scrollYNow, scrollingUp);
+        if (currentTop === null) {
+          currentTop = targetTop;
+          applyLandingState(currentTop, currentProgress);
+          return;
+        }
+
+        var bottomOffset = Math.max(0, window.innerHeight - headerHeight);
+        var atTopEdge = currentTop <= 0.6;
+        var atBottomEdge = currentTop >= (bottomOffset - 0.6);
+
+        var now = Date.now();
+        var isWheelDriven = (now - lastWheelAt <= 120);
+        var isLikelyScrollbarDrag = (now - lastWheelAt > 120) && (Math.abs(targetTop - currentTop) > 40);
+        var leavingBoundary = (atTopEdge && scrollingUp) || (atBottomEdge && scrollingDown);
+
+        // Browser scrollbar dragging should map directly with no catch-up animation.
+        if (!isWheelDriven) {
+          if (rafId) {
+            window.cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+          currentTop = targetTop;
+          applyLandingState(currentTop, currentProgress);
+          return;
+        }
+
+        // Scrollbar thumb dragging often emits sparse large jumps. Map directly to avoid catch-up lag.
+        if (isLikelyScrollbarDrag || leavingBoundary) {
+          if (rafId) {
+            window.cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+          currentTop = targetTop;
+          applyLandingState(currentTop, currentProgress);
+          return;
+        }
+
+        // For normal wheel/trackpad scrolling, apply immediately to avoid perceived lag.
+        if (Math.abs(targetTop - currentTop) <= JUMP_SMOOTH_THRESHOLD) {
+          if (rafId) {
+            window.cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+          currentTop = targetTop;
+          applyLandingState(currentTop, currentProgress);
+          return;
+        }
+
+        if (!rafId) {
+          rafId = window.requestAnimationFrame(animateLanding);
+        }
+      }
+
+      function onLandingScroll() {
+        if (scrollIdleTimer) {
+          window.clearTimeout(scrollIdleTimer);
+        }
+        document.body.classList.add('is-scrolling');
+        scrollIdleTimer = window.setTimeout(function () {
+          document.body.classList.remove('is-scrolling');
+        }, 120);
+
+        scheduleLandingAnimation();
+      }
+
+      function onLandingResize() {
+        recomputeMetrics();
+        scheduleLandingAnimation();
+      }
+
+      recomputeMetrics();
+      window.addEventListener('wheel', function () {
+        lastWheelAt = Date.now();
+      }, { passive: true });
       window.addEventListener('scroll', onLandingScroll, { passive: true });
-      window.addEventListener('resize', onLandingScroll);
-      updateLandingScroll();
+      window.addEventListener('resize', onLandingResize);
+      // Initialize immediately at the correct visual position.
+      targetTop = computeTargetTop(window.scrollY || window.pageYOffset || 0, false);
+      currentTop = targetTop;
+      applyLandingState(currentTop, currentProgress);
     }
   } catch (e) {
     console.error('Landing scroll behavior init failed', e);

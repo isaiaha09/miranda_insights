@@ -1,14 +1,17 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark-mode">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Insights Website{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'css/tailwind-build.css' %}" />
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
   </head>
-  <body class="{% block body_class %}{% endblock %}">
+  <body class="dark-mode {% block body_class %}{% endblock %}">
     <header class="site-header">
       <nav class="nav" id="site-nav">
         <div class="nav-left">
@@ -24,7 +27,6 @@
 
         <div class="nav-right">
           <a class="signin" href="#">Sign In</a>
-          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle light / dark">🌙</button>
           <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Menu" aria-controls="nav-menu" aria-expanded="false">
             <span class="hamburger" aria-hidden="true">
               <span></span>
