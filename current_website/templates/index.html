@@ -33,7 +33,14 @@
       <div class="container subscribe-inner">
         <h3>Subscribe to our newsletter</h3>
         <p>Get monthly insights and product updates delivered to your inbox.</p>
-        <form class="subscribe-form" action="#" method="post">
+        {% if messages %}
+          <div class="subscribe-messages" aria-live="polite">
+            {% for message in messages %}
+              <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <form class="subscribe-form" action="{% url 'newsletter_subscribe' %}" method="post">
           {% csrf_token %}
           <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
           <button class="btn btn-primary" type="submit">Subscribe</button>

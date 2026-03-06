@@ -319,6 +319,27 @@ body.landing .hero-right {
     color: var(--muted);
 }
 
+.subscribe-messages {
+    width: min(100%, 44rem);
+}
+
+.subscribe-message {
+    margin: 0.35rem 0;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    font-size: 0.92rem;
+}
+
+.subscribe-message-success {
+    border-color: color-mix(in srgb, #16a34a 55%, var(--border-soft));
+}
+
+.subscribe-message-error {
+    border-color: color-mix(in srgb, #dc2626 55%, var(--border-soft));
+}
+
 .subscribe-form {
     display: flex;
     gap: .5rem;
