@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Insights Website{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -64,8 +65,8 @@
 
         <div class="footer-col footer-contact">
           <h4>Contact</h4>
-          <p><a href="mailto:example@email.com">example@email.com</a></p>
-          <p><a href="/contact/">Contact Us</a></p>
+          <p><a href="mailto:{{ footer_contact_email }}">{{ footer_contact_label }}</a></p>
+          <p><a href="{% url 'contact_support' %}">Contact us</a></p>
         </div>
       </div>
 

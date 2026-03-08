@@ -43,6 +43,14 @@ class NewsletterCampaign(models.Model):
 		help_text="Use plain text. Optional placeholder: {date}"
 	)
 	mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_CUSTOM)
+	include_subscribers = models.BooleanField(
+		default=True,
+		help_text="If enabled, send to all active newsletter subscribers.",
+	)
+	direct_recipients = models.TextField(
+		blank=True,
+		help_text="Optional extra recipients (comma/newline separated emails).",
+	)
 
 	is_active = models.BooleanField(default=True)
 	frequency = models.CharField(

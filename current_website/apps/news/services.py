@@ -1,38 +1,97 @@
+import re
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.validators import validate_email
 from django.utils import timezone
 
 from .models import NewsletterCampaign, NewsletterSendLog, NewsletterSubscriber
 
 
+def _parse_direct_recipient_emails(raw_recipients: str):
+    """Split comma/newline separated recipients and return valid + invalid lists."""
+    valid_emails = []
+    invalid_emails = []
+    seen = set()
+
+    for token in re.split(r"[,\n\r\t]+", raw_recipients or ""):
+        email = token.strip().lower()
+        if not email:
+            continue
+        if email in seen:
+            continue
+        seen.add(email)
+
+        try:
+            validate_email(email)
+            valid_emails.append(email)
+        except ValidationError:
+            invalid_emails.append(email)
+
+    return valid_emails, invalid_emails
+
+
+def _build_recipient_list(campaign: NewsletterCampaign, subscribers=None):
+    """Build recipient list based on campaign targeting options."""
+    recipients = []
+    seen = set()
+
+    if campaign.include_subscribers:
+        active_subscribers = subscribers or NewsletterSubscriber.objects.filter(is_active=True)
+        for subscriber in active_subscribers.iterator():
+            email = subscriber.email.strip().lower()
+            if email and email not in seen:
+                recipients.append(email)
+                seen.add(email)
+
+    direct_valid, direct_invalid = _parse_direct_recipient_emails(campaign.direct_recipients)
+    for email in direct_valid:
+        if email not in seen:
+            recipients.append(email)
+            seen.add(email)
+
+    return recipients, direct_invalid
+
+
 def send_campaign(campaign: NewsletterCampaign, subscribers=None):
-    """Send one campaign to active subscribers and persist delivery logs."""
-    active_subscribers = subscribers or NewsletterSubscriber.objects.filter(is_active=True)
+    """Send one campaign to selected recipients and persist delivery logs."""
     sent_count = 0
     failed_count = 0
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@example.com")
+    from_email = getattr(settings, "NEWSLETTER_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@example.com"))
     body = campaign.rendered_body()
 
-    for subscriber in active_subscribers.iterator():
+    recipients, invalid_direct_recipients = _build_recipient_list(campaign, subscribers)
+
+    for invalid_email in invalid_direct_recipients:
+        NewsletterSendLog.objects.create(
+            campaign=campaign,
+            recipient_email=invalid_email,
+            status=NewsletterSendLog.STATUS_FAILED,
+            error_message="Invalid email in direct_recipients.",
+        )
+        failed_count += 1
+
+    for recipient_email in recipients:
         try:
             send_mail(
                 subject=campaign.subject,
                 message=body,
                 from_email=from_email,
-                recipient_list=[subscriber.email],
+                recipient_list=[recipient_email],
                 fail_silently=False,
             )
             NewsletterSendLog.objects.create(
                 campaign=campaign,
-                recipient_email=subscriber.email,
+                recipient_email=recipient_email,
                 status=NewsletterSendLog.STATUS_SENT,
             )
             sent_count += 1
         except Exception as exc:
             NewsletterSendLog.objects.create(
                 campaign=campaign,
-                recipient_email=subscriber.email,
+                recipient_email=recipient_email,
                 status=NewsletterSendLog.STATUS_FAILED,
                 error_message=str(exc),
             )

@@ -1,4 +1,8 @@
 from django.contrib import admin
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.urls import path, reverse
+from django.utils.html import format_html
 
 from .models import NewsletterCampaign, NewsletterSendLog, NewsletterSubscriber
 from .services import send_campaign
@@ -20,11 +24,18 @@ class NewsletterCampaignAdmin(admin.ModelAdmin):
 		"frequency",
 		"next_send_at",
 		"last_sent_at",
+		"send_now_link",
 	)
 	list_filter = ("mode", "is_active", "frequency")
 	search_fields = ("name", "subject")
 	actions = ["send_selected_campaigns_now"]
-	readonly_fields = ("last_sent_at", "next_send_at", "created_at", "updated_at")
+	readonly_fields = (
+		"last_sent_at",
+		"next_send_at",
+		"created_at",
+		"updated_at",
+		"send_now_button",
+	)
 
 	fieldsets = (
 		(
@@ -35,6 +46,8 @@ class NewsletterCampaignAdmin(admin.ModelAdmin):
 					"subject",
 					"body",
 					"mode",
+					"include_subscribers",
+					"direct_recipients",
 					"is_active",
 				)
 			},
@@ -59,12 +72,53 @@ class NewsletterCampaignAdmin(admin.ModelAdmin):
 				"fields": (
 					"created_by",
 					"last_sent_at",
+					"send_now_button",
 					"created_at",
 					"updated_at",
 				)
 			},
 		),
 	)
+
+	def get_urls(self):
+		urls = super().get_urls()
+		custom_urls = [
+			path(
+				"<path:object_id>/send-now/",
+				self.admin_site.admin_view(self.send_now_view),
+				name="news_newslettercampaign_send_now",
+			),
+		]
+		return custom_urls + urls
+
+	def send_now_button(self, obj):
+		if not obj or not obj.pk:
+			return "Save campaign first, then use Send now."
+		url = reverse("admin:news_newslettercampaign_send_now", args=[obj.pk])
+		return format_html('<a class="button" href="{}">Send this campaign now</a>', url)
+
+	send_now_button.short_description = "Run"
+
+	def send_now_link(self, obj):
+		url = reverse("admin:news_newslettercampaign_send_now", args=[obj.pk])
+		return format_html('<a href="{}">Send now</a>', url)
+
+	send_now_link.short_description = "Run"
+
+	def send_now_view(self, request, object_id):
+		campaign = self.get_object(request, object_id)
+		if campaign is None:
+			self.message_user(request, "Campaign not found.", level=messages.ERROR)
+			return HttpResponseRedirect(reverse("admin:news_newslettercampaign_changelist"))
+
+		sent, failed = send_campaign(campaign)
+		self.message_user(
+			request,
+			f"Campaign send complete. Sent: {sent}, Failed: {failed}",
+		)
+		return HttpResponseRedirect(
+			reverse("admin:news_newslettercampaign_change", args=[campaign.pk])
+		)
 
 	@admin.action(description="Send selected campaigns now")
 	def send_selected_campaigns_now(self, request, queryset):

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Contact Support{% endblock %}
+
+{% block body_class %}contact-page{% endblock %}
+
+{% load static %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/contact.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="contact-shell container">
+    <article class="contact-card">
+      <div class="contact-intro">
+        <p class="contact-eyebrow">Support</p>
+        <h1>Contact Support</h1>
+        <p>
+        Send us a message and we will get back to you as soon as possible.
+        </p>
+      </div>
+
+      {% if messages %}
+        <div aria-live="polite" class="contact-messages">
+          {% for message in messages %}
+            <p class="contact-message contact-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate class="support-form">
+        {% csrf_token %}
+
+        <div class="field-row">
+          <label for="id_name">Name</label>
+          {{ form.name }}
+          {% if form.name.errors %}<small class="field-error">{{ form.name.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="id_email">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}<small class="field-error">{{ form.email.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="id_subject">Subject</label>
+          {{ form.subject }}
+          {% if form.subject.errors %}<small class="field-error">{{ form.subject.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="id_message">Message</label>
+          {{ form.message }}
+          {% if form.message.errors %}<small class="field-error">{{ form.message.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <button class="btn btn-primary support-submit" type="submit">Send message</button>
+      </form>
+    </article>
+  </section>
+  <script src="{% static 'js/base.js' %}"></script>
+{% endblock %}
