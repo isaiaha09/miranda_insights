@@ -29,18 +29,16 @@
     </section>
 
     <!-- Subscribe / Newsletter -->
-    <section class="subscribe">
+    <section class="subscribe" id="{{ newsletter_section_id|default:'newsletter-signup' }}" tabindex="-1">
       <div class="container subscribe-inner">
         <h3>Subscribe to our newsletter</h3>
         <p>Get monthly insights and product updates delivered to your inbox.</p>
-        {% if messages %}
-          <div class="subscribe-messages" aria-live="polite">
-            {% for message in messages %}
-              <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>
-            {% endfor %}
-          </div>
-        {% endif %}
-        <form class="subscribe-form" action="{% url 'newsletter_subscribe' %}" method="post">
+        <div class="subscribe-messages" aria-live="polite" data-subscribe-messages {% if not messages %}hidden{% endif %}>
+          {% for message in messages %}
+            <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+        <form class="subscribe-form" action="{% url 'newsletter_subscribe' %}" method="post" data-subscribe-form data-section-id="{{ newsletter_section_id|default:'newsletter-signup' }}">
           {% csrf_token %}
           <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
           <button class="btn btn-primary" type="submit">Subscribe</button>

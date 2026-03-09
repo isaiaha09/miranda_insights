@@ -225,9 +225,98 @@
     }
   }
 
+  function runNewsletterBehavior() {
+    var form = document.querySelector('[data-subscribe-form]');
+    var messageHost = document.querySelector('[data-subscribe-messages]');
+    if (!form || !messageHost) return;
+
+    var submitButton = form.querySelector('button[type="submit"]');
+    var emailInput = form.querySelector('input[name="email"]');
+    var sectionId = form.getAttribute('data-section-id') || 'newsletter-signup';
+
+    function getHeaderOffset() {
+      var header = document.querySelector('.site-header');
+      return header ? header.getBoundingClientRect().height : 0;
+    }
+
+    function scrollSectionIntoView(smooth) {
+      var section = document.getElementById(sectionId);
+      if (!section) return;
+
+      var top = section.getBoundingClientRect().top + window.scrollY - getHeaderOffset() - 12;
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: smooth ? 'smooth' : 'auto'
+      });
+
+      if (typeof section.focus === 'function') {
+        section.focus({ preventScroll: true });
+      }
+    }
+
+    function renderMessage(level, text) {
+      var message = document.createElement('p');
+
+      message.className = 'subscribe-message subscribe-message-' + (level || 'info');
+      message.textContent = text;
+      messageHost.hidden = false;
+      messageHost.replaceChildren(message);
+    }
+
+    if (window.location.hash === '#' + sectionId || window.location.search.indexOf('newsletter_status=') !== -1) {
+      window.requestAnimationFrame(function () {
+        scrollSectionIntoView(false);
+      });
+    }
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      var formData = new FormData(form);
+      if (submitButton) {
+        submitButton.disabled = true;
+      }
+
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+      })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            return { ok: response.ok, data: data };
+          });
+        })
+        .then(function (result) {
+          renderMessage(result.data.level, result.data.message);
+          scrollSectionIntoView(true);
+
+          if (result.ok && emailInput) {
+            emailInput.value = '';
+          }
+        })
+        .catch(function () {
+          renderMessage('error', 'Your subscription request could not be completed right now. Please try again.');
+          scrollSectionIntoView(true);
+        })
+        .finally(function () {
+          if (submitButton) {
+            submitButton.disabled = false;
+          }
+        });
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', runLandingBehavior, { once: true });
+    document.addEventListener('DOMContentLoaded', function () {
+      runLandingBehavior();
+      runNewsletterBehavior();
+    }, { once: true });
   } else {
     runLandingBehavior();
+    runNewsletterBehavior();
   }
 })();

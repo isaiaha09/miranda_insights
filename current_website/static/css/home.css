@@ -298,6 +298,12 @@ body.landing .hero-right {
 
 .subscribe {
     padding: 1.5rem 0 2rem 0;
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+.subscribe:focus,
+.subscribe:focus-visible {
+    outline: none;
 }
 
 .subscribe-inner {
@@ -332,6 +338,10 @@ body.landing .hero-right {
     font-size: 0.92rem;
 }
 
+.subscribe-message-info {
+    border-color: color-mix(in srgb, #64748b 55%, var(--border-soft));
+}
+
 .subscribe-message-success {
     border-color: color-mix(in srgb, #16a34a 55%, var(--border-soft));
 }
@@ -363,6 +373,11 @@ body.landing .hero-right {
 
 .subscribe-form input[type="email"]::placeholder {
     color: var(--muted);
+}
+
+.subscribe-form button[disabled] {
+    opacity: 0.75;
+    cursor: wait;
 }
 
 .features {

@@ -65,7 +65,7 @@
 
         <div class="footer-col footer-contact">
           <h4>Contact</h4>
-          <p><a href="mailto:{{ footer_contact_email }}">{{ footer_contact_label }}</a></p>
+          <p><a href="mailto:{{ footer_contact_email|urlencode }}">{{ footer_contact_label }}</a></p>
           <p><a href="{% url 'contact_support' %}">Contact us</a></p>
         </div>
       </div>

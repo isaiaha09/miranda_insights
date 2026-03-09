@@ -160,6 +160,7 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', os.getenv('BREVO_SMTP_PAS
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS')
 EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 
 # Newsletter sender (use a dedicated address for outgoing newsletters)
 NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
