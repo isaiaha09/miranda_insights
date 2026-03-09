@@ -74,6 +74,7 @@
 }
 
 .support-form input,
+.support-form select,
 .support-form textarea {
     width: 100%;
     border-radius: var(--radius-md);
@@ -86,16 +87,22 @@
 }
 
 .support-form input::placeholder,
+.support-form select,
 .support-form textarea::placeholder {
     color: color-mix(in srgb, var(--muted) 82%, white);
 }
 
 .support-form input:focus,
+.support-form select:focus,
 .support-form textarea:focus {
     outline: none;
     border-color: color-mix(in srgb, var(--accent) 56%, var(--input-border));
     box-shadow: 0 0 0 3px var(--ring);
     background: color-mix(in srgb, var(--input-bg) 100%, #0b1220);
+}
+
+.subject-other-hidden {
+    display: none;
 }
 
 .field-error {

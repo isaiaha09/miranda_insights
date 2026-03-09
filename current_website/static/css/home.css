@@ -11,11 +11,6 @@ body.landing .site-header {
     top: calc(100dvh - var(--header-height));
 }
 
-/* Reduce expensive effects while actively scrolling for smoother landing motion */
-body.is-scrolling .hero-block::before {
-    animation-play-state: paused;
-}
-
 /* Hero / upper page sections */
 .hero {
     padding: 3rem 0;
@@ -51,59 +46,10 @@ body.is-scrolling .hero-block::before {
 /* Landing hero styles */
 .hero-block {
     width: 100%;
-    background: linear-gradient(180deg, var(--hero-start) 0%, var(--hero-end) 100%);
+    background: transparent;
     color: var(--text);
     position: relative;
     overflow: hidden;
-}
-
-.hero-block::before,
-.hero-block::after {
-    z-index: 0;
-}
-
-.hero-block > * {
-    position: relative;
-    z-index: 1;
-}
-
-/* Landing: subtle techy grid + glow */
-.hero-block::before {
-    content: "";
-    position: absolute;
-    inset: -2px;
-    pointer-events: none;
-    opacity: 0.55;
-    background-image:
-        linear-gradient(to right, color-mix(in srgb, var(--accent) 14%, transparent) 1px, transparent 1px),
-        linear-gradient(to bottom, color-mix(in srgb, var(--accent) 12%, transparent) 1px, transparent 1px),
-        radial-gradient(800px circle at 18% 18%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
-        radial-gradient(640px circle at 82% 30%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 52%);
-    background-size: 68px 68px, 68px 68px, auto, auto;
-    background-position: 0 0, 0 0, 0 0, 0 0;
-    animation: grid-pan 22s linear infinite;
-    filter: saturate(1.1);
-}
-
-.hero-block::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%),
-        radial-gradient(900px circle at 50% 0%, rgba(88, 166, 255, 0.10), transparent 60%);
-    opacity: 0.9;
-}
-
-@keyframes grid-pan {
-    from {
-        background-position: 0 0, 0 0, 0 0, 0 0;
-    }
-
-    to {
-        background-position: -136px -136px, -68px -68px, 0 0, 0 0;
-    }
 }
 
 .hero-landing {
@@ -239,6 +185,33 @@ body.landing .hero-search input[type="search"] {
     color: var(--muted);
 }
 
+.hero-summary {
+    width: min(100%, 56rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    text-wrap: balance;
+}
+
+.hero-summary-lead,
+.hero-summary-copy {
+    margin: 0;
+}
+
+.hero-summary-lead {
+    color: var(--text);
+    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+.hero-summary-copy {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
 .hero-cta {
     margin: 0;
     display: flex;
@@ -297,7 +270,7 @@ body.landing .hero-right {
 }
 
 .subscribe {
-    padding: 1.5rem 0 2rem 0;
+    
     scroll-margin-top: calc(var(--header-height) + 1rem);
 }
 
@@ -313,6 +286,7 @@ body.landing .hero-right {
     gap: .5rem;
     text-align: center;
     padding: 1rem 0;
+    padding-bottom: 100px;
 }
 
 .subscribe h3 {
@@ -380,15 +354,31 @@ body.landing .hero-right {
     cursor: wait;
 }
 
+.features-section {
+    padding: 0 1rem 2.5rem 1rem;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+   
+}
+
+.features-heading {
+    margin: 0 0 1.25rem 0;
+    text-align: center;
+    color: var(--text);
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.1;
+}
+
 .features {
     background: transparent;
     padding: 1.25rem 1rem 2.5rem 1rem;
     margin-top: 0;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -398,7 +388,90 @@ body.landing .hero-right {
     background: var(--card-bg);
 }
 
+.feature-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.75rem;
+    padding: 1rem;
+    color: var(--text);
+    text-decoration: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.feature-card-static {
+    cursor: default;
+}
+
+.features-audience {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.features-process {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.cta-section {
+    padding: 0 1rem 2.5rem 1rem;
+}
+
+.cta-panel {
+    height: 100%;
+    padding: clamp(1.6rem, 3vw, 2.4rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background:
+        radial-gradient(720px circle at 10% -18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 40%),
+        radial-gradient(620px circle at 100% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 46%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, #05070c), color-mix(in srgb, var(--surface) 88%, #05070c));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.24);
+    text-align: center;
+}
+
+.cta-panel-contact {
+    max-width: none;
+}
+
+.cta-heading {
+    margin: 0 0 0.75rem 0;
+    color: var(--text);
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.1;
+}
+
+.cta-copy {
+    max-width: 42rem;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.75;
+}
+
+.cta-actions {
+    margin: 1.35rem 0 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
 @media (max-width: 900px) {
+    .subscribe {
+        padding: 1.5rem 0 2rem 0;
+    }
+
     .hero-inner {
         flex-direction: column;
         text-align: left;
@@ -437,8 +510,21 @@ body.landing .hero-right {
 
     .features {
         grid-template-columns: 1fr;
+    }
+
+    .features-section {
         padding-left: 1rem;
         padding-right: 1rem;
+    }
+
+    .cta-section {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .cta-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
     }
 }
 

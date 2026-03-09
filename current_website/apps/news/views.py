@@ -64,6 +64,10 @@ def home(request):
 	)
 
 
+def services(request):
+	return render(request, "services.html")
+
+
 def subscribe(request):
 	if request.method != "POST":
 		return redirect(_newsletter_anchor_url())
@@ -121,15 +125,24 @@ def contact_support(request):
 		form = SupportContactForm(request.POST)
 		if form.is_valid():
 			name = form.cleaned_data["name"].strip()
+			organization = form.cleaned_data["organization"].strip()
 			email = form.cleaned_data["email"].strip().lower()
+			phone = form.cleaned_data.get("phone", "").strip()
+			business_location = form.cleaned_data.get("business_location", "").strip()
 			subject = form.cleaned_data["subject"].strip()
 			message = form.cleaned_data["message"].strip()
+
+			phone_line = f"Phone: {phone}\n" if phone else ""
+			location_line = f"Business location: {business_location}\n" if business_location else ""
 
 			email_subject = f"[Support] {subject}"
 			email_body = (
 				"New support request submitted from website contact form.\n\n"
 				f"Name: {name}\n"
+				f"Organization: {organization}\n"
 				f"Email: {email}\n"
+				f"{phone_line}"
+				f"{location_line}"
 				f"Subject: {subject}\n\n"
 				"Message:\n"
 				f"{message}\n"
@@ -141,7 +154,10 @@ def contact_support(request):
 				"Thanks for contacting Miranda Insights support. "
 				"We received your message and will respond as soon as possible.\n\n"
 				"Summary of your request:\n"
+				f"Organization: {organization}\n"
 				f"Subject: {subject}\n"
+				f"{phone_line}"
+				f"{location_line}"
 				f"Message: {message}\n\n"
 				"If you need to add details, reply to this email."
 			)

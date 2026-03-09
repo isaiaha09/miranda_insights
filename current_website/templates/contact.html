@@ -39,15 +39,39 @@
         </div>
 
         <div class="field-row">
+          <label for="id_organization">Organization</label>
+          {{ form.organization }}
+          {% if form.organization.errors %}<small class="field-error">{{ form.organization.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
           <label for="id_email">Email</label>
           {{ form.email }}
           {% if form.email.errors %}<small class="field-error">{{ form.email.errors|striptags }}</small>{% endif %}
         </div>
 
         <div class="field-row">
-          <label for="id_subject">Subject</label>
-          {{ form.subject }}
-          {% if form.subject.errors %}<small class="field-error">{{ form.subject.errors|striptags }}</small>{% endif %}
+          <label for="id_phone">Phone (Optional)</label>
+          {{ form.phone }}
+          {% if form.phone.errors %}<small class="field-error">{{ form.phone.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="id_business_location">Business Location (Optional)</label>
+          {{ form.business_location }}
+          {% if form.business_location.errors %}<small class="field-error">{{ form.business_location.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="id_subject_choice">Subject</label>
+          {{ form.subject_choice }}
+          {% if form.subject_choice.errors %}<small class="field-error">{{ form.subject_choice.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row{% if form.subject_choice.value != 'other' and not form.subject_other.errors %} subject-other-hidden{% endif %}" data-subject-other-row>
+          <label for="id_subject_other">Custom Subject</label>
+          {{ form.subject_other }}
+          {% if form.subject_other.errors %}<small class="field-error">{{ form.subject_other.errors|striptags }}</small>{% endif %}
         </div>
 
         <div class="field-row">
@@ -60,5 +84,28 @@
       </form>
     </article>
   </section>
-  <script src="{% static 'js/base.js' %}"></script>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var subjectSelect = document.getElementById('id_subject_choice');
+      var otherRow = document.querySelector('[data-subject-other-row]');
+      var otherInput = document.getElementById('id_subject_other');
+
+      if (!subjectSelect || !otherRow || !otherInput) return;
+
+      function syncOtherSubjectVisibility() {
+        var shouldShow = subjectSelect.value === 'other';
+        otherRow.classList.toggle('subject-other-hidden', !shouldShow);
+        otherInput.required = shouldShow;
+        if (!shouldShow) {
+          otherInput.value = '';
+        }
+      }
+
+      subjectSelect.addEventListener('change', syncOtherSubjectVisibility);
+      syncOtherSubjectVisibility();
+    });
+  </script>
 {% endblock %}

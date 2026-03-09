@@ -22,13 +22,14 @@
 
         <div class="nav-center" id="nav-menu">
           <a href="#">About</a>
-          <a href="#">Download</a>
-          <a href="#">Pricing</a>
-          <a href="#">Features</a>
+          <a href="{% url 'services' %}">Services</a>
+          <a href="#">Products</a>
+          <a href="#">FAQ</a>
         </div>
 
         <div class="nav-right">
-          <a class="signin" href="#">Sign In</a>
+          <a class="client-portal" href="#">Client Portal</a>
+          <a class="signup" href="#">Sign Up</a>
           <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Menu" aria-controls="nav-menu" aria-expanded="false">
             <span class="hamburger" aria-hidden="true">
               <span></span>
@@ -56,10 +57,14 @@
         <div class="footer-col footer-links">
           <h4>Quick Links</h4>
           <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Features</a></li>
-            <li><a href="#">Pricing</a></li>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="{% url 'services' %}">Services</a></li>
+            <li><a href="#">Products</a></li>
+            <li><a href="#">Client Portal</a></li>
             <li><a href="#">FAQ</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
           </ul>
         </div>
 

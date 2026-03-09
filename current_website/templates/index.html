@@ -20,8 +20,13 @@
             <input type="search" placeholder="Search insights, reports..." aria-label="Search" />
           </form>
 
+          <div class="hero-summary">
+            <p class="hero-summary-lead">Data Insights that drive better decisions</p>
+            <p class="hero-summary-copy">We help school districts, organizations, and agencies turn complex data into clear, actionable insights.</p>
+          </div>
+
           <p class="hero-cta">
-            <a class="btn btn-primary" href="#">Free Trial</a>
+            <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact us</a>
             <a class="btn btn-ghost" href="#">See more</a>
           </p>
         </div>
@@ -46,11 +51,57 @@
       </div>
     </section>
 
-    <section class="features">
-      <div class="card">Latest news and updates</div>
-      <div class="card">Client insights</div>
-      <div class="card">Chat and collaboration</div>
+    <section class="features-section" aria-labelledby="what-we-do-heading">
+      <h2 id="what-we-do-heading" class="features-heading">What We Do</h2>
+      <div class="features">
+        <a class="card feature-card" href="{% url 'services' %}">Data Analytics</a>
+        <a class="card feature-card" href="{% url 'services' %}">Dashboard Development</a>
+        <a class="card feature-card" href="{% url 'services' %}">Program Evaluation</a>
+        <a class="card feature-card" href="{% url 'services' %}">Data Systems</a>
+      </div>
     </section>
+
+    <section class="features-section" aria-labelledby="who-we-work-with-heading">
+      <h2 id="who-we-work-with-heading" class="features-heading">Who We Work With</h2>
+      <div class="features features-audience">
+        <div class="card feature-card feature-card-static">School Districts</div>
+        <div class="card feature-card feature-card-static">Government and Public Agencies</div>
+        <div class="card feature-card feature-card-static">Organizations and Nonprofits</div>
+      </div>
+    </section>
+
+    <section class="features-section" aria-labelledby="our-process-heading">
+      <h2 id="our-process-heading" class="features-heading">Our Process</h2>
+      <div class="features features-process">
+        <div class="card feature-card feature-card-static">1. Discovery</div>
+        <div class="card feature-card feature-card-static">2. Data Analysis</div>
+        <div class="card feature-card feature-card-static">3. Insight Development</div>
+        <div class="card feature-card feature-card-static">4. Reporting and Communication</div>
+      </div>
+    </section>
+
+    <div class="cta-grid">
+      <section class="cta-section" aria-labelledby="client-access-heading">
+        <div class="cta-panel">
+          <h2 id="client-access-heading" class="cta-heading">Client Access</h2>
+          <p class="cta-copy">Our clients receive secure access to a project dashboard where they can monitor progress, download reports, and much more.</p>
+          <p class="cta-actions">
+            <a class="btn btn-ghost" href="#">Client Portal</a>
+            <a class="btn btn-primary" href="#">Sign Up</a>
+          </p>
+        </div>
+      </section>
+
+      <section class="cta-section" aria-labelledby="contact-us-heading">
+        <div class="cta-panel cta-panel-contact">
+          <h2 id="contact-us-heading" class="cta-heading">Contact Us</h2>
+          <p class="cta-copy">Have a project in mind?</p>
+          <p class="cta-actions">
+            <a class="btn btn-primary" href="{% url 'contact_support' %}">Fill out this form</a>
+          </p>
+        </div>
+      </section>
+    </div>
   </div>
 {% endblock %}
 

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Services{% endblock %}
+
+{% block body_class %}services-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/services.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="services-shell container">
+    <header class="services-intro">
+      <p class="services-eyebrow">What We Do</p>
+      <h1>Services Built Around Clear, Actionable Insight</h1>
+      <p>We partner with districts, agencies, and organizations to turn raw information into reporting, systems, and decisions that move work forward.</p>
+    </header>
+
+    <section class="services-grid" aria-label="Services offered">
+      <article class="service-card">
+        <h2>Data Analytics</h2>
+        <p>We analyze complex datasets to uncover trends, performance patterns, and practical next steps for leadership teams.</p>
+      </article>
+      <article class="service-card">
+        <h2>Dashboard Development</h2>
+        <p>We design focused dashboards that help teams monitor outcomes, track priorities, and communicate progress clearly.</p>
+      </article>
+      <article class="service-card">
+        <h2>Program Evaluation</h2>
+        <p>We evaluate initiatives with rigorous reporting frameworks that show what is working, what is changing, and where to improve.</p>
+      </article>
+      <article class="service-card">
+        <h2>Data Systems</h2>
+        <p>We help build practical data systems that improve collection, organization, governance, and day-to-day usability.</p>
+      </article>
+    </section>
+  </section>
+{% endblock %}

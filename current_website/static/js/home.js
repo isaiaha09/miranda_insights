@@ -7,6 +7,7 @@
 
       var header = document.querySelector('.site-header');
       var landingNav = document.getElementById('site-nav');
+      var heroSection = document.querySelector('.hero-landing');
       var heroLeft = document.querySelector('.hero-left');
       var rafId = 0;
       var targetTop = null;
@@ -40,15 +41,16 @@
         }
 
         // Mobile: move header out of the way quickly on scroll-down.
-        // Desktop: keep the longer cinematic travel.
+        // Desktop: pin the header earlier than the original version, but not so early that it leaves a large empty gap.
+        var heroHeight = heroSection ? (heroSection.getBoundingClientRect().height || viewportH) : viewportH;
         var desiredDistance = isMobileViewport
-          ? Math.max(420, Math.round(viewportH * 0.65))
-          : Math.max(900, Math.round(viewportH * 1.2));
+          ? Math.max(320, Math.round(viewportH * 0.5))
+          : Math.max(420, Math.round(Math.min(viewportH * 0.62, heroHeight * 0.46)));
         scrollDistance = Math.max(1, Math.min(desiredDistance, maxScrollable || desiredDistance));
 
         // Mobile up-scroll release: keep header pinned at top until near page top.
         scrollReleaseDistance = isMobileViewport
-          ? Math.max(220, Math.round(viewportH * 0.48))
+          ? Math.max(180, Math.round(viewportH * 0.32))
           : scrollDistance;
       }
 
