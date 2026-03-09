@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Terms & Agreement{% endblock %}
+
+{% block body_class %}auth-page terms-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card auth-card-narrow">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Terms</p>
+        <h1>Terms &amp; Agreement</h1>
+      </div>
+
+      <div class="auth-text-block">
+        <h2>Use of Service</h2>
+        <p>By creating an account, you agree to use the Insights platform responsibly and only for lawful business or professional purposes.</p>
+
+        <h2>Account Responsibility</h2>
+        <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account.</p>
+
+        <h2>Data and Communication</h2>
+        <p>You consent to receiving service-related communications needed to manage your account, projects, and support requests.</p>
+      </div>
+    </article>
+  </section>
+{% endblock %}

@@ -12,6 +12,17 @@
     --footer-bg: #0c111b;
     --chrome-bg: #0c111b;
 
+
+    .nav-right .auth-action-form {
+        margin: 0;
+    }
+
+    .nav-right .auth-action-button {
+        font: inherit;
+        cursor: pointer;
+        margin-left: 0;
+        border: 0;
+    }
     --surface: rgba(14, 20, 33, 0.72);
     --border: rgba(230, 238, 246, 0.16);
     --border-soft: rgba(230, 238, 246, 0.10);

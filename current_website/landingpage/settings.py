@@ -161,6 +161,8 @@ EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS')
 EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Newsletter sender (use a dedicated address for outgoing newsletters)
 NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)

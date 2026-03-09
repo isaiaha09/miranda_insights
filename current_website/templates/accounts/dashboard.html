@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Client Dashboard{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="dashboard-shell container">
+    <header class="dashboard-hero">
+      <div>
+        <p class="dashboard-eyebrow">Client Portal</p>
+        <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
+        <p>Track project activity, review deliverables, and stay connected with the Insights team from one place.</p>
+      </div>
+      <div class="dashboard-actions">
+        <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact our team</a>
+      </div>
+    </header>
+
+    <section class="dashboard-grid dashboard-grid-two">
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Active Projects</h2>
+          <span>{{ active_projects|length }} active</span>
+        </div>
+        <div class="project-list">
+          {% for project in active_projects %}
+            <div class="project-card">
+              <h3>{{ project.name }}</h3>
+              <p class="project-meta">{{ project.client }} | {{ project.status }}</p>
+              <div class="progress-row">
+                <div class="progress-track" aria-hidden="true">
+                  <span class="progress-fill" style="width: {{ project.progress }}%"></span>
+                </div>
+                <span class="progress-value">{{ project.progress }}%</span>
+              </div>
+              <p class="project-note">Next: {{ project.next_step }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Completed Projects</h2>
+          <span>{{ completed_projects|length }} completed</span>
+        </div>
+        <div class="project-list">
+          {% for project in completed_projects %}
+            <div class="project-card project-card-complete">
+              <h3>{{ project.name }}</h3>
+              <p class="project-meta">{{ project.client }}</p>
+              <p class="project-note">Completed {{ project.completed_on }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-two">
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Project Progress Updates</h2>
+        </div>
+        <ul class="update-list">
+          {% for update in progress_updates %}
+            <li>{{ update }}</li>
+          {% endfor %}
+        </ul>
+      </article>
+
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Reports &amp; Deliverables</h2>
+        </div>
+        <div class="deliverable-list">
+          {% for report in reports %}
+            <a class="deliverable-card" href="{{ report.href }}">
+              <strong>{{ report.title }}</strong>
+              <span>{{ report.description }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-single">
+      <article class="dashboard-panel dashboard-contact-panel">
+        <div class="dashboard-panel-head">
+          <h2>Message or Contact Our Team</h2>
+        </div>
+        <p class="dashboard-contact-copy">Need an update, have a question, or want to request a new deliverable? Reach out and we will follow up with your project team.</p>
+        <div class="dashboard-contact-actions">
+          <a class="btn btn-primary" href="{% url 'contact_support' %}">Send a message</a>
+          <a class="btn btn-ghost" href="mailto:{{ footer_contact_email|urlencode }}">Email support</a>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

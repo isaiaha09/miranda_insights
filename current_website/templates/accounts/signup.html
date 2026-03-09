@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block body_class %}auth-page signup-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Account Access</p>
+        <h1>Create Your Account</h1>
+        <p>Set up your Insights account to access your dashboard, reports, and client resources.</p>
+      </div>
+
+      {% if messages %}
+        <div aria-live="polite" class="auth-messages">
+          {% for message in messages %}
+            <p class="auth-message auth-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate class="auth-form">
+        {% csrf_token %}
+
+        <div class="auth-grid">
+          <div class="field-row">
+            <label for="id_first_name">First Name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<small class="field-error">{{ form.first_name.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_last_name">Last Name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<small class="field-error">{{ form.last_name.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_industry_type">Industry Type</label>
+            {{ form.industry_type }}
+            {% if form.industry_type.errors %}<small class="field-error">{{ form.industry_type.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_phone_number">Phone Number</label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}<small class="field-error">{{ form.phone_number.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_email">Email Address</label>
+            {{ form.email }}
+            {% if form.email.errors %}<small class="field-error">{{ form.email.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_username">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}<small class="field-error">{{ form.username.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_password1">Password</label>
+            {{ form.password1 }}
+            {% if form.password1.help_text %}<p class="field-help">{{ form.password1.help_text|safe }}</p>{% endif %}
+            {% if form.password1.errors %}<small class="field-error">{{ form.password1.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_password2">Confirm Password</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}<small class="field-error">{{ form.password2.errors|striptags }}</small>{% endif %}
+          </div>
+        </div>
+
+        <div class="auth-form-actions">
+          <div class="checkbox-row">
+            {{ form.agree_to_terms }}
+            <label for="id_agree_to_terms">I agree to the <a href="{% url 'terms' %}">Terms &amp; Agreement</a>.</label>
+          </div>
+          {% if form.agree_to_terms.errors %}<small class="field-error auth-actions-error">{{ form.agree_to_terms.errors|striptags }}</small>{% endif %}
+
+          <button class="btn btn-primary auth-submit" type="submit">Create account</button>
+        </div>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'login' %}">Already have an account? Login here</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

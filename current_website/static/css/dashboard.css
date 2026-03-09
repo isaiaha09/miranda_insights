@@ -1,0 +1,206 @@
+/* Client dashboard styling */
+
+.dashboard-shell {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+.dashboard-hero,
+.dashboard-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background:
+        radial-gradient(720px circle at 8% -20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 40%),
+        radial-gradient(620px circle at 100% 0%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 46%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, #05070c), color-mix(in srgb, var(--surface) 88%, #05070c));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.22);
+}
+
+.dashboard-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+    margin-bottom: 1.25rem;
+}
+
+.dashboard-eyebrow {
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--accent) 75%, var(--text));
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.dashboard-hero h1 {
+    margin: 0 0 0.55rem 0;
+    font-size: clamp(1.8rem, 4.2vw, 3rem);
+}
+
+.dashboard-hero p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.75;
+    max-width: 42rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.dashboard-grid-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-grid-single {
+    grid-template-columns: 1fr;
+}
+
+.dashboard-panel {
+    padding: 1.3rem;
+}
+
+.dashboard-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-panel-head h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.dashboard-panel-head span {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.project-list,
+.deliverable-list {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.project-card,
+.deliverable-card {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface) 56%, transparent);
+}
+
+.project-card h3,
+.deliverable-card strong {
+    display: block;
+    margin: 0 0 0.4rem 0;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.project-meta,
+.project-note,
+.deliverable-card span,
+.dashboard-contact-copy,
+.update-list {
+    color: var(--muted);
+}
+
+.project-meta,
+.project-note,
+.deliverable-card span {
+    margin: 0;
+    line-height: 1.65;
+}
+
+.project-card-complete {
+    border-color: color-mix(in srgb, #16a34a 34%, var(--border-soft));
+}
+
+.progress-row {
+    margin: 0.8rem 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.progress-track {
+    height: 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 70%, #0a1120);
+    overflow: hidden;
+}
+
+.progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.progress-value {
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.update-list {
+    margin: 0;
+    padding-left: 1.15rem;
+    line-height: 1.8;
+}
+
+.deliverable-card {
+    text-decoration: none;
+    transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.deliverable-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border-soft));
+    background: color-mix(in srgb, var(--surface) 74%, transparent);
+}
+
+.dashboard-contact-panel {
+    text-align: center;
+}
+
+.dashboard-contact-copy {
+    max-width: 42rem;
+    margin: 0 auto;
+    line-height: 1.8;
+}
+
+.dashboard-contact-actions {
+    margin-top: 1.2rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+    .dashboard-hero,
+    .dashboard-grid-two {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 800px) {
+    .dashboard-shell {
+        padding-top: 1.4rem;
+        padding-bottom: 1.8rem;
+    }
+}

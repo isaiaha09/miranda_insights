@@ -28,8 +28,15 @@
         </div>
 
         <div class="nav-right">
-          <a class="client-portal" href="#">Client Portal</a>
-          <a class="signup" href="#">Sign Up</a>
+          <a class="client-portal" href="{% url 'dashboard' %}">Client Portal</a>
+          {% if request.user.is_authenticated %}
+            <form class="auth-action-form" action="{% url 'logout' %}" method="post">
+              {% csrf_token %}
+              <button class="signup auth-action-button" type="submit">Logout</button>
+            </form>
+          {% else %}
+            <a class="signup" href="{% url 'signup' %}">Sign Up</a>
+          {% endif %}
           <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Menu" aria-controls="nav-menu" aria-expanded="false">
             <span class="hamburger" aria-hidden="true">
               <span></span>
@@ -61,10 +68,10 @@
             <li><a href="#">About</a></li>
             <li><a href="{% url 'services' %}">Services</a></li>
             <li><a href="#">Products</a></li>
-            <li><a href="#">Client Portal</a></li>
+            <li><a href="{% url 'dashboard' %}">Client Portal</a></li>
             <li><a href="#">FAQ</a></li>
             <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
+            <li><a href="{% url 'terms' %}">Terms of Service</a></li>
           </ul>
         </div>
 
