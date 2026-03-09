@@ -27,6 +27,21 @@ Isaiah's Edits:
     - .env (hides all of our secret keys and api keys)
     - db.sqlite3 and other sqlite dbs (stores data from local machine. Cannot have that in github repo)
     - venv (also unnecessary for git repo. venv should be created and activated in own local machine)
+
+
+
+
+    EMAILS:
+        company@mirandainsights.com (emails/messages get received)
+        news@mirandainsights.com (news letter aesthetic email)
+        suppor@mirandainsights.com (visual email when sending messages to and from company@mirandainsights email from clients pov)
+
+    
+    Security:
+        - Implement cloudflare turnstiles in contact form and registration
+
+
+
     
 
 
