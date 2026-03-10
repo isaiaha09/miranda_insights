@@ -116,8 +116,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 	login_url = "login"
 
 	def _get_newsletter_initial(self):
-		subscriber = NewsletterSubscriber.objects.filter(email__iexact=self.request.user.email).first()
-		return {"subscribe_to_newsletter": bool(subscriber and subscriber.is_active)}
+		return {"subscribe_to_newsletter": NewsletterSubscriber.objects.filter(email__iexact=self.request.user.email, is_active=True).exists()}
 
 	def post(self, request, *args, **kwargs):
 		action = (request.POST.get("settings_action") or "newsletter").strip()
@@ -129,26 +128,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 				wants_newsletter = form.cleaned_data["subscribe_to_newsletter"]
 
 				if email:
-					subscriber, created = NewsletterSubscriber.objects.get_or_create(
-						email=email,
-						defaults={"is_active": wants_newsletter},
-					)
-
 					if wants_newsletter:
-						if not subscriber.is_active:
-							subscriber.is_active = True
-							subscriber.unsubscribed_at = None
-							subscriber.save(update_fields=["is_active", "unsubscribed_at"])
+						NewsletterSubscriber.objects.update_or_create(
+							email=email,
+							defaults={"is_active": True, "unsubscribed_at": None},
+						)
 						messages.success(request, "Your newsletter preference has been updated.")
 					else:
-						if created:
-							subscriber.is_active = False
-							subscriber.unsubscribed_at = timezone.now()
-							subscriber.save(update_fields=["is_active", "unsubscribed_at"])
-						elif subscriber.is_active:
-							subscriber.is_active = False
-							subscriber.unsubscribed_at = timezone.now()
-							subscriber.save(update_fields=["is_active", "unsubscribed_at"])
+						NewsletterSubscriber.objects.filter(email=email).delete()
 						messages.success(request, "You have been unsubscribed from newsletter updates.")
 				else:
 					messages.error(request, "Add an email address to your account before managing newsletter preferences.")

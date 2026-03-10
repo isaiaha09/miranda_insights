@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.db.models import Exists, OuterRef
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
@@ -9,11 +11,42 @@ from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImage
 from .services import send_campaign
 
 
+User = get_user_model()
+
+
+class HasAccountListFilter(admin.SimpleListFilter):
+	title = "has account"
+	parameter_name = "has_account"
+
+	def lookups(self, request, model_admin):
+		return (
+			("yes", "Has account"),
+			("no", "No account"),
+		)
+
+	def queryset(self, request, queryset):
+		value = self.value()
+		if value == "yes":
+			return queryset.filter(has_account=True)
+		if value == "no":
+			return queryset.filter(has_account=False)
+		return queryset
+
+
 @admin.register(NewsletterSubscriber)
 class NewsletterSubscriberAdmin(admin.ModelAdmin):
-	list_display = ("email", "is_active", "subscribed_at", "unsubscribed_at")
-	list_filter = ("is_active", "subscribed_at")
+	list_display = ("email", "has_account", "is_active", "subscribed_at", "unsubscribed_at")
+	list_filter = (HasAccountListFilter, "is_active", "subscribed_at")
 	search_fields = ("email",)
+
+	def get_queryset(self, request):
+		queryset = super().get_queryset(request)
+		matching_users = User.objects.filter(email__iexact=OuterRef("email"))
+		return queryset.annotate(has_account=Exists(matching_users))
+
+	@admin.display(boolean=True, ordering="has_account", description="Has account")
+	def has_account(self, obj):
+		return bool(getattr(obj, "has_account", False))
 
 
 @admin.register(NewsletterImageAsset)

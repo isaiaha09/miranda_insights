@@ -8,7 +8,6 @@ from django.core.mail import get_connection
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from landingpage.emailing import send_templated_email
 from landingpage.turnstile import is_turnstile_enabled, verify_turnstile
@@ -120,10 +119,8 @@ def unsubscribe(request):
 		return redirect(_newsletter_anchor_url())
 
 	subscriber = NewsletterSubscriber.objects.filter(email=email).first()
-	if subscriber and subscriber.is_active:
-		subscriber.is_active = False
-		subscriber.unsubscribed_at = timezone.now()
-		subscriber.save(update_fields=["is_active", "unsubscribed_at"])
+	if subscriber:
+		subscriber.delete()
 
 	messages.success(request, "You have been unsubscribed from newsletter emails.")
 	return redirect(_newsletter_anchor_url({"newsletter_status": "unsubscribed"}))

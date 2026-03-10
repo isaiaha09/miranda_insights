@@ -1,18 +1,23 @@
 import tempfile
 from urllib.parse import urlsplit
 
+from django.contrib.admin.sites import AdminSite
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import RequestFactory
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from .admin import HasAccountListFilter, NewsletterSubscriberAdmin
 from .newsletter_blocks import normalize_blocks
 from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
 from .services import send_campaign
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
+User = get_user_model()
 
 
 @override_settings(
@@ -127,7 +132,7 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertEqual(response.json()["sectionId"], "newsletter-signup")
 		self.assertTrue(NewsletterSubscriber.objects.filter(email="person@example.com", is_active=True).exists())
 
-	def test_unsubscribe_link_deactivates_subscriber(self):
+	def test_unsubscribe_link_deletes_subscriber(self):
 		subscriber = NewsletterSubscriber.objects.create(email="sub1@example.com", is_active=True)
 		campaign = self.create_campaign(body="Body text")
 
@@ -137,12 +142,10 @@ class NewsletterSendCampaignTests(TestCase):
 		parsed_url = urlsplit(unsubscribe_url)
 		response = self.client.get(f"{parsed_url.path}?{parsed_url.query}", follow=True)
 
-		subscriber.refresh_from_db()
 		self.assertEqual(response.status_code, 200)
 		self.assertTrue(response.redirect_chain)
 		self.assertIn("newsletter_status=unsubscribed#newsletter-signup", response.redirect_chain[0][0])
-		self.assertFalse(subscriber.is_active)
-		self.assertIsNotNone(subscriber.unsubscribed_at)
+		self.assertFalse(NewsletterSubscriber.objects.filter(pk=subscriber.pk).exists())
 		self.assertContains(response, "You have been unsubscribed from newsletter emails.")
 
 	def test_send_campaign_renders_structured_blocks(self):
@@ -215,3 +218,39 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="hero-spotlight", is_builtin=True).exists())
 		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="event-announcement", is_builtin=True).exists())
 		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="article-digest", is_builtin=True).exists())
+
+
+class NewsletterSubscriberAdminTests(TestCase):
+	def setUp(self):
+		self.site = AdminSite()
+		self.admin = NewsletterSubscriberAdmin(NewsletterSubscriber, self.site)
+		self.factory = RequestFactory()
+
+	def test_get_queryset_annotates_has_account(self):
+		NewsletterSubscriber.objects.create(email="with-account@example.com", is_active=True)
+		NewsletterSubscriber.objects.create(email="without-account@example.com", is_active=True)
+		User.objects.create_user(username="withaccount", email="with-account@example.com", password="test-pass-123")
+
+		request = self.factory.get("/admin/news/newslettersubscriber/")
+		queryset = self.admin.get_queryset(request)
+
+		results = {subscriber.email: subscriber.has_account for subscriber in queryset}
+		self.assertTrue(results["with-account@example.com"])
+		self.assertFalse(results["without-account@example.com"])
+
+	def test_has_account_filter_returns_only_matching_rows(self):
+		NewsletterSubscriber.objects.create(email="with-account@example.com", is_active=True)
+		NewsletterSubscriber.objects.create(email="without-account@example.com", is_active=True)
+		User.objects.create_user(username="withaccount", email="with-account@example.com", password="test-pass-123")
+
+		request = self.factory.get("/admin/news/newslettersubscriber/", {"has_account": "yes"})
+		filter_instance = HasAccountListFilter(
+			request,
+			{},
+			NewsletterSubscriber,
+			self.admin,
+		)
+		filter_instance.used_parameters = {"has_account": "yes"}
+		filtered = filter_instance.queryset(request, self.admin.get_queryset(request))
+
+		self.assertEqual(list(filtered.values_list("email", flat=True)), ["with-account@example.com"])
