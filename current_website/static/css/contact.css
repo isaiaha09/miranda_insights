@@ -113,12 +113,12 @@
     display: flex;
     width: 100%;
     max-width: 100%;
+    justify-content: flex-start;
+    align-items: flex-start;
     margin-bottom: 1rem;
 }
 
-.turnstile-wrap .cf-turnstile,
-.turnstile-wrap iframe {
-    width: 100%;
+.turnstile-wrap .cf-turnstile {
     max-width: 100%;
 }
 
@@ -137,5 +137,9 @@
 @media (max-width: 480px) {
     .turnstile-wrap {
         overflow: hidden;
+    }
+
+    .turnstile-wrap .cf-turnstile {
+        will-change: transform;
     }
 }

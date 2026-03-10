@@ -91,7 +91,7 @@
         <div class="auth-form-actions">
           {% if turnstile_enabled %}
             <div class="turnstile-wrap">
-              <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-size="flexible"></div>
+              <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-mobile-size="normal" data-desktop-size="flexible"></div>
             </div>
           {% endif %}
 
@@ -120,6 +120,67 @@
 
 {% block extra_js %}
   {% if turnstile_enabled %}
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script>
+      function fitTurnstileWidgets() {
+        document.querySelectorAll('.turnstile-wrap').forEach(function (wrapper) {
+          var widget = wrapper.querySelector('.cf-turnstile');
+          var iframe = wrapper.querySelector('iframe');
+
+          if (!widget || !iframe) {
+            return;
+          }
+
+          widget.style.transform = '';
+          widget.style.transformOrigin = '';
+          wrapper.style.minHeight = '';
+
+          var isMobile = window.matchMedia('(max-width: 520px)').matches;
+          if (!isMobile) {
+            return;
+          }
+
+          var widgetWidth = iframe.offsetWidth || 300;
+          var widgetHeight = iframe.offsetHeight || 65;
+          var availableWidth = wrapper.clientWidth;
+
+          if (!availableWidth || availableWidth >= widgetWidth) {
+            wrapper.style.minHeight = widgetHeight + 'px';
+            return;
+          }
+
+          var scale = availableWidth / widgetWidth;
+          widget.style.transform = 'scale(' + scale + ')';
+          widget.style.transformOrigin = 'left top';
+          wrapper.style.minHeight = Math.ceil(widgetHeight * scale) + 'px';
+        });
+      }
+
+      function renderResponsiveTurnstile() {
+        if (!window.turnstile) {
+          return;
+        }
+
+        var isMobile = window.matchMedia('(max-width: 520px)').matches;
+        document.querySelectorAll('.cf-turnstile').forEach(function (element) {
+          if (element.dataset.widgetId) {
+            return;
+          }
+
+          var size = isMobile ? (element.dataset.mobileSize || 'compact') : (element.dataset.desktopSize || 'flexible');
+          var widgetId = window.turnstile.render(element, {
+            sitekey: element.dataset.sitekey,
+            size: size,
+          });
+
+          element.dataset.widgetId = widgetId;
+        });
+
+        window.requestAnimationFrame(fitTurnstileWidgets);
+      }
+
+      window.onloadTurnstileCallback = renderResponsiveTurnstile;
+      window.addEventListener('resize', fitTurnstileWidgets);
+    </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback" async defer></script>
   {% endif %}
 {% endblock %}
