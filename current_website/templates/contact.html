@@ -29,6 +29,14 @@
         </div>
       {% endif %}
 
+      {% if form.non_field_errors %}
+        <div aria-live="polite" class="contact-messages">
+          {% for error in form.non_field_errors %}
+            <p class="contact-message contact-message-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <form method="post" novalidate class="support-form">
         {% csrf_token %}
 
@@ -80,6 +88,12 @@
           {% if form.message.errors %}<small class="field-error">{{ form.message.errors|striptags }}</small>{% endif %}
         </div>
 
+        {% if turnstile_enabled %}
+          <div class="turnstile-wrap">
+            <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-size="flexible"></div>
+          </div>
+        {% endif %}
+
         <button class="btn btn-primary support-submit" type="submit">Send message</button>
       </form>
     </article>
@@ -87,6 +101,9 @@
 {% endblock %}
 
 {% block extra_js %}
+  {% if turnstile_enabled %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       var subjectSelect = document.getElementById('id_subject_choice');

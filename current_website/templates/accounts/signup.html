@@ -26,6 +26,14 @@
         </div>
       {% endif %}
 
+      {% if form.non_field_errors %}
+        <div aria-live="polite" class="auth-messages">
+          {% for error in form.non_field_errors %}
+            <p class="auth-message auth-message-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <form method="post" novalidate class="auth-form">
         {% csrf_token %}
 
@@ -81,6 +89,18 @@
         </div>
 
         <div class="auth-form-actions">
+          {% if turnstile_enabled %}
+            <div class="turnstile-wrap">
+              <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-size="flexible"></div>
+            </div>
+          {% endif %}
+
+          <div class="checkbox-row">
+            {{ form.subscribe_to_newsletter }}
+            <label for="id_subscribe_to_newsletter">Send me newsletter updates and product insights.</label>
+          </div>
+          {% if form.subscribe_to_newsletter.errors %}<small class="field-error auth-actions-error">{{ form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
+
           <div class="checkbox-row">
             {{ form.agree_to_terms }}
             <label for="id_agree_to_terms">I agree to the <a href="{% url 'terms' %}">Terms &amp; Agreement</a>.</label>
@@ -96,4 +116,10 @@
       </div>
     </article>
   </section>
+{% endblock %}
+
+{% block extra_js %}
+  {% if turnstile_enabled %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  {% endif %}
 {% endblock %}

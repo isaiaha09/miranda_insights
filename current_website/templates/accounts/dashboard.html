@@ -11,6 +11,14 @@
 
 {% block content %}
   <section class="dashboard-shell container">
+    {% if messages %}
+      <div class="dashboard-messages" aria-live="polite">
+        {% for message in messages %}
+          <p class="dashboard-message dashboard-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     <header class="dashboard-hero">
       <div>
         <p class="dashboard-eyebrow">Client Portal</p>
@@ -86,6 +94,66 @@
             </a>
           {% endfor %}
         </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-single">
+      <article class="dashboard-panel dashboard-settings-panel">
+        <div class="dashboard-panel-head">
+          <h2>Portal Settings</h2>
+        </div>
+        <p class="dashboard-contact-copy">Manage your newsletter preference for account-related product updates and insights.</p>
+        <form method="post" class="dashboard-settings-form">
+          {% csrf_token %}
+          <input type="hidden" name="settings_action" value="newsletter" />
+          <div class="dashboard-checkbox-row">
+            {{ newsletter_form.subscribe_to_newsletter }}
+            <label for="id_subscribe_to_newsletter">Keep me subscribed to newsletter updates.</label>
+          </div>
+          {% if newsletter_form.subscribe_to_newsletter.errors %}<small class="dashboard-field-error">{{ newsletter_form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
+          <button class="btn btn-primary" type="submit">Save settings</button>
+        </form>
+
+        <div class="dashboard-settings-divider"></div>
+
+        <p class="dashboard-contact-copy">Secure your client portal login with an authenticator app.</p>
+        {% if two_factor_enabled %}
+          <div class="dashboard-status-pill">2FA enabled</div>
+          <form method="post" class="dashboard-settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="disable_2fa" />
+            <button class="btn btn-ghost" type="submit">Disable 2FA</button>
+          </form>
+        {% elif two_factor_pending %}
+          <div class="dashboard-setup-box">
+            <p class="dashboard-contact-copy">Add this setup key to your authenticator app, then enter the current 6-digit code to finish setup.</p>
+            {% if two_factor_qr_data_uri %}
+              <div class="dashboard-qr-wrap">
+                <img class="dashboard-qr-image" src="{{ two_factor_qr_data_uri }}" alt="QR code for authenticator app setup" />
+              </div>
+            {% endif %}
+            <p class="dashboard-setup-key">{{ two_factor_setup_key }}</p>
+          </div>
+          <form method="post" class="dashboard-settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="confirm_2fa_setup" />
+            <div class="dashboard-code-field">
+              <label for="id_otp_code">Authentication Code</label>
+              {{ two_factor_setup_form.otp_code }}
+            </div>
+            {% if two_factor_setup_form.otp_code.errors %}<small class="dashboard-field-error">{{ two_factor_setup_form.otp_code.errors|striptags }}</small>{% endif %}
+            <div class="dashboard-contact-actions">
+              <button class="btn btn-primary" type="submit">Enable 2FA</button>
+            </div>
+          </form>
+        {% else %}
+          <div class="dashboard-status-pill dashboard-status-pill-muted">2FA not enabled</div>
+          <form method="post" class="dashboard-settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="start_2fa_setup" />
+            <button class="btn btn-primary" type="submit">Set up 2FA</button>
+          </form>
+        {% endif %}
       </article>
     </section>
 

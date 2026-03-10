@@ -1,0 +1,7 @@
+We received a request to recover your username.
+
+The following username(s) are associated with this email address:
+{% for username in usernames %}- {{ username }}
+{% endfor %}
+
+If you did not request this email, you can safely ignore it.

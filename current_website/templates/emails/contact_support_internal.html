@@ -1,0 +1,14 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <p style="margin:0 0 16px 0;">A new support request was submitted from the website contact form.</p>
+  <div style="padding:18px 20px;border:1px solid rgba(230,238,246,0.12);border-radius:16px;background:rgba(255,255,255,0.03);margin:18px 0;">
+    <div style="margin:0 0 8px 0;"><strong style="color:#e6eef6;">Name:</strong> {{ name }}</div>
+    <div style="margin:0 0 8px 0;"><strong style="color:#e6eef6;">Organization:</strong> {{ organization }}</div>
+    <div style="margin:0 0 8px 0;"><strong style="color:#e6eef6;">Email:</strong> <a href="mailto:{{ email|urlencode }}" style="color:#7db5ff;text-decoration:none;font-weight:600;">{{ email }}</a></div>
+    {% if phone %}<div style="margin:0 0 8px 0;"><strong style="color:#e6eef6;">Phone:</strong> {{ phone }}</div>{% endif %}
+    {% if business_location %}<div style="margin:0 0 8px 0;"><strong style="color:#e6eef6;">Business Location:</strong> {{ business_location }}</div>{% endif %}
+    <div style="margin:0 0 8px 0;"><strong style="color:#e6eef6;">Subject:</strong> {{ subject }}</div>
+    <div style="margin:0;"><strong style="color:#e6eef6;">Message:</strong><br>{{ message|linebreaksbr }}</div>
+  </div>
+{% endblock %}

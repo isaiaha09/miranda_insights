@@ -1,0 +1,12 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <p style="margin:0 0 16px 0;">We received a request to recover your username.</p>
+  <p style="margin:0 0 16px 0;">The following username{% if usernames|length > 1 %}s are{% else %} is{% endif %} associated with this email address:</p>
+  <div style="padding:18px 20px;border:1px solid rgba(230,238,246,0.12);border-radius:16px;background:rgba(255,255,255,0.03);margin:18px 0;">
+    {% for username in usernames %}
+      <div style="margin:0 0 8px 0;font-weight:700;color:#e6eef6;">{{ username }}</div>
+    {% endfor %}
+  </div>
+  <p style="margin:0;">If you did not request this email, you can safely ignore it.</p>
+{% endblock %}

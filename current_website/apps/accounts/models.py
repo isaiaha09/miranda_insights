@@ -26,6 +26,8 @@ class AccountProfile(models.Model):
 	user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="account_profile")
 	industry_type = models.CharField(max_length=64, choices=INDUSTRY_CHOICES)
 	phone_number = models.CharField(max_length=40)
+	two_factor_enabled = models.BooleanField(default=False)
+	two_factor_secret = models.CharField(max_length=64, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):

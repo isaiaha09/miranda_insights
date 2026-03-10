@@ -109,6 +109,19 @@
     color: #fca5a5;
 }
 
+.turnstile-wrap {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1rem;
+}
+
+.turnstile-wrap .cf-turnstile,
+.turnstile-wrap iframe {
+    width: 100%;
+    max-width: 100%;
+}
+
 .support-submit {
     border-radius: var(--radius-md);
     padding: 0.72rem 1.1rem;
@@ -118,5 +131,11 @@
     .contact-shell {
         padding-top: 1.4rem;
         padding-bottom: 1.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .turnstile-wrap {
+        overflow: hidden;
     }
 }

@@ -1,0 +1,4 @@
+{{ body_text }}
+
+{{ unsubscribe_footer_text }} {{ unsubscribe_label }}.
+{{ unsubscribe_url }}

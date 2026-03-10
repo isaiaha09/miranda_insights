@@ -14,6 +14,7 @@ class SignupForm(UserCreationForm):
     industry_type = forms.ChoiceField(choices=AccountProfile.INDUSTRY_CHOICES)
     phone_number = forms.CharField(max_length=40, widget=forms.TextInput(attrs={"autocomplete": "tel"}))
     email = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={"autocomplete": "email"}))
+    subscribe_to_newsletter = forms.BooleanField(required=False, label="Subscribe to the newsletter")
     agree_to_terms = forms.BooleanField(label="I agree to the Terms & Agreement")
 
     class Meta(UserCreationForm.Meta):
@@ -24,6 +25,7 @@ class SignupForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         self.fields["first_name"].widget.attrs.update({"placeholder": "First name"})
         self.fields["last_name"].widget.attrs.update({"placeholder": "Last name"})
+        self.fields["industry_type"].choices = (("", "Select an industry"),) + tuple(AccountProfile.INDUSTRY_CHOICES)
         self.fields["phone_number"].widget.attrs.update({"placeholder": "Phone number"})
         self.fields["email"].widget.attrs.update({"placeholder": "Email address"})
         self.fields["username"].widget.attrs.update({"placeholder": "Username", "autocomplete": "username"})
@@ -49,6 +51,26 @@ class SignupForm(UserCreationForm):
                 phone_number=self.cleaned_data["phone_number"].strip(),
             )
         return user
+
+
+class NewsletterPreferenceForm(forms.Form):
+    subscribe_to_newsletter = forms.BooleanField(required=False, label="Email me newsletter updates and product insights")
+
+
+class TwoFactorChallengeForm(forms.Form):
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={"placeholder": "123456", "inputmode": "numeric", "autocomplete": "one-time-code"}),
+    )
+
+
+class TwoFactorSetupForm(forms.Form):
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={"placeholder": "123456", "inputmode": "numeric", "autocomplete": "one-time-code"}),
+    )
 
 
 class LoginForm(AuthenticationForm):

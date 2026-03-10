@@ -129,6 +129,20 @@
     color: #fca5a5;
 }
 
+.turnstile-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 0.95rem;
+}
+
+.turnstile-wrap .cf-turnstile,
+.turnstile-wrap iframe {
+    width: 100%;
+    max-width: 100%;
+}
+
 .auth-form-actions {
     margin-top: 1.4rem;
     display: flex;
@@ -210,5 +224,12 @@
 
     .auth-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .turnstile-wrap {
+        justify-content: stretch;
+        overflow: hidden;
     }
 }

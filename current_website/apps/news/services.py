@@ -9,6 +9,9 @@ from django.core.validators import validate_email
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils import timezone
+from django.template.loader import render_to_string
+
+from landingpage.emailing import build_email_context
 
 from .models import NewsletterCampaign, NewsletterSendLog, NewsletterSubscriber
 
@@ -90,15 +93,19 @@ def _build_campaign_body(campaign: NewsletterCampaign, recipient_email: str) -> 
 
 
 def _build_campaign_html_body(campaign: NewsletterCampaign, recipient_email: str) -> str:
-    body = escape(campaign.rendered_body().rstrip()).replace("\n", "<br>")
-    unsubscribe_url = escape(build_unsubscribe_url(recipient_email))
-    return (
-        "<html><body>"
-        f"<p>{body}</p>"
-        f"<p>{escape(UNSUBSCRIBE_FOOTER_TEXT)} "
-        f"<a href=\"{unsubscribe_url}\">{escape(UNSUBSCRIBE_LABEL)}</a>."
-        "</p>"
-        "</body></html>"
+    return render_to_string(
+        "emails/newsletter_campaign.html",
+        build_email_context(
+            {
+                "email_title": campaign.subject,
+                "heading": campaign.subject,
+                "subheading": "Latest updates from Miranda Insights.",
+                "body_html": escape(campaign.rendered_body().rstrip()).replace("\n", "<br>"),
+                "unsubscribe_url": build_unsubscribe_url(recipient_email),
+                "unsubscribe_footer_text": UNSUBSCRIBE_FOOTER_TEXT,
+                "unsubscribe_label": UNSUBSCRIBE_LABEL,
+            }
+        ),
     )
 
 

@@ -4,12 +4,14 @@ from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
 from django.core import signing
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import get_connection
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+from landingpage.emailing import send_templated_email
+from landingpage.turnstile import is_turnstile_enabled, verify_turnstile
 
 from .forms import NewsletterSubscribeForm, SupportContactForm
 from .models import NewsletterSubscriber
@@ -29,6 +31,13 @@ def _newsletter_anchor_url(params=None):
 
 def _is_ajax_request(request):
 	return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _client_ip(request):
+	x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+	if x_forwarded_for:
+		return x_forwarded_for.split(",")[0].strip()
+	return request.META.get("REMOTE_ADDR")
 
 
 def _newsletter_response(request, message_text, *, level, status_code=200):
@@ -124,6 +133,11 @@ def contact_support(request):
 	if request.method == "POST":
 		form = SupportContactForm(request.POST)
 		if form.is_valid():
+			turnstile_ok, _ = verify_turnstile((request.POST.get("cf-turnstile-response") or "").strip(), _client_ip(request))
+			if not turnstile_ok:
+				form.add_error(None, "Security verification failed. Please try again.")
+				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled(), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
+
 			name = form.cleaned_data["name"].strip()
 			organization = form.cleaned_data["organization"].strip()
 			email = form.cleaned_data["email"].strip().lower()
@@ -165,25 +179,45 @@ def contact_support(request):
 			try:
 				connection = get_connection(fail_silently=False)
 
-				support_email = EmailMessage(
+				support_sent = send_templated_email(
 					subject=email_subject,
-					body=email_body,
-					from_email=settings.DEFAULT_FROM_EMAIL,
 					to=[settings.CONTACT_RECIPIENT],
+					template_prefix="contact_support_internal",
+					context={
+						"email_title": email_subject,
+						"heading": "New Support Request",
+						"subheading": "A new contact form submission is ready for review.",
+						"name": name,
+						"organization": organization,
+						"email": email,
+						"phone": phone,
+						"business_location": business_location,
+						"subject": subject,
+						"message": message,
+					},
+					from_email=settings.DEFAULT_FROM_EMAIL,
 					reply_to=[email],
 					connection=connection,
 				)
-				confirmation_email = EmailMessage(
+				confirmation_sent = send_templated_email(
 					subject=confirmation_subject,
-					body=confirmation_body,
-					from_email=settings.DEFAULT_FROM_EMAIL,
 					to=[email],
+					template_prefix="contact_support_confirmation",
+					context={
+						"email_title": confirmation_subject,
+						"heading": "Support Request Received",
+						"subheading": "We have your message and will follow up as soon as possible.",
+						"name": name,
+						"organization": organization,
+						"phone": phone,
+						"business_location": business_location,
+						"subject": subject,
+						"message": message,
+					},
+					from_email=settings.DEFAULT_FROM_EMAIL,
 					reply_to=["support@mirandainsights.com"],
 					connection=connection,
 				)
-
-				support_sent = support_email.send(fail_silently=False)
-				confirmation_sent = confirmation_email.send(fail_silently=False)
 				if support_sent != 1 or confirmation_sent != 1:
 					raise RuntimeError(
 						f"Unexpected send result (support={support_sent}, confirmation={confirmation_sent})"
@@ -194,11 +228,11 @@ def contact_support(request):
 				if settings.DEBUG:
 					error_message = f"{error_message} (Reason: {exc})"
 				messages.error(request, error_message)
-				return render(request, "contact.html", {"form": form})
+				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled(), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
 
-			messages.success(request, "Thanks, your support request has been received.")
+			messages.success(request, "Thanks, your support request has been received. A confirmation message has been sent to your email.")
 			return redirect("contact_support")
 	else:
 		form = SupportContactForm()
 
-	return render(request, "contact.html", {"form": form})
+	return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled(), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})

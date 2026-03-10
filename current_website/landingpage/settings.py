@@ -37,7 +37,7 @@ SECRET_KEY = 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -163,6 +163,11 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Turnstile (for contact form and sign up pages)
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
+TURNSTILE_VERIFY_URL = os.getenv('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify')
 
 # Newsletter sender (use a dedicated address for outgoing newsletters)
 NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)

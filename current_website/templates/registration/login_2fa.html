@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Two-Factor Authentication{% endblock %}
+
+{% block body_class %}auth-page login-2fa-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card auth-card-narrow">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Client Portal</p>
+        <h1>Enter Your Authentication Code</h1>
+        <p>Open your authenticator app and enter the current 6-digit code to complete sign in.</p>
+      </div>
+
+      <form method="post" novalidate class="auth-form">
+        {% csrf_token %}
+        <div class="field-row">
+          <label for="id_otp_code">Authentication Code</label>
+          {{ form.otp_code }}
+          {% if form.otp_code.errors %}<small class="field-error">{{ form.otp_code.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <button class="btn btn-primary auth-submit" type="submit">Verify and continue</button>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'login' %}">Back to login</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}
