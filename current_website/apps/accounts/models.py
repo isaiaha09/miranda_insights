@@ -30,5 +30,9 @@ class AccountProfile(models.Model):
 	two_factor_secret = models.CharField(max_length=64, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
+	class Meta:
+		verbose_name = "Account Profile"
+		verbose_name_plural = "Account Profiles"
+
 	def __str__(self):
 		return f"Profile for {self.user.username}"

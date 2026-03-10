@@ -115,6 +115,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 	template_name = "accounts/dashboard.html"
 	login_url = "login"
 
+	def _get_account_profile(self):
+		return getattr(self.request.user, "account_profile", None)
+
 	def _get_newsletter_initial(self):
 		return {"subscribe_to_newsletter": NewsletterSubscriber.objects.filter(email__iexact=self.request.user.email, is_active=True).exists()}
 
@@ -145,7 +148,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 			context = self.get_context_data(newsletter_form=form)
 			return self.render_to_response(context)
 
-		profile = request.user.account_profile
+		profile = self._get_account_profile()
+		if profile is None:
+			messages.error(request, "Your account profile is incomplete. Please contact support for assistance.")
+			return redirect("dashboard")
 
 		if action == "start_2fa_setup":
 			pending_secret = generate_totp_secret()
@@ -186,14 +192,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		pending_secret = self.request.session.get("pending_2fa_secret", "")
-		profile = self.request.user.account_profile
+		profile = self._get_account_profile()
 		context["newsletter_form"] = kwargs.get("newsletter_form") or NewsletterPreferenceForm(initial=self._get_newsletter_initial())
 		context["two_factor_setup_form"] = kwargs.get("two_factor_setup_form") or TwoFactorSetupForm()
 		context.update(
 			{
 				"turnstile_enabled": is_turnstile_enabled(),
 				"turnstile_site_key": settings.TURNSTILE_SITE_KEY,
-				"two_factor_enabled": profile.two_factor_enabled,
+				"two_factor_enabled": bool(profile and profile.two_factor_enabled),
 				"two_factor_pending": bool(pending_secret),
 				"two_factor_setup_key": pending_secret,
 				"two_factor_otpauth_uri": build_totp_uri(pending_secret, self.request.user.username) if pending_secret else "",

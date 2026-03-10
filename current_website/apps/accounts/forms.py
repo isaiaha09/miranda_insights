@@ -74,6 +74,11 @@ class TwoFactorSetupForm(forms.Form):
 
 
 class LoginForm(AuthenticationForm):
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": "Incorrect username or password.",
+    }
+
     username = forms.CharField(widget=forms.TextInput(attrs={"placeholder": "Username", "autocomplete": "username"}))
     password = forms.CharField(widget=forms.PasswordInput(attrs={"placeholder": "Password", "autocomplete": "current-password"}))
 
