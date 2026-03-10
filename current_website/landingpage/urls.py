@@ -28,3 +28,4 @@ urlpatterns = [
 # Serve static files during development
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=str(settings.BASE_DIR / 'static'))
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -4,7 +4,8 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import NewsletterCampaign, NewsletterSendLog, NewsletterSubscriber
+from .forms import NewsletterBlockTemplateAdminForm, NewsletterCampaignAdminForm
+from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
 from .services import send_campaign
 
 
@@ -15,8 +16,45 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
 	search_fields = ("email",)
 
 
+@admin.register(NewsletterImageAsset)
+class NewsletterImageAssetAdmin(admin.ModelAdmin):
+	list_display = ("name", "image_preview", "is_active", "created_at")
+	list_filter = ("is_active", "created_at")
+	search_fields = ("name", "alt_text", "default_caption")
+	readonly_fields = ("created_at", "updated_at", "image_preview")
+	fields = ("name", "image", "image_preview", "alt_text", "default_caption", "is_active", "created_by", "created_at", "updated_at")
+
+	def image_preview(self, obj):
+		if not obj or not obj.image:
+			return "No image"
+		return format_html('<img src="{}" alt="{}" style="max-height:72px;border-radius:12px;" />', obj.image.url, obj.alt_text or obj.name)
+
+	image_preview.short_description = "Preview"
+
+	def save_model(self, request, obj, form, change):
+		if not obj.created_by_id:
+			obj.created_by = request.user
+		super().save_model(request, obj, form, change)
+
+
+@admin.register(NewsletterBlockTemplate)
+class NewsletterBlockTemplateAdmin(admin.ModelAdmin):
+	form = NewsletterBlockTemplateAdminForm
+	list_display = ("name", "category", "is_builtin", "is_active", "updated_at")
+	list_filter = ("category", "is_builtin", "is_active")
+	search_fields = ("name", "slug", "description")
+	readonly_fields = ("created_at", "updated_at")
+	fields = ("name", "slug", "description", "category", "content_blocks", "is_builtin", "is_active", "created_by", "created_at", "updated_at")
+
+	def save_model(self, request, obj, form, change):
+		if not obj.created_by_id:
+			obj.created_by = request.user
+		super().save_model(request, obj, form, change)
+
+
 @admin.register(NewsletterCampaign)
 class NewsletterCampaignAdmin(admin.ModelAdmin):
+	form = NewsletterCampaignAdminForm
 	list_display = (
 		"name",
 		"mode",
@@ -44,7 +82,8 @@ class NewsletterCampaignAdmin(admin.ModelAdmin):
 				"fields": (
 					"name",
 					"subject",
-					"body",
+					"preheader",
+					"content_blocks",
 					"mode",
 					"include_subscribers",
 					"direct_recipients",

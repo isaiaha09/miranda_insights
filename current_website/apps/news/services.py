@@ -13,7 +13,8 @@ from django.template.loader import render_to_string
 
 from landingpage.emailing import build_email_context
 
-from .models import NewsletterCampaign, NewsletterSendLog, NewsletterSubscriber
+from .models import NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
+from .newsletter_blocks import build_html, build_plain_text
 
 
 UNSUBSCRIBE_TOKEN_SALT = "news.unsubscribe"
@@ -83,7 +84,12 @@ def build_unsubscribe_url(recipient_email: str) -> str:
 
 
 def _build_campaign_body(campaign: NewsletterCampaign, recipient_email: str) -> str:
-    body = campaign.rendered_body().rstrip()
+    asset_map = _get_image_asset_map(campaign)
+    body = build_plain_text(
+        campaign.content_blocks,
+        formatter=lambda value: campaign._render_placeholder_text(value, timezone.localtime().strftime("%Y-%m-%d")),
+        image_resolver=lambda asset_id: asset_map.get(asset_id),
+    ).rstrip() if campaign.content_blocks else campaign.rendered_body().rstrip()
     unsubscribe_url = build_unsubscribe_url(recipient_email)
     return (
         f"{body}\n\n"
@@ -93,20 +99,52 @@ def _build_campaign_body(campaign: NewsletterCampaign, recipient_email: str) -> 
 
 
 def _build_campaign_html_body(campaign: NewsletterCampaign, recipient_email: str) -> str:
+    asset_map = _get_image_asset_map(campaign)
+    body_html = build_html(
+        campaign.content_blocks,
+        formatter=lambda value: campaign._render_placeholder_text(value, timezone.localtime().strftime("%Y-%m-%d")),
+        image_resolver=lambda asset_id: asset_map.get(asset_id),
+    ) if campaign.content_blocks else escape(campaign.rendered_body().rstrip()).replace("\n", "<br>")
+
     return render_to_string(
         "emails/newsletter_campaign.html",
         build_email_context(
             {
                 "email_title": campaign.subject,
                 "heading": campaign.subject,
-                "subheading": "Latest updates from Miranda Insights.",
-                "body_html": escape(campaign.rendered_body().rstrip()).replace("\n", "<br>"),
+                "subheading": campaign.rendered_preheader() or "Latest updates from Miranda Insights.",
+                "preheader": campaign.rendered_preheader(),
+                "body_html": body_html,
                 "unsubscribe_url": build_unsubscribe_url(recipient_email),
                 "unsubscribe_footer_text": UNSUBSCRIBE_FOOTER_TEXT,
                 "unsubscribe_label": UNSUBSCRIBE_LABEL,
             }
         ),
     )
+
+
+def _get_image_asset_map(campaign: NewsletterCampaign) -> dict[int, dict[str, str]]:
+    asset_ids = []
+    for block in campaign.content_blocks or []:
+        asset_id = block.get("image_asset_id")
+        if isinstance(asset_id, int):
+            asset_ids.append(asset_id)
+
+    if not asset_ids:
+        return {}
+
+    base_url = getattr(settings, "SITE_URL", "http://localhost:8000").rstrip("/")
+    asset_map = {}
+    for asset in NewsletterImageAsset.objects.filter(pk__in=asset_ids, is_active=True):
+        asset_url = asset.image.url if asset.image else ""
+        if asset_url.startswith("/"):
+            asset_url = f"{base_url}{asset_url}"
+        asset_map[asset.pk] = {
+            "url": asset_url,
+            "alt_text": asset.alt_text,
+            "caption": asset.default_caption,
+        }
+    return asset_map
 
 
 def _build_campaign_headers(recipient_email: str) -> dict[str, str]:

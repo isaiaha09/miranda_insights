@@ -136,6 +136,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
 
 DJANGO_ADMIN_URL=os.getenv('DJANGO_ADMIN_URL')
 
@@ -146,6 +147,7 @@ STATICFILES_DIRS = [
 
 # Optional STATIC_ROOT for collectstatic (useful for deployments)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Email (newsletter)

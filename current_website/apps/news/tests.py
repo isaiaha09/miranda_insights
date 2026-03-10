@@ -1,16 +1,25 @@
+import tempfile
 from urllib.parse import urlsplit
 
 from django.core import mail
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import NewsletterCampaign, NewsletterSendLog, NewsletterSubscriber
+from .newsletter_blocks import normalize_blocks
+from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
 from .services import send_campaign
+
+
+TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 
 
 @override_settings(
 	EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
 	SITE_URL="https://mirandainsights.com",
+	MEDIA_ROOT=TEMP_MEDIA_ROOT,
+	MEDIA_URL="/media/",
 )
 class NewsletterSendCampaignTests(TestCase):
 	def create_campaign(self, **overrides):
@@ -135,3 +144,74 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertFalse(subscriber.is_active)
 		self.assertIsNotNone(subscriber.unsubscribed_at)
 		self.assertContains(response, "You have been unsubscribed from newsletter emails.")
+
+	def test_send_campaign_renders_structured_blocks(self):
+		NewsletterSubscriber.objects.create(email="sub1@example.com", is_active=True)
+		campaign = self.create_campaign(
+			body="",
+			preheader="Quarterly highlights",
+			content_blocks=[
+				{"type": "heading", "text": "Q1 Highlights", "level": "1", "align": "left"},
+				{"type": "paragraph", "text": "A polished newsletter without raw HTML.", "style": "lead", "align": "left"},
+				{"type": "button", "text": "Read more", "url": "https://mirandainsights.com/services/", "style": "primary", "align": "center"},
+			],
+		)
+
+		sent, failed = send_campaign(campaign)
+
+		self.assertEqual(sent, 1)
+		self.assertEqual(failed, 0)
+		self.assertEqual(len(mail.outbox), 1)
+		message = mail.outbox[0]
+		self.assertIn("Q1 Highlights", message.body)
+		html_body, _ = message.alternatives[0]
+		self.assertIn("Quarterly highlights", html_body)
+		self.assertIn("Read more", html_body)
+		self.assertIn("https://mirandainsights.com/services/", html_body)
+
+	def test_normalize_blocks_rejects_invalid_image_url(self):
+		with self.assertRaises(ValidationError):
+			normalize_blocks([
+				{"type": "image", "image_url": "notaurl", "alt_text": "Chart"},
+			])
+
+	def test_send_campaign_renders_uploaded_image_asset(self):
+		NewsletterSubscriber.objects.create(email="sub1@example.com", is_active=True)
+		asset = NewsletterImageAsset.objects.create(
+			name="Hero Chart",
+			alt_text="Growth chart",
+			default_caption="Monthly growth snapshot",
+			image=SimpleUploadedFile(
+				"chart.gif",
+				b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02L\x01\x00;",
+				content_type="image/gif",
+			),
+		)
+		campaign = self.create_campaign(
+			body="",
+			content_blocks=[
+				{"type": "image", "image_asset_id": asset.pk, "caption": "", "link_url": "", "width": "wide", "alt_text": ""},
+			],
+		)
+
+		sent, failed = send_campaign(campaign)
+
+		self.assertEqual(sent, 1)
+		self.assertEqual(failed, 0)
+		self.assertIn("Growth chart", mail.outbox[0].body)
+		self.assertIn("Monthly growth snapshot", mail.outbox[0].body)
+		html_body, _ = mail.outbox[0].alternatives[0]
+		self.assertIn("https://mirandainsights.com/media/newsletter/images/", html_body)
+		self.assertIn("Growth chart", html_body)
+		self.assertIn("Monthly growth snapshot", html_body)
+
+	def test_normalize_blocks_accepts_uploaded_image_without_url(self):
+		blocks = normalize_blocks([
+			{"type": "image", "image_asset_id": 7, "alt_text": "", "caption": "", "link_url": "", "width": "full"},
+		])
+		self.assertEqual(blocks[0]["image_asset_id"], 7)
+
+	def test_default_templates_exist(self):
+		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="hero-spotlight", is_builtin=True).exists())
+		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="event-announcement", is_builtin=True).exists())
+		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="article-digest", is_builtin=True).exists())
