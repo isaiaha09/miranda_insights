@@ -1,3 +1,20 @@
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) {
+    return;
+  }
+
+  var config = window.insightsPwaConfig || {};
+  var serviceWorkerUrl = config.serviceWorkerUrl || '/service-worker.js';
+
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register(serviceWorkerUrl).catch(function (error) {
+      console.warn('Service worker registration failed', error);
+    });
+  });
+}
+
+registerServiceWorker();
+
 // Minimal JS placeholder for site interactions
 document.addEventListener('DOMContentLoaded', function(){
   // Example: simple console message

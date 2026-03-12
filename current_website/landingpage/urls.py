@@ -18,9 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from landingpage import pwa
 
 urlpatterns = [
     path(f"{settings.DJANGO_ADMIN_URL}/", admin.site.urls),
+    path("manifest.webmanifest", pwa.manifest, name="webmanifest"),
+    path("service-worker.js", pwa.service_worker, name="service_worker"),
+    path("offline/", pwa.offline, name="offline"),
     path('', include('apps.accounts.urls')),
     path('', include('apps.news.urls')),
 ]
