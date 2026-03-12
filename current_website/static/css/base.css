@@ -432,6 +432,90 @@ input:focus-visible {
     box-shadow: 0 18px 54px rgba(2, 6, 23, 0.10);
 }
 
+.pwa-install-banner {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 1200;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.9rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(12, 17, 27, 0.98), rgba(7, 11, 18, 0.96));
+    box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(14px) saturate(1.06);
+    transform: translateY(calc(100% + 2rem));
+    opacity: 0;
+    transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.pwa-install-banner.is-visible {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.pwa-install-banner__media img {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 0.9rem;
+    display: block;
+}
+
+.pwa-install-banner__content {
+    min-width: 0;
+}
+
+.pwa-install-banner__eyebrow {
+    margin: 0 0 0.2rem;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.pwa-install-banner__title {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.pwa-install-banner__copy,
+.pwa-install-banner__steps {
+    margin: 0.3rem 0 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.pwa-install-banner__steps {
+    color: var(--text);
+}
+
+.pwa-install-banner__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.45rem;
+}
+
+.pwa-install-banner__dismiss {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+    padding: 0.15rem 0;
+}
+
+.pwa-install-banner__dismiss:hover {
+    color: var(--text);
+}
+
 /* Footer */
 .site-footer {
     border-top: 1px solid var(--border);
@@ -595,6 +679,34 @@ input:focus-visible {
         text-align: left;
     }
 
+    .pwa-install-banner {
+        grid-template-columns: 1fr;
+        align-items: start;
+        left: 0.75rem;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        padding: 0.9rem;
+    }
+
+    .pwa-install-banner__media {
+        display: none;
+    }
+
+    .pwa-install-banner__actions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .pwa-install-banner__actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .pwa-install-banner__dismiss {
+        text-align: center;
+        padding-top: 0.2rem;
+    }
+
     .footer-bottom {
         text-align: left;
     }
@@ -635,6 +747,10 @@ input:focus-visible {
     .site-footer,
     .nav-right .signup,
     .nav-center a {
+        transition: none;
+    }
+
+    .pwa-install-banner {
         transition: none;
     }
 

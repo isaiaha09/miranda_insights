@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="application-name" content="Insights" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-navbutton-color" content="#0c111b" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Insights" />
     <meta name="description" content="Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions." />
-    <meta name="theme-color" content="#070b12" />
+    <meta name="theme-color" content="#0c111b" />
     <title>{% block title %}Insights Website{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}" />
     <link rel="manifest" href="{% url 'webmanifest' %}" />
@@ -62,6 +63,22 @@
     <main class="site-main">
       {% block content %}{% endblock %}
     </main>
+
+    <aside class="pwa-install-banner" id="pwa-install-banner" hidden aria-live="polite" aria-labelledby="pwa-install-title">
+      <div class="pwa-install-banner__media" aria-hidden="true">
+        <img src="{% static 'pwa/icon-192.png' %}" alt="" />
+      </div>
+      <div class="pwa-install-banner__content">
+        <p class="pwa-install-banner__eyebrow">Install Insights</p>
+        <h2 class="pwa-install-banner__title" id="pwa-install-title">Keep Insights one tap away.</h2>
+        <p class="pwa-install-banner__copy" id="pwa-install-copy">Install the web app for faster access to dashboards, updates, and support.</p>
+        <p class="pwa-install-banner__steps" id="pwa-install-steps" hidden></p>
+      </div>
+      <div class="pwa-install-banner__actions">
+        <button class="btn btn-primary" id="pwa-install-action" type="button">Install app</button>
+        <button class="pwa-install-banner__dismiss" id="pwa-install-dismiss" type="button" aria-label="Dismiss install prompt">Not now</button>
+      </div>
+    </aside>
 
     <footer class="site-footer">
       <div class="container footer-grid">

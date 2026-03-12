@@ -16,8 +16,9 @@ def manifest(request):
         "scope": "/",
         "display": "standalone",
         "background_color": "#070b12",
-        "theme_color": "#070b12",
+        "theme_color": "#0c111b",
         "lang": "en-US",
+        "prefer_related_applications": False,
         "icons": [
             {
                 "src": static("pwa/icon-192.png"),
@@ -60,7 +61,7 @@ def service_worker(request):
         request,
         "service-worker.js",
         {
-            "cache_name": "insights-pwa-v1",
+            "cache_name": "insights-pwa-v2",
         },
         content_type="application/javascript; charset=utf-8",
     )
