@@ -11,6 +11,8 @@ User = get_user_model()
 class SignupForm(UserCreationForm):
     first_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs={"autocomplete": "given-name"}))
     last_name = forms.CharField(max_length=150, widget=forms.TextInput(attrs={"autocomplete": "family-name"}))
+    organization_name = forms.CharField(max_length=180, required=False, label="Business/Organization Name")
+    organization_description = forms.CharField(required=False, label="Business/Organization Description", widget=forms.Textarea(attrs={"rows": 3}))
     industry_type = forms.ChoiceField(choices=AccountProfile.INDUSTRY_CHOICES)
     phone_number = forms.CharField(max_length=40, widget=forms.TextInput(attrs={"autocomplete": "tel"}))
     email = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={"autocomplete": "email"}))
@@ -19,12 +21,14 @@ class SignupForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("first_name", "last_name", "industry_type", "phone_number", "email", "username")
+        fields = ("first_name", "last_name", "organization_name", "organization_description", "industry_type", "phone_number", "email", "username")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["first_name"].widget.attrs.update({"placeholder": "First name"})
         self.fields["last_name"].widget.attrs.update({"placeholder": "Last name"})
+        self.fields["organization_name"].widget.attrs.update({"placeholder": "Business or organization name"})
+        self.fields["organization_description"].widget.attrs.update({"placeholder": "A short description of your organization or team."})
         self.fields["industry_type"].choices = (("", "Select an industry"),) + tuple(AccountProfile.INDUSTRY_CHOICES)
         self.fields["phone_number"].widget.attrs.update({"placeholder": "Phone number"})
         self.fields["email"].widget.attrs.update({"placeholder": "Email address"})
@@ -50,6 +54,12 @@ class SignupForm(UserCreationForm):
                 industry_type=self.cleaned_data["industry_type"],
                 phone_number=self.cleaned_data["phone_number"].strip(),
             )
+            from apps.clients.models import get_or_create_client_for_user
+
+            client_record = get_or_create_client_for_user(user)
+            client_record.organization_name = self.cleaned_data["organization_name"].strip()
+            client_record.organization_description = self.cleaned_data["organization_description"].strip()
+            client_record.save(update_fields=["organization_name", "organization_description", "updated_at"])
         return user
 
 

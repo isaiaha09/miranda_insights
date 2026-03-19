@@ -79,6 +79,10 @@
     align-self: start;
 }
 
+.auth-grid .field-row-wide {
+    grid-column: 1 / -1;
+}
+
 .field-row {
     display: grid;
     gap: 0.45rem;

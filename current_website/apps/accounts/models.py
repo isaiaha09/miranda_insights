@@ -5,6 +5,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from .services import delete_account_for_user
+
 
 ACCOUNT_DELETION_GRACE_PERIOD = timedelta(days=7)
 
@@ -80,9 +82,11 @@ class AccountDeletionRequest(models.Model):
 
 def purge_expired_account_deletions(reference_time=None):
 	now = reference_time or timezone.now()
-	user_ids = list(AccountDeletionRequest.objects.filter(scheduled_for__lte=now).values_list("user_id", flat=True))
-	if not user_ids:
+	deletion_requests = list(AccountDeletionRequest.objects.filter(scheduled_for__lte=now).select_related("user"))
+	if not deletion_requests:
 		return 0
-	user_model = get_user_model()
-	user_model.objects.filter(pk__in=user_ids).delete()
-	return len(user_ids)
+	deleted_count = 0
+	for deletion_request in deletion_requests:
+		if delete_account_for_user(deletion_request.user, send_confirmation_email=True):
+			deleted_count += 1
+	return deleted_count

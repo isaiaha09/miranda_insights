@@ -1,0 +1,7 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <p style="margin:0 0 16px 0;">Your Miranda Insights account has been successfully deleted.</p>
+  <p style="margin:0 0 16px 0;">All account data associated with this email has been permanently removed from Miranda Insights, except any active newsletter subscription tied to this email.</p>
+  <p style="margin:0;">If this was a mistake, please contact Miranda Insights at <a href="mailto:{{ support_email|urlencode }}" style="color:#7db5ff;text-decoration:none;font-weight:600;">{{ support_email }}</a>.</p>
+{% endblock %}

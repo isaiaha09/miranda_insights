@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block title %}{% translate 'Login' %}{% endblock %}
+
+{% block body_class %}auth-page login-page admin-login-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+  {{ form.media }}
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card auth-card-narrow">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Client Portal</p>
+        <h1>Login</h1>
+        <p>Enter your admin username and password to access the Miranda Insights management workspace.</p>
+      </div>
+
+      {% if messages %}
+        <div class="auth-messages" aria-live="polite">
+          {% for message in messages %}
+            <p class="auth-message auth-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if form.errors and not form.non_field_errors %}
+        <div class="auth-messages" aria-live="polite">
+          <p class="auth-message auth-message-error">
+            {% blocktranslate count counter=form.errors.items|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}
+          </p>
+        </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+        <div class="auth-messages" aria-live="polite">
+          {% for error in form.non_field_errors %}
+            <p class="auth-message auth-message-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if user.is_authenticated %}
+        <div class="auth-messages" aria-live="polite">
+          <p class="auth-message auth-message-error">
+            {% blocktranslate trimmed %}
+              You are authenticated as {{ username }}, but are not authorized to access this page. Log in with a staff account instead.
+            {% endblocktranslate %}
+          </p>
+        </div>
+      {% endif %}
+
+      <form action="{{ app_path }}" method="post" id="login-form" novalidate class="auth-form">
+        {% csrf_token %}
+
+        <div class="field-row">
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% if form.username.errors %}<small class="field-error">{{ form.username.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+          {{ form.password }}
+          {% if form.password.errors %}<small class="field-error">{{ form.password.errors|striptags }}</small>{% endif %}
+        </div>
+
+        {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
+
+        <button class="btn btn-primary auth-submit" type="submit">Log in</button>
+      </form>
+
+      <div class="auth-links">
+        
+        <a href="{% url 'recover_username' %}">Forgot username?</a>
+        <a href="{% url 'password_reset' %}">Forgot password?</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

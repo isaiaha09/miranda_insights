@@ -13,7 +13,7 @@ from django.views.generic import FormView, TemplateView
 
 from apps.news.models import NewsletterSubscriber
 from apps.clients.chat import render_project_chat_widget
-from apps.clients.forms import ProjectMessageForm
+from apps.clients.forms import ClientPortalProfileForm, ProjectMessageForm
 from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 from landingpage.emailing import send_templated_email
 from landingpage.turnstile import is_turnstile_enabled, verify_turnstile
@@ -93,7 +93,7 @@ class PortalContextMixin:
 			project_payload = {
 				"name": project.name,
 				"client": client.organization_name or client.contact_name,
-				"consultant": (project.consultant.get_full_name().strip() or project.consultant.username) if project.consultant else "Unassigned consultant",
+				"consultant": project.consultant_display,
 				"progress": project.progress_percentage,
 				"status": project.get_status_display(),
 				"next_step": next_subtask.title if next_subtask else ("Awaiting next update" if project.status != Project.STATUS_COMPLETED else "Project wrapped"),
@@ -150,7 +150,7 @@ class PortalContextMixin:
 		message_logs = [
 			{
 				"project_name": message.project.name,
-				"sender": message.sender.get_full_name().strip() or message.sender.username,
+				"sender": message.sender_label,
 				"body": message.body,
 				"logged_at": message.created_at,
 				"is_staff_message": message.is_staff_message,
@@ -285,6 +285,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 	def post(self, request, *args, **kwargs):
 		action = (request.POST.get("settings_action") or "newsletter").strip()
 		client = self._get_client_record()
+		profile = self._get_account_profile()
 
 		if action == "newsletter":
 			form = NewsletterPreferenceForm(request.POST)
@@ -310,6 +311,16 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 			context = self.get_context_data(newsletter_form=form)
 			return self.render_to_response(context)
 
+		if action == "client_profile":
+			form = ClientPortalProfileForm(request.POST, instance=client, profile=profile)
+			if form.is_valid():
+				form.save()
+				messages.success(request, "Your business profile has been updated.")
+				return redirect("dashboard")
+
+			context = self.get_context_data(client_profile_form=form)
+			return self.render_to_response(context)
+
 		if action == "project_message":
 			form = ProjectMessageForm(request.POST, request.FILES, client=client)
 			if form.is_valid():
@@ -323,7 +334,6 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 			context = self.get_context_data(project_message_form=form)
 			return self.render_to_response(context)
 
-		profile = self._get_account_profile()
 		if profile is None:
 			messages.error(request, "Your account profile is incomplete. Please contact support for assistance.")
 			return redirect("dashboard")
@@ -370,6 +380,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 		profile = self._get_account_profile()
 		client = self._get_client_record()
 		context["newsletter_form"] = kwargs.get("newsletter_form") or NewsletterPreferenceForm(initial=self._get_newsletter_initial())
+		context["client_profile_form"] = kwargs.get("client_profile_form") or ClientPortalProfileForm(instance=client, profile=profile)
 		context["two_factor_setup_form"] = kwargs.get("two_factor_setup_form") or TwoFactorSetupForm()
 		context["project_chat_widget_html"] = render_project_chat_widget(
 			self.request,

@@ -20,6 +20,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from landingpage import pwa
 
+admin.site.login_template = "admin/login_portal.html"
+admin.site.site_header = "Miranda Insights Admin"
+admin.site.site_title = "Miranda Insights Admin"
+admin.site.index_title = "Management Workspace"
+
 urlpatterns = [
     path(f"{settings.DJANGO_ADMIN_URL}/", admin.site.urls),
     path("manifest.webmanifest", pwa.manifest, name="webmanifest"),

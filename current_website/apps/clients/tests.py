@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from apps.accounts.models import AccountProfile
 from .admin import ClientAdmin, ProjectAdmin, ProjectMessageAdmin, ProjectNoteInline, ProjectSubtaskInline
+from .forms import AdminProjectCreateForm
 from .models import Client, Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 
 
@@ -42,7 +43,8 @@ class ClientProjectTests(TestCase):
 		)
 		self.client_record = get_or_create_client_for_user(self.client_user)
 		self.client_record.organization_name = "North Valley School District"
-		self.client_record.save(update_fields=["organization_name"])
+		self.client_record.organization_description = "A public school district coordinating performance dashboards and reporting rollouts."
+		self.client_record.save(update_fields=["organization_name", "organization_description"])
 		self.project = Project.objects.create(
 			client=self.client_record,
 			name="District Performance Dashboard",
@@ -95,12 +97,55 @@ class ClientProjectTests(TestCase):
 
 		self.assertEqual(response.status_code, 200)
 		message = ProjectMessage.objects.get(project=self.project)
-		self.assertTrue(message.attachment_file.name.endswith("project-brief.docx"))
+		self.assertIn("project-brief", message.attachment_file.name)
+		self.assertTrue(message.attachment_file.name.endswith(".docx"))
 		self.assertEqual(message.attachment_link, "https://example.com/dashboard-spec")
-		self.assertContains(response, "project-brief.docx")
+		self.assertContains(response, "project-brief")
 		self.assertContains(response, "Open shared link")
-		self.assertIn("project-brief.docx", mail.outbox[0].body)
+		self.assertIn(message.attachment_file_name, mail.outbox[0].body)
 		self.assertIn("https://example.com/dashboard-spec", mail.outbox[0].body)
+
+	def test_dashboard_chat_widget_filters_messages_to_selected_project(self):
+		second_project = Project.objects.create(
+			client=self.client_record,
+			name="Enrollment Forecast Review",
+			status=Project.STATUS_PENDING,
+			consultant_name=Project.CONSULTANT_NAME_MIRANDA_INSIGHTS_TEAM,
+		)
+		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Message for project one")
+		ProjectMessage.objects.create(project=second_project, sender=self.client_user, body="Message for project two")
+		self.client.login(username="clientuser", password="client-pass-123")
+
+		response = self.client.get(
+			reverse("project_chat_widget"),
+			{"project": second_project.pk},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Message for project two")
+		self.assertNotContains(response, "Message for project one")
+
+	def test_admin_chat_widget_filters_messages_to_selected_project(self):
+		second_project = Project.objects.create(
+			client=self.client_record,
+			name="Enrollment Forecast Review",
+			status=Project.STATUS_PENDING,
+			consultant_name=Project.CONSULTANT_NAME_MIRANDA_INSIGHTS_TEAM,
+		)
+		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Admin view project one")
+		ProjectMessage.objects.create(project=second_project, sender=self.client_user, body="Admin view project two")
+		self.client.force_login(self.staff_user)
+
+		response = self.client.get(
+			reverse("admin:clients_client_chat_widget", args=[self.client_record.pk]),
+			{"project": second_project.pk},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Admin view project two")
+		self.assertNotContains(response, "Admin view project one")
 
 	def test_admin_project_message_sends_client_notification(self):
 		admin = ProjectMessageAdmin(ProjectMessage, AdminSite())
@@ -114,6 +159,39 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(mail.outbox[0].to, ["client@example.com"])
 		self.assertIn("The latest dashboard draft is ready for review.", mail.outbox[0].body)
 		self.assertIn("https://example.com/review-draft", mail.outbox[0].body)
+		self.assertIn("Avery Consultant", mail.outbox[0].body)
+
+	def test_staff_message_uses_project_consultant_display_for_sender_label(self):
+		project = Project.objects.create(
+			client=self.client_record,
+			name="Team-Managed Rollout",
+			status=Project.STATUS_IN_PROGRESS,
+			consultant_name=Project.CONSULTANT_NAME_MIRANDA_INSIGHTS_TEAM,
+		)
+		message = ProjectMessage.objects.create(project=project, sender=self.staff_user, body="Team update")
+
+		self.assertEqual(message.sender_label, "Miranda Insights Team")
+
+	def test_custom_consultant_name_is_used_in_staff_message_email_and_widget(self):
+		project = Project.objects.create(
+			client=self.client_record,
+			name="Custom Managed Rollout",
+			status=Project.STATUS_IN_PROGRESS,
+			consultant_name="KMIR Success Lead",
+		)
+		message = ProjectMessage.objects.create(project=project, sender=self.staff_user, body="Custom consultant update")
+		message.send_notification()
+		self.client.login(username="clientuser", password="client-pass-123")
+
+		response = self.client.get(
+			reverse("project_chat_widget"),
+			{"project": project.pk},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertIn("KMIR Success Lead", mail.outbox[0].body)
+		self.assertContains(response, "KMIR Success Lead")
 
 	def test_project_admin_editor_excludes_chat_preview(self):
 		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Can we update the filters on the dashboard?")
@@ -160,9 +238,21 @@ class ClientProjectTests(TestCase):
 		chat_preview = admin.client_chat_preview(self.client_record)
 
 		self.assertIn("District Performance Dashboard", workspace)
+		self.assertIn("Other", workspace)
+		self.assertIn("North Valley School District", workspace)
+		self.assertIn("A public school district coordinating performance dashboards and reporting rollouts.", workspace)
 		self.assertIn("Open full project editor", workspace)
 		self.assertIn("Review export mappings", workspace)
 		self.assertIn("Can we update the filters on the dashboard?", chat_preview)
+
+	def test_client_admin_keeps_organization_details_on_change_form_not_list_row(self):
+		admin = ClientAdmin(Client, AdminSite())
+
+		self.assertNotIn("organization_name", admin.list_display)
+		self.assertIn("organization_name", admin.fields)
+		self.assertIn("organization_description", admin.fields)
+		self.assertIn("industry_type_display", admin.fields)
+		self.assertIn("industry_type_display", admin.readonly_fields)
 
 	def test_hidden_client_admin_models_do_not_show_module_perms(self):
 		request = RequestFactory().get("/admin/")
@@ -188,7 +278,8 @@ class ClientProjectTests(TestCase):
 				"status": Project.STATUS_PENDING,
 				"start_date": "2025-04-01",
 				"end_date": "2025-04-30",
-				"consultant": self.staff_user.pk,
+				"consultant_choice": self.staff_user.pk,
+				"consultant_custom_name": "",
 				"description": "Launch timeline and onboarding checkpoints.",
 			},
 			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
@@ -197,7 +288,62 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		project = Project.objects.get(client=self.client_record, name="Family Engagement Rollout")
 		self.assertEqual(project.consultant, self.staff_user)
+		self.assertEqual(project.consultant_display, "Avery Consultant")
 		self.assertContains(response, "Created project &#x27;Family Engagement Rollout&#x27;.")
+		self.assertContains(response, "Family Engagement Rollout")
+		self.assertContains(response, "Open full project editor")
+
+	def test_client_admin_workspace_can_create_project_with_miranda_insights_team_consultant(self):
+		self.client.force_login(self.staff_user)
+
+		response = self.client.post(
+			reverse("admin:clients_client_workspace", args=[self.client_record.pk]),
+			{
+				"workspace_action": "create_project",
+				"name": "Insights Team Rollout",
+				"status": Project.STATUS_PENDING,
+				"start_date": "2025-05-01",
+				"end_date": "2025-05-31",
+				"consultant_choice": AdminProjectCreateForm.CONSULTANT_OPTION_MIRANDA_TEAM,
+				"consultant_custom_name": "",
+				"description": "Team-led implementation plan.",
+			},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		project = Project.objects.get(client=self.client_record, name="Insights Team Rollout")
+		self.assertIsNone(project.consultant)
+		self.assertEqual(project.consultant_name, Project.CONSULTANT_NAME_MIRANDA_INSIGHTS_TEAM)
+		self.assertContains(response, "Insights Team Rollout")
+		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "Miranda Insights Team")
+
+	def test_client_admin_workspace_can_create_project_with_custom_consultant_name(self):
+		self.client.force_login(self.staff_user)
+
+		response = self.client.post(
+			reverse("admin:clients_client_workspace", args=[self.client_record.pk]),
+			{
+				"workspace_action": "create_project",
+				"name": "Custom Consultant Rollout",
+				"status": Project.STATUS_PENDING,
+				"start_date": "2025-06-01",
+				"end_date": "2025-06-30",
+				"consultant_choice": AdminProjectCreateForm.CONSULTANT_OPTION_CUSTOM_NAME,
+				"consultant_custom_name": "KMIR Success Lead",
+				"description": "Custom consultant assignment.",
+			},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		project = Project.objects.get(client=self.client_record, name="Custom Consultant Rollout")
+		self.assertIsNone(project.consultant)
+		self.assertEqual(project.consultant_name, "KMIR Success Lead")
+		self.assertContains(response, "Custom Consultant Rollout")
+		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "KMIR Success Lead")
 
 	def test_client_admin_workspace_can_add_subtask(self):
 		self.client.force_login(self.staff_user)
@@ -220,6 +366,8 @@ class ClientProjectTests(TestCase):
 		self.assertTrue(subtask.is_completed)
 		self.assertEqual(subtask.completed_by, self.staff_user)
 		self.assertContains(response, "Added a subtask to &#x27;District Performance Dashboard&#x27;.")
+		self.assertContains(response, "Finalize dashboard QA checklist")
+		self.assertContains(response, "Open full project editor")
 
 	def test_client_admin_workspace_can_add_note(self):
 		self.client.force_login(self.staff_user)
@@ -239,3 +387,5 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(note.created_by, self.staff_user)
 		self.assertEqual(note.content, "Client approved the revised scorecard summary copy.")
 		self.assertContains(response, "Added a note to &#x27;District Performance Dashboard&#x27;.")
+		self.assertContains(response, "Client approved the revised scorecard summary copy.")
+		self.assertContains(response, "Open full project editor")

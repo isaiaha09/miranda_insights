@@ -86,9 +86,33 @@
     initWorkspace(nextWorkspace);
   }
 
-  async function refreshWidget(widget) {
+  function syncConsultantCustomField(form) {
+    if (!form) {
+      return;
+    }
+
+    var consultantChoice = form.querySelector('[data-consultant-choice]');
+    var customFieldWrapper = form.querySelector('[data-consultant-custom-field]');
+    var customNameInput = form.querySelector('[data-consultant-custom-name]');
+
+    if (!consultantChoice || !customFieldWrapper) {
+      return;
+    }
+
+    var customOptionValue = consultantChoice.dataset.customConsultantOption || "";
+    var showCustomField = consultantChoice.value === customOptionValue;
+
+    customFieldWrapper.classList.toggle("is-hidden", !showCustomField);
+
+    if (!showCustomField && customNameInput) {
+      customNameInput.value = "";
+    }
+  }
+
+  async function refreshWidget(widget, options) {
+    options = options || {};
     var refreshUrl = widget.dataset.refreshUrl;
-    if (!refreshUrl || isUserInteracting(widget)) {
+    if (!refreshUrl || (!options.force && isUserInteracting(widget))) {
       return;
     }
     var response = await fetch(buildUrl(refreshUrl, selectedProject(widget)), {
@@ -116,16 +140,53 @@
     }
     workspace.dataset.workspaceInitialized = "true";
 
-    workspace.querySelectorAll("form[data-client-workspace-form]").forEach(function (form) {
-      form.addEventListener("submit", async function (event) {
-        event.preventDefault();
-        var submitButton = form.querySelector('button[type="submit"]');
+    function buildWorkspaceFormData(container) {
+      var formData = new FormData();
+
+      container.querySelectorAll("input, select, textarea").forEach(function (field) {
+        if (!field.name || field.disabled) {
+          return;
+        }
+
+        if ((field.type === "checkbox" || field.type === "radio") && !field.checked) {
+          return;
+        }
+
+        if (field.type === "file") {
+          Array.prototype.forEach.call(field.files || [], function (file) {
+            formData.append(field.name, file);
+          });
+          return;
+        }
+
+        formData.append(field.name, field.value);
+      });
+
+      return formData;
+    }
+
+    workspace.querySelectorAll("[data-client-workspace-form]").forEach(function (container) {
+      syncConsultantCustomField(container);
+
+      var consultantChoice = container.querySelector('[data-consultant-choice]');
+      if (consultantChoice) {
+        consultantChoice.addEventListener("change", function () {
+          syncConsultantCustomField(container);
+        });
+      }
+
+      var submitButton = container.querySelector('[data-client-workspace-submit]');
+      if (!submitButton) {
+        return;
+      }
+
+      submitButton.addEventListener("click", async function () {
         if (submitButton) {
           submitButton.disabled = true;
         }
-        var response = await fetch(form.action, {
+        var response = await fetch(container.dataset.formAction, {
           method: "POST",
-          body: new FormData(form),
+          body: buildWorkspaceFormData(container),
           headers: {
             "X-Requested-With": "XMLHttpRequest",
             "X-CSRFToken": getCookie("csrftoken") || "",
@@ -152,7 +213,7 @@
     var select = widget.querySelector('select[name="project"]');
     if (select) {
       select.addEventListener("change", function () {
-        refreshWidget(widget).catch(function () {});
+        refreshWidget(widget, { force: true }).catch(function () {});
       });
     }
 

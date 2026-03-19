@@ -180,3 +180,32 @@ CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')
 SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', CONTACT_RECIPIENT)
 COMPANY_NOTIFICATION_EMAIL = os.getenv('COMPANY_NOTIFICATION_EMAIL', 'company@mirandainsights.com')
 
+UNFOLD = {
+    "SITE_TITLE": "Miranda Insights Admin",
+    "SITE_HEADER": "Miranda Insights Admin",
+    "SITE_SUBHEADER": "Management Workspace",
+    "SITE_ICON": {
+        "light": f"/{STATIC_URL}pwa/icon-192.png",
+        "dark": f"/{STATIC_URL}pwa/icon-192.png",
+    },
+    "SITE_SYMBOL": "monitoring",
+    "STYLES": [
+        "css/admin-theme.css",
+    ],
+    "COLORS": {
+        "primary": {
+            "50": "#eff6ff",
+            "100": "#dbeafe",
+            "200": "#bfdbfe",
+            "300": "#93c5fd",
+            "400": "#60a5fa",
+            "500": "#3b82f6",
+            "600": "#2563eb",
+            "700": "#1d4ed8",
+            "800": "#1e40af",
+            "900": "#1e3a8a",
+            "950": "#172554",
+        },
+    },
+}
+

@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.urls import path
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from .chat import render_project_chat_widget
 from .forms import AdminProjectCreateForm, AdminProjectNoteForm, AdminProjectSubtaskForm, ProjectMessageForm
@@ -82,19 +83,19 @@ def _render_admin_chat(messages_queryset):
 	)
 
 
-class HiddenClientModelAdmin(admin.ModelAdmin):
+class HiddenClientModelAdmin(UnfoldModelAdmin):
 	def get_model_perms(self, request):
 		return {}
 
 
 @admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+class ClientAdmin(UnfoldModelAdmin):
 	change_form_template = "admin/clients/client/change_form.html"
-	list_display = ("contact_name", "organization_name", "contact_email", "project_count", "active_project_count", "created_at")
+	list_display = ("contact_name", "contact_email", "project_count", "active_project_count", "created_at")
 	search_fields = ("contact_name", "organization_name", "contact_email", "user__username", "user__email")
 	inlines = []
-	readonly_fields = ("projects_workspace",)
-	fields = ("user", "organization_name", "contact_name", "contact_email", "projects_workspace")
+	readonly_fields = ("industry_type_display", "projects_workspace")
+	fields = ("user", "organization_name", "organization_description", "industry_type_display", "contact_name", "contact_email", "projects_workspace")
 
 	class Media:
 		css = {"all": ("css/project-chat.css",)}
@@ -114,6 +115,7 @@ class ClientAdmin(admin.ModelAdmin):
 		subtask_form = None
 		note_form = None
 		notice = None
+		client_updated = False
 
 		if request.method == "POST":
 			action = request.POST.get("workspace_action")
@@ -125,6 +127,7 @@ class ClientAdmin(admin.ModelAdmin):
 					project = project_form.save(commit=False)
 					project.client = client
 					project.save()
+					client_updated = True
 					notice = f"Created project '{project.name}'."
 					messages.success(request, notice)
 					project_form = AdminProjectCreateForm()
@@ -143,6 +146,7 @@ class ClientAdmin(admin.ModelAdmin):
 						is_completed=form.cleaned_data["is_completed"],
 						completed_by=request.user if form.cleaned_data["is_completed"] else None,
 					)
+					client_updated = True
 					notice = f"Added a subtask to '{project.name}'."
 					messages.success(request, notice)
 					subtask_form = AdminProjectSubtaskForm(client=client, prefix="subtask")
@@ -154,11 +158,15 @@ class ClientAdmin(admin.ModelAdmin):
 				if form.is_valid():
 					project = form.cleaned_data["project"]
 					ProjectNote.objects.create(project=project, content=form.cleaned_data["content"], created_by=request.user)
+					client_updated = True
 					notice = f"Added a note to '{project.name}'."
 					messages.success(request, notice)
 					note_form = AdminProjectNoteForm(client=client, prefix="note")
 				else:
 					messages.error(request, "Please correct the note before saving.")
+
+		if client_updated:
+			client = Client.objects.get(pk=client.pk)
 
 		workspace_html = render_client_workspace(
 			request,
@@ -203,6 +211,13 @@ class ClientAdmin(admin.ModelAdmin):
 	def project_count(self, obj):
 		return obj.projects.count()
 
+	@admin.display(description="Industry type")
+	def industry_type_display(self, obj):
+		profile = getattr(getattr(obj, "user", None), "account_profile", None)
+		if not profile:
+			return "-"
+		return profile.get_industry_type_display()
+
 	@admin.display(description="Client chat log")
 	def client_chat_preview(self, obj):
 		messages_queryset = ProjectMessage.objects.filter(project__client=obj).select_related("project", "sender")
@@ -238,11 +253,11 @@ class ProjectAdmin(HiddenClientModelAdmin):
 		"status",
 		"start_date",
 		"end_date",
-		"consultant",
+		"consultant_display",
 		"progress_display",
 	)
 	list_filter = ("status", "start_date", "end_date", "consultant")
-	search_fields = ("name", "client__contact_name", "client__organization_name", "client__contact_email")
+	search_fields = ("name", "client__contact_name", "client__organization_name", "client__contact_email", "consultant_name")
 	inlines = [ProjectSubtaskInline, ProjectNoteInline]
 	fields = (
 		"client",
@@ -252,11 +267,16 @@ class ProjectAdmin(HiddenClientModelAdmin):
 		"start_date",
 		"end_date",
 		"consultant",
+		"consultant_name",
 	)
 
 	@admin.display(description="Progress")
 	def progress_display(self, obj):
 		return f"{obj.progress_percentage}%"
+
+	@admin.display(description="Consultant")
+	def consultant_display(self, obj):
+		return obj.consultant_display
 
 	def save_formset(self, request, form, formset, change):
 		instances = formset.save(commit=False)

@@ -156,6 +156,36 @@
         <div class="dashboard-panel-head">
           <h2>Portal Settings</h2>
         </div>
+        <p class="dashboard-contact-copy">Keep your business or organization details up to date for the client portal and admin workspace.</p>
+        <form method="post" class="dashboard-settings-form dashboard-settings-form-wide">
+          {% csrf_token %}
+          <input type="hidden" name="settings_action" value="client_profile" />
+          <div class="dashboard-form-grid">
+            <div class="dashboard-form-stack">
+              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
+                <label for="id_industry_type">Industry Type</label>
+                {{ client_profile_form.industry_type }}
+              </div>
+              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
+                <label for="id_organization_name">Business/Organization Name</label>
+                {{ client_profile_form.organization_name }}
+              </div>
+            </div>
+            <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-description">
+              <label for="id_organization_description">Business/Organization Description</label>
+              {{ client_profile_form.organization_description }}
+            </div>
+          </div>
+          {% if client_profile_form.industry_type.errors %}<small class="dashboard-field-error">{{ client_profile_form.industry_type.errors|striptags }}</small>{% endif %}
+          {% if client_profile_form.organization_name.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_name.errors|striptags }}</small>{% endif %}
+          {% if client_profile_form.organization_description.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_description.errors|striptags }}</small>{% endif %}
+          <div class="dashboard-form-actions dashboard-form-actions-right">
+            <button class="btn btn-primary" type="submit">Save business profile</button>
+          </div>
+        </form>
+
+        <div class="dashboard-settings-divider"></div>
+
         <p class="dashboard-contact-copy">Manage your newsletter preference for account-related product updates and insights.</p>
         <form method="post" class="dashboard-settings-form">
           {% csrf_token %}

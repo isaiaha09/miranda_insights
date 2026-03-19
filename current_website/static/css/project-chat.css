@@ -44,6 +44,7 @@
     background: #ffffff;
     color: #11203a;
     font-weight: 700;
+    cursor: pointer;
     box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
 }
 
@@ -109,6 +110,7 @@
     background: #ffffff;
     color: #11203a;
     font-weight: 700;
+    cursor: pointer;
     text-decoration: none;
     box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
 }
@@ -212,6 +214,18 @@
     grid-column: 1 / -1;
 }
 
+.client-workspace__consultant-custom-field {
+    display: none;
+}
+
+.client-workspace__consultant-custom-field.is-hidden {
+    display: none;
+}
+
+form[data-client-workspace-form]:has(select[data-consultant-choice] option[value="__custom_name__"]:checked) .client-workspace__consultant-custom-field {
+    display: grid;
+}
+
 .client-workspace__field label {
     color: #e5eef8;
     font-weight: 600;
@@ -268,6 +282,7 @@
     background: #ffffff;
     color: #11203a;
     font-weight: 700;
+    cursor: pointer;
     box-shadow: 0 14px 28px rgba(15, 23, 42, 0.18);
 }
 

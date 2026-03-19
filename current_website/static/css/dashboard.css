@@ -414,6 +414,31 @@
     align-items: center;
 }
 
+.dashboard-settings-form-wide {
+    align-items: stretch;
+}
+
+.dashboard-form-grid {
+    width: min(100%, 42rem);
+    display: grid;
+    gap: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-form-stack {
+    display: grid;
+    gap: 0.95rem;
+}
+
+.dashboard-form-actions {
+    display: flex;
+    width: min(100%, 42rem);
+}
+
+.dashboard-form-actions-right {
+    justify-content: flex-end;
+}
+
 .dashboard-settings-divider {
     height: 1px;
     width: 100%;
@@ -498,6 +523,18 @@
     margin-top: 1rem;
 }
 
+.dashboard-code-field-wide {
+    width: 100%;
+}
+
+.dashboard-code-field-compact {
+    margin-top: 0;
+}
+
+.dashboard-code-field-description {
+    margin-top: 0;
+}
+
 .dashboard-code-field label {
     color: var(--text);
     font-weight: 600;
@@ -522,6 +559,28 @@
     color: var(--text);
     font: inherit;
     padding: 0.78rem 0.9rem;
+}
+
+.dashboard-code-field textarea {
+    min-height: 7rem;
+    resize: vertical;
+}
+
+@media (min-width: 900px) {
+    .dashboard-form-grid {
+        width: 100%;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        align-items: start;
+    }
+
+    .dashboard-code-field-description textarea {
+        min-height: 100%;
+        height: 100%;
+    }
+
+    .dashboard-form-actions {
+        width: 100%;
+    }
 }
 
 .dashboard-code-field input:focus {

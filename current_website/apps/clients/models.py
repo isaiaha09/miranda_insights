@@ -18,7 +18,8 @@ class Client(models.Model):
 		blank=True,
 		related_name="client_record",
 	)
-	organization_name = models.CharField(max_length=180, blank=True)
+	organization_name = models.CharField(max_length=180, blank=True, verbose_name="business/organization name")
+	organization_description = models.TextField(blank=True, verbose_name="business/organization description")
 	contact_name = models.CharField(max_length=180)
 	contact_email = models.EmailField()
 	created_at = models.DateTimeField(auto_now_add=True)
@@ -42,6 +43,8 @@ class Client(models.Model):
 
 
 class Project(models.Model):
+	CONSULTANT_NAME_MIRANDA_INSIGHTS_TEAM = "Miranda Insights Team"
+
 	STATUS_PENDING = "pending"
 	STATUS_IN_PROGRESS = "in_progress"
 	STATUS_CANCELLED = "cancelled"
@@ -67,6 +70,7 @@ class Project(models.Model):
 		related_name="client_projects",
 		limit_choices_to={"is_staff": True},
 	)
+	consultant_name = models.CharField(max_length=180, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -94,6 +98,15 @@ class Project(models.Model):
 	@property
 	def latest_note(self):
 		return self.notes.order_by("-created_at").first()
+
+	@property
+	def consultant_display(self):
+		if self.consultant_id:
+			full_name = self.consultant.get_full_name().strip()
+			return full_name or self.consultant.username
+		if self.consultant_name:
+			return self.consultant_name
+		return "Unassigned consultant"
 
 
 class ProjectSubtask(models.Model):
@@ -174,8 +187,7 @@ class ProjectMessage(models.Model):
 	@property
 	def sender_label(self):
 		if self.is_staff_message:
-			full_name = self.sender.get_full_name().strip()
-			return full_name or self.sender.username
+			return self.project.consultant_display
 		return self.project.client.contact_name
 
 	@property

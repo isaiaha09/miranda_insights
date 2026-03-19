@@ -3,6 +3,15 @@
     <div>
       <p class="client-workspace__eyebrow">Client Workspace</p>
       <h2>Projects, subtasks, and notes</h2>
+      {% if client.user and client.user.account_profile %}
+        <p class="client-workspace__notice">Industry: {{ client.user.account_profile.get_industry_type_display }}</p>
+      {% endif %}
+      {% if client.organization_name %}
+        <p class="client-workspace__notice">Organization: {{ client.organization_name }}</p>
+      {% endif %}
+      {% if client.organization_description %}
+        <p class="client-workspace__notice">{{ client.organization_description }}</p>
+      {% endif %}
     </div>
   </div>
 
@@ -18,12 +27,13 @@
       </div>
     </div>
     <div class="client-workspace__card client-workspace__card-form">
-    <form method="post" action="{{ workspace_submit_url }}" data-client-workspace-form>
-      {% csrf_token %}
+    <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
       <input type="hidden" name="workspace_action" value="create_project" />
       <div class="client-workspace__grid">
         {% for field in project_create_form %}
-          <div class="client-workspace__field {% if field.name == 'description' %}client-workspace__field-wide{% endif %}">
+          <div class="client-workspace__field {% if field.name == 'description' or field.name == 'consultant_custom_name' %}client-workspace__field-wide{% endif %}{% if field.name == 'consultant_custom_name' %} client-workspace__consultant-custom-field{% endif %}{% if field.name == 'consultant_custom_name' and project_create_form.consultant_choice.value != project_create_form.CONSULTANT_OPTION_CUSTOM_NAME %} is-hidden{% endif %}"
+            {% if field.name == 'consultant_custom_name' %}data-consultant-custom-field="true" style="{% if project_create_form.consultant_choice.value == project_create_form.CONSULTANT_OPTION_CUSTOM_NAME %}display:grid;{% else %}display:none;{% endif %}"{% endif %}>
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
             {% if field.errors %}<small class="client-workspace__error">{{ field.errors|striptags }}</small>{% endif %}
@@ -31,9 +41,9 @@
         {% endfor %}
       </div>
       <div class="client-workspace__actions">
-        <button class="btn btn-primary client-workspace__button" type="submit">Create project</button>
+        <button class="btn btn-primary client-workspace__button" type="button" data-client-workspace-submit>Create project</button>
       </div>
-    </form>
+    </div>
     </div>
   </section>
 
@@ -45,8 +55,8 @@
       </div>
     </div>
     <div class="client-workspace__card client-workspace__card-form">
-    <form method="post" action="{{ workspace_submit_url }}" data-client-workspace-form>
-      {% csrf_token %}
+    <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
       <input type="hidden" name="workspace_action" value="add_subtask" />
       <div class="client-workspace__grid">
         {% for field in subtask_form %}
@@ -68,9 +78,9 @@
         {% endfor %}
       </div>
       <div class="client-workspace__actions">
-        <button class="btn btn-ghost client-workspace__button" type="submit">Add subtask</button>
+        <button class="btn btn-ghost client-workspace__button" type="button" data-client-workspace-submit>Add subtask</button>
       </div>
-    </form>
+    </div>
     </div>
   </section>
 
@@ -82,8 +92,8 @@
       </div>
     </div>
     <div class="client-workspace__card client-workspace__card-form">
-    <form method="post" action="{{ workspace_submit_url }}" data-client-workspace-form>
-      {% csrf_token %}
+    <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
       <input type="hidden" name="workspace_action" value="add_note" />
       <div class="client-workspace__grid">
         {% for field in note_form %}
@@ -95,9 +105,9 @@
         {% endfor %}
       </div>
       <div class="client-workspace__actions">
-        <button class="btn btn-ghost client-workspace__button" type="submit">Add note</button>
+        <button class="btn btn-ghost client-workspace__button" type="button" data-client-workspace-submit>Add note</button>
       </div>
-    </form>
+    </div>
     </div>
   </section>
 
@@ -116,7 +126,7 @@
           <div>
             <h3>{{ project.name }}</h3>
             <p>Status: {{ project.get_status_display }} | Start: {{ project.start_date|default:"-" }} | End: {{ project.end_date|default:"-" }}</p>
-            <p>Consultant: {% if project.consultant %}{{ project.consultant.get_full_name|default:project.consultant.username }}{% else %}Unassigned{% endif %} | Progress: {{ project.progress_percentage }}%</p>
+            <p>Consultant: {{ project.consultant_display }} | Progress: {{ project.progress_percentage }}%</p>
           </div>
           <a class="btn btn-primary client-workspace__editor-button" href="{{ entry.edit_url }}">Open full project editor</a>
         </div>

@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from .admin import AccountProfileAdmin, StaffUserAdmin
 from .models import AccountDeletionRequest, AccountProfile
-from apps.clients.models import Project, ProjectMessage, ProjectSubtask, get_or_create_client_for_user
+from apps.clients.models import Client, Project, ProjectMessage, ProjectSubtask, get_or_create_client_for_user
 from apps.news.models import NewsletterSubscriber
 
 
@@ -19,6 +19,39 @@ User = get_user_model()
 
 
 class LoginViewTests(TestCase):
+	def test_admin_login_uses_portal_style_template(self):
+		response = self.client.get(reverse("admin:login"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Admin Portal")
+		self.assertContains(response, "Miranda Insights management workspace")
+		self.assertContains(response, "id=\"login-form\"", html=False)
+
+	@override_settings(TURNSTILE_SITE_KEY="", TURNSTILE_SECRET_KEY="")
+	def test_signup_creates_client_business_profile_fields(self):
+		response = self.client.post(
+			reverse("signup"),
+			{
+				"first_name": "Timmy",
+				"last_name": "Timmons",
+				"organization_name": "Timmons Advisory Group",
+				"organization_description": "A consulting firm focused on analytics strategy for district leaders.",
+				"industry_type": AccountProfile.INDUSTRY_INDIVIDUAL,
+				"phone_number": "8058271393",
+				"email": "emailtestappworks@gmail.com",
+				"username": "emailtestappworks@gmail.com",
+				"password1": "SecurePortal!8472",
+				"password2": "SecurePortal!8472",
+				"agree_to_terms": "on",
+			},
+		)
+
+		self.assertEqual(response.status_code, 302)
+		user = User.objects.get(username="emailtestappworks@gmail.com")
+		client_record = user.client_record
+		self.assertEqual(client_record.organization_name, "Timmons Advisory Group")
+		self.assertEqual(client_record.organization_description, "A consulting firm focused on analytics strategy for district leaders.")
+
 	def test_login_shows_incorrect_credentials_message(self):
 		User.objects.create_user(username="isaiah", email="isaiah@example.com", password="correct-pass-123")
 
@@ -78,6 +111,33 @@ class StaffUserAdminTests(TestCase):
 		self.assertEqual(admin_instance.account_deletion_status(profile), "Scheduled")
 		self.assertEqual(admin_instance.account_deletion_scheduled_for(profile), deletion_request.scheduled_for)
 
+	@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+	def test_account_profile_admin_delete_removes_email_linked_data_and_preserves_subscriber(self):
+		user = User.objects.create_user(username="admindelete", email="admindelete@example.com", password="test-pass-123")
+		profile = AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-0202")
+		linked_client = get_or_create_client_for_user(user)
+		Project.objects.create(client=linked_client, name="Main Portal Project", status=Project.STATUS_IN_PROGRESS)
+		email_only_client = Client.objects.create(
+			contact_name="Same Email Client",
+			contact_email="admindelete@example.com",
+			organization_name="Miranda Insights Test",
+		)
+		NewsletterSubscriber.objects.create(email="admindelete@example.com", is_active=True)
+
+		admin_instance = AccountProfileAdmin(AccountProfile, AdminSite())
+		request = RequestFactory().post("/admin/accounts/accountprofile/")
+
+		admin_instance.delete_model(request, profile)
+
+		self.assertFalse(User.objects.filter(pk=user.pk).exists())
+		self.assertFalse(AccountProfile.objects.filter(pk=profile.pk).exists())
+		self.assertFalse(Client.objects.filter(pk=linked_client.pk).exists())
+		self.assertFalse(Client.objects.filter(pk=email_only_client.pk).exists())
+		self.assertTrue(NewsletterSubscriber.objects.filter(email="admindelete@example.com", is_active=True).exists())
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["admindelete@example.com"])
+		self.assertIn("successfully deleted", mail.outbox[0].body)
+
 
 @override_settings(
 	EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -127,6 +187,37 @@ class DashboardNewsletterPreferenceTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertFalse(NewsletterSubscriber.objects.filter(pk=subscriber.pk).exists())
 		self.assertContains(response, "You have been unsubscribed from newsletter updates.")
+
+	def test_dashboard_can_update_client_business_profile(self):
+		user = User.objects.create_user(username="bizowner", email="bizowner@example.com", password="test-pass-123")
+		profile = AccountProfile.objects.create(
+			user=user,
+			industry_type=AccountProfile.INDUSTRY_OTHER,
+			phone_number="555-0108",
+		)
+		client_record = get_or_create_client_for_user(user)
+
+		self.client.login(username="bizowner", password="test-pass-123")
+		response = self.client.post(
+			reverse("dashboard"),
+			{
+				"settings_action": "client_profile",
+				"industry_type": AccountProfile.INDUSTRY_EDUCATION,
+				"organization_name": "Miranda Insights Partner District",
+				"organization_description": "A district leadership team coordinating reporting, deliverables, and ongoing analytics support.",
+			},
+			follow=True,
+		)
+
+		client_record.refresh_from_db()
+		profile.refresh_from_db()
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(profile.industry_type, AccountProfile.INDUSTRY_EDUCATION)
+		self.assertEqual(client_record.organization_name, "Miranda Insights Partner District")
+		self.assertEqual(client_record.organization_description, "A district leadership team coordinating reporting, deliverables, and ongoing analytics support.")
+		self.assertContains(response, "Your business profile has been updated.")
+		self.assertContains(response, "Miranda Insights Partner District")
+		self.assertContains(response, "Educational Institution")
 
 	def test_delete_account_page_shows_project_and_message_log_data(self):
 		user = User.objects.create_user(username="deletecheck", email="deletecheck@example.com", password="test-pass-123")
@@ -283,6 +374,9 @@ class DashboardNewsletterPreferenceTests(TestCase):
 	def test_purge_scheduled_account_deletions_removes_expired_accounts(self):
 		user = User.objects.create_user(username="expireddelete", email="expired@example.com", password="test-pass-123")
 		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-0104")
+		client_record = get_or_create_client_for_user(user)
+		Project.objects.create(client=client_record, name="Cleanup Project", status=Project.STATUS_IN_PROGRESS)
+		NewsletterSubscriber.objects.create(email="expired@example.com", is_active=True)
 		AccountDeletionRequest.objects.create(
 			user=user,
 			requested_at=timezone.now() - timedelta(days=8),
@@ -292,3 +386,9 @@ class DashboardNewsletterPreferenceTests(TestCase):
 		call_command("purge_scheduled_account_deletions")
 
 		self.assertFalse(User.objects.filter(pk=user.pk).exists())
+		self.assertFalse(Client.objects.filter(pk=client_record.pk).exists())
+		self.assertFalse(AccountDeletionRequest.objects.filter(user_id=user.pk).exists())
+		self.assertTrue(NewsletterSubscriber.objects.filter(email="expired@example.com", is_active=True).exists())
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["expired@example.com"])
+		self.assertIn("successfully deleted", mail.outbox[0].body)
