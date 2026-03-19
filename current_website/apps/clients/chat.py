@@ -4,7 +4,7 @@ from django.urls import reverse
 from .forms import ProjectMessageForm
 
 
-def build_project_chat_context(request, client, *, selected_project_id=None, form=None, submit_url="", refresh_url="", is_admin=False):
+def build_project_chat_context(request, client, *, selected_project_id=None, form=None, submit_url="", refresh_url="", is_admin=False, notice="", notice_level="info"):
 	projects = list(client.projects.exclude(status="cancelled").order_by("name"))
 	selected_project = None
 	if selected_project_id:
@@ -32,12 +32,14 @@ def build_project_chat_context(request, client, *, selected_project_id=None, for
 		"chat_submit_url": submit_url,
 		"chat_refresh_url": refresh_url,
 		"chat_is_admin": is_admin,
+		"chat_notice": notice,
+		"chat_notice_level": notice_level,
 		"chat_widget_title": "Project Chat",
 		"chat_widget_subtitle": client.display_name,
 	}
 
 
-def render_project_chat_widget(request, client, *, selected_project_id=None, form=None, submit_url="", refresh_url="", is_admin=False):
+def render_project_chat_widget(request, client, *, selected_project_id=None, form=None, submit_url="", refresh_url="", is_admin=False, notice="", notice_level="info"):
 	context = build_project_chat_context(
 		request,
 		client,
@@ -46,5 +48,7 @@ def render_project_chat_widget(request, client, *, selected_project_id=None, for
 		submit_url=submit_url,
 		refresh_url=refresh_url,
 		is_admin=is_admin,
+		notice=notice,
+		notice_level=notice_level,
 	)
 	return render_to_string("clients/_project_chat_widget.html", context, request=request)

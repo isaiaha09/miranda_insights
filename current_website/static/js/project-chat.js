@@ -246,14 +246,23 @@
 
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
-        var submitButton = form.querySelector("[data-chat-submit-button]");
+        var submitButton = event.submitter || form.querySelector("[data-chat-submit-button]");
+        var formData = new FormData(form);
+        if (submitButton && submitButton.name) {
+          formData.append(submitButton.name, submitButton.value);
+        }
+        if (submitButton && submitButton.dataset.confirmMessage && !window.confirm(submitButton.dataset.confirmMessage)) {
+          return;
+        }
         if (submitButton) {
           submitButton.disabled = true;
-          submitButton.classList.add("is-loading");
+          if (submitButton.hasAttribute("data-chat-submit-button")) {
+            submitButton.classList.add("is-loading");
+          }
         }
         var response = await fetch(form.action, {
           method: "POST",
-          body: new FormData(form),
+          body: formData,
           headers: { "X-Requested-With": "XMLHttpRequest" },
           credentials: "same-origin",
         });

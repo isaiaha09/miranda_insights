@@ -4,6 +4,8 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+import os
+import tempfile
 
 from apps.accounts.models import AccountProfile
 from .admin import ClientAdmin, ProjectAdmin, ProjectMessageAdmin, ProjectNoteInline, ProjectSubtaskInline
@@ -228,6 +230,53 @@ class ClientProjectTests(TestCase):
 		self.assertContains(response, "project-chat-widget__bubble-client")
 		self.assertContains(response, "Please confirm the revised chart labels.")
 		self.assertContains(response, "Open shared link")
+
+	def test_admin_can_clear_message_log_for_selected_project_only(self):
+		second_project = Project.objects.create(
+			client=self.client_record,
+			name="Enrollment Forecast Review",
+			status=Project.STATUS_PENDING,
+		)
+		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Primary project message")
+		ProjectMessage.objects.create(project=second_project, sender=self.client_user, body="Second project message")
+		self.client.force_login(self.staff_user)
+
+		response = self.client.post(
+			reverse("admin:clients_client_chat_widget", args=[self.client_record.pk]),
+			{
+				"project": self.project.pk,
+				"chat_action": "clear_project_log",
+			},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertFalse(ProjectMessage.objects.filter(project=self.project).exists())
+		self.assertTrue(ProjectMessage.objects.filter(project=second_project).exists())
+		self.assertContains(response, "Cleared 1 message(s) for &#x27;District Performance Dashboard&#x27;.")
+		self.assertNotContains(response, "Primary project message")
+
+	def test_clearing_project_message_log_deletes_attachment_files(self):
+		self.client.force_login(self.staff_user)
+		with tempfile.TemporaryDirectory() as temp_dir:
+			with override_settings(MEDIA_ROOT=temp_dir):
+				attachment = SimpleUploadedFile("project-brief.docx", b"docx attachment content", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+				message = ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Attached file", attachment_file=attachment)
+				file_path = message.attachment_file.path
+				self.assertTrue(os.path.exists(file_path))
+
+				response = self.client.post(
+					reverse("admin:clients_client_chat_widget", args=[self.client_record.pk]),
+					{
+						"project": self.project.pk,
+						"chat_action": "clear_project_log",
+					},
+					HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+				)
+
+				self.assertEqual(response.status_code, 200)
+				self.assertFalse(ProjectMessage.objects.filter(project=self.project).exists())
+				self.assertFalse(os.path.exists(file_path))
 
 	def test_client_admin_workspace_and_chat_preview_render_without_error(self):
 		ProjectSubtask.objects.create(project=self.project, title="Review export mappings", is_completed=False)

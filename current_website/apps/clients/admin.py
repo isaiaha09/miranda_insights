@@ -183,15 +183,33 @@ class ClientAdmin(UnfoldModelAdmin):
 	def chat_widget_view(self, request, object_id, *args, **kwargs):
 		client = get_object_or_404(Client, pk=object_id)
 		selected_project_id = request.GET.get("project") or request.POST.get("project")
+		notice = ""
+		notice_level = "info"
 		if request.method == "POST":
-			form = ProjectMessageForm(request.POST, request.FILES, client=client)
-			if form.is_valid():
-				project_message = form.save(commit=False)
-				project_message.sender = request.user
-				project_message.save()
-				project_message.send_notification()
-				form = ProjectMessageForm(client=client, initial={"project": project_message.project_id})
-				selected_project_id = project_message.project_id
+			action = (request.POST.get("chat_action") or "send_message").strip()
+			if action == "clear_project_log":
+				project = client.projects.exclude(status=Project.STATUS_CANCELLED).filter(pk=selected_project_id).first()
+				if project is None:
+					form = ProjectMessageForm(client=client)
+					notice = "Choose a project before clearing its message log."
+					notice_level = "error"
+				else:
+					deleted_count = project.messages.count()
+					project.messages.all().delete()
+					form = ProjectMessageForm(client=client, initial={"project": project.pk})
+					notice = f"Cleared {deleted_count} message(s) for '{project.name}'."
+					notice_level = "success"
+			else:
+				form = ProjectMessageForm(request.POST, request.FILES, client=client)
+				if form.is_valid():
+					project_message = form.save(commit=False)
+					project_message.sender = request.user
+					project_message.save()
+					project_message.send_notification()
+					form = ProjectMessageForm(client=client, initial={"project": project_message.project_id})
+					selected_project_id = project_message.project_id
+					notice = "Message sent."
+					notice_level = "success"
 		else:
 			form = None
 		widget = render_project_chat_widget(
@@ -202,6 +220,8 @@ class ClientAdmin(UnfoldModelAdmin):
 			submit_url=reverse("admin:clients_client_chat_widget", args=[client.pk]),
 			refresh_url=reverse("admin:clients_client_chat_widget", args=[client.pk]),
 			is_admin=True,
+			notice=notice,
+			notice_level=notice_level,
 		)
 		if request.headers.get("x-requested-with") == "XMLHttpRequest":
 			return HttpResponse(widget)

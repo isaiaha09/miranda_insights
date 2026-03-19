@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
 
@@ -231,6 +233,16 @@ class ProjectMessage(models.Model):
 			},
 			from_email=settings.DEFAULT_FROM_EMAIL,
 		)
+
+
+@receiver(post_delete, sender=ProjectMessage)
+def delete_project_message_attachment(sender, instance, **kwargs):
+	if not instance.attachment_file:
+		return
+	storage = instance.attachment_file.storage
+	name = instance.attachment_file.name
+	if name and storage.exists(name):
+		storage.delete(name)
 
 
 def get_or_create_client_for_user(user):

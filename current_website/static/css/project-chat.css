@@ -613,6 +613,25 @@ form[data-client-workspace-form]:has(select[data-consultant-choice] option[value
     gap: 1rem;
 }
 
+.project-chat-widget__notice {
+    border-radius: 14px;
+    font-size: 0.95rem;
+    margin: 0 1.75rem 1rem;
+    padding: 0.85rem 1rem;
+}
+
+.project-chat-widget__notice-success {
+    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    color: #bfdbfe;
+}
+
+.project-chat-widget__notice-error {
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    color: #fecaca;
+}
+
 .project-chat-widget__field textarea {
     min-height: 8rem;
     resize: vertical;
@@ -621,6 +640,7 @@ form[data-client-workspace-form]:has(select[data-consultant-choice] option[value
 .project-chat-widget__actions {
     display: flex;
     justify-content: center;
+    gap: 0.75rem;
 }
 
 .project-chat-widget__actions-right {
@@ -632,9 +652,28 @@ form[data-client-workspace-form]:has(select[data-consultant-choice] option[value
     color: #fca5a5;
 }
 
+.project-chat-widget__clear-button {
+    border-color: rgba(248, 113, 113, 0.38);
+    color: #fda4af;
+    cursor: pointer;
+}
+
+.project-chat-widget__clear-button:hover:not(:disabled),
+.project-chat-widget__clear-button:focus-visible:not(:disabled) {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.55);
+    color: #ffe4e6;
+}
+
+.project-chat-widget__clear-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 @media (max-width: 800px) {
     .project-chat-widget__header,
-    .project-chat-widget__controls {
+    .project-chat-widget__controls,
+    .project-chat-widget__notice {
         padding-left: 1rem;
         padding-right: 1rem;
     }

@@ -7,6 +7,10 @@
     <span class="project-chat-widget__count">{{ chat_message_count }} messages</span>
   </div>
 
+  {% if chat_notice %}
+    <p class="project-chat-widget__notice project-chat-widget__notice-{{ chat_notice_level }}">{{ chat_notice }}</p>
+  {% endif %}
+
   <form method="post" action="{{ chat_submit_url }}" class="project-chat-widget__controls" data-project-chat-form enctype="multipart/form-data">
     {% csrf_token %}
     <div class="project-chat-widget__field">
@@ -78,6 +82,19 @@
           </div>
         </div>
         <div class="project-chat-widget__actions project-chat-widget__actions-right">
+          {% if chat_is_admin %}
+            <button
+              class="btn btn-ghost project-chat-widget__clear-button"
+              type="submit"
+              name="chat_action"
+              value="clear_project_log"
+              data-chat-clear-button
+              data-confirm-message="This will permanently delete all messages, links, and attachments for the selected project. Continue?"
+              {% if not chat_selected_project or not chat_messages %}disabled{% endif %}
+            >
+              Clear message log
+            </button>
+          {% endif %}
           <button class="btn btn-primary project-chat-widget__send-button" data-chat-submit-button type="submit" {% if not chat_projects %}disabled{% endif %}>
             <span class="project-chat-widget__send-label">Send message</span>
             <span class="project-chat-widget__send-spinner" aria-hidden="true"></span>
