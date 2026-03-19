@@ -176,7 +176,7 @@ class ClientAdmin(admin.ModelAdmin):
 		client = get_object_or_404(Client, pk=object_id)
 		selected_project_id = request.GET.get("project") or request.POST.get("project")
 		if request.method == "POST":
-			form = ProjectMessageForm(request.POST, client=client)
+			form = ProjectMessageForm(request.POST, request.FILES, client=client)
 			if form.is_valid():
 				project_message = form.save(commit=False)
 				project_message.sender = request.user
@@ -276,14 +276,19 @@ class ProjectAdmin(HiddenClientModelAdmin):
 
 @admin.register(ProjectMessage)
 class ProjectMessageAdmin(HiddenClientModelAdmin):
-	list_display = ("project", "sender", "recipient_display", "created_at")
+	list_display = ("project", "sender", "recipient_display", "has_attachment_display", "created_at")
 	list_filter = ("project__status", "project__consultant", "created_at")
 	search_fields = ("project__name", "project__client__contact_name", "body", "sender__username", "sender__email")
 	readonly_fields = ("created_at",)
+	fields = ("project", "sender", "body", "attachment_file", "attachment_link", "created_at")
 
 	@admin.display(description="Recipient")
 	def recipient_display(self, obj):
 		return obj.recipient_email
+
+	@admin.display(description="Attachment")
+	def has_attachment_display(self, obj):
+		return "Yes" if obj.has_attachment else "No"
 
 	def save_model(self, request, obj, form, change):
 		is_new = obj.pk is None

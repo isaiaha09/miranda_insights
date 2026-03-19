@@ -26,6 +26,44 @@
     return select ? select.value : "";
   }
 
+  function hasDraftContent(form) {
+    if (!form) {
+      return false;
+    }
+    var messageField = form.querySelector('textarea[name="body"]');
+    var fileInput = form.querySelector('.project-chat-widget__file-input');
+    var linkInput = form.querySelector('[data-link-input]');
+    return Boolean(
+      (messageField && messageField.value.trim()) ||
+      (fileInput && fileInput.files && fileInput.files.length) ||
+      (linkInput && linkInput.value.trim())
+    );
+  }
+
+  function isUserInteracting(widget) {
+    if (!widget) {
+      return false;
+    }
+    var active = document.activeElement;
+    if (active && widget.contains(active)) {
+      return true;
+    }
+    var form = widget.querySelector('form[data-project-chat-form]');
+    return hasDraftContent(form);
+  }
+
+  function updateLinkStatus(form) {
+    if (!form) {
+      return;
+    }
+    var linkInput = form.querySelector('[data-link-input]');
+    var linkStatus = form.querySelector('[data-link-status]');
+    if (!linkInput || !linkStatus) {
+      return;
+    }
+    linkStatus.textContent = linkInput.value.trim() ? 'Link ready to send' : 'No link added yet';
+  }
+
   function replaceWidget(widget, html) {
     var wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
@@ -50,7 +88,7 @@
 
   async function refreshWidget(widget) {
     var refreshUrl = widget.dataset.refreshUrl;
-    if (!refreshUrl) {
+    if (!refreshUrl || isUserInteracting(widget)) {
       return;
     }
     var response = await fetch(buildUrl(refreshUrl, selectedProject(widget)), {
@@ -120,6 +158,31 @@
 
     var form = widget.querySelector("form[data-project-chat-form]");
     if (form) {
+      var fileInput = form.querySelector(".project-chat-widget__file-input");
+      var fileName = form.querySelector("[data-file-name]");
+      if (fileInput && fileName) {
+        fileInput.addEventListener("change", function () {
+          fileName.textContent = fileInput.files && fileInput.files.length ? "Attachment ready to send: " + fileInput.files[0].name : "No attachment selected yet";
+        });
+      }
+
+      var linkToggle = form.querySelector("[data-link-toggle]");
+      var linkPopover = form.querySelector("[data-link-popover]");
+      var linkInput = form.querySelector("[data-link-input]");
+      if (linkToggle && linkPopover && linkInput) {
+        updateLinkStatus(form);
+        linkInput.addEventListener("input", function () {
+          updateLinkStatus(form);
+        });
+        linkToggle.addEventListener("click", function () {
+          var isOpen = linkPopover.classList.toggle("is-open");
+          linkToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+          if (isOpen) {
+            linkInput.focus();
+          }
+        });
+      }
+
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
         var submitButton = form.querySelector("[data-chat-submit-button]");

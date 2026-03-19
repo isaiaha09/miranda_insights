@@ -8,7 +8,7 @@ class ProjectMessageForm(forms.ModelForm):
 
 	class Meta:
 		model = ProjectMessage
-		fields = ("project", "body")
+		fields = ("project", "body", "attachment_file", "attachment_link")
 		widgets = {
 			"body": forms.Textarea(
 				attrs={
@@ -16,11 +16,17 @@ class ProjectMessageForm(forms.ModelForm):
 					"placeholder": "Send a project update or question to the Insights team.",
 				}
 			),
+			"attachment_link": forms.URLInput(attrs={"placeholder": "https://example.com/reference-link"}),
 		}
 
 	def __init__(self, *args, client=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.client = client
+		self.fields["body"].required = False
+		self.fields["attachment_file"].required = False
+		self.fields["attachment_link"].required = False
+		self.fields["attachment_file"].widget.attrs.update({"class": "project-chat-widget__file-input", "accept": "*/*"})
+		self.fields["attachment_link"].widget.attrs.update({"class": "project-chat-widget__link-input", "data-link-input": "true"})
 		if client is not None:
 			self.fields["project"].queryset = client.projects.exclude(status=Project.STATUS_CANCELLED).order_by("name")
 		self.fields["project"].label_from_instance = lambda project: f"{project.name} ({project.get_status_display()})"
@@ -30,6 +36,17 @@ class ProjectMessageForm(forms.ModelForm):
 		if self.client and project.client_id != self.client.pk:
 			raise forms.ValidationError("Choose one of your own projects.")
 		return project
+
+	def clean(self):
+		cleaned_data = super().clean()
+		body = (cleaned_data.get("body") or "").strip()
+		attachment_file = cleaned_data.get("attachment_file")
+		attachment_link = (cleaned_data.get("attachment_link") or "").strip()
+		if not body and not attachment_file and not attachment_link:
+			raise forms.ValidationError("Add a message, upload a file, or include a link before sending.")
+		cleaned_data["body"] = body
+		cleaned_data["attachment_link"] = attachment_link
+		return cleaned_data
 
 
 class AdminProjectCreateForm(forms.ModelForm):

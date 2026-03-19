@@ -23,7 +23,7 @@ class ProjectChatWidgetView(LoginRequiredMixin, View):
 
 	def post(self, request, *args, **kwargs):
 		client = get_or_create_client_for_user(request.user)
-		form = ProjectMessageForm(request.POST, client=client)
+		form = ProjectMessageForm(request.POST, request.FILES, client=client)
 		selected_project_id = request.POST.get("project")
 		if form.is_valid():
 			project_message = form.save(commit=False)

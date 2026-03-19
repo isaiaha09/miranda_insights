@@ -1,6 +1,7 @@
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
@@ -77,17 +78,42 @@ class ClientProjectTests(TestCase):
 		self.assertContains(response, "project-chat-widget__bubble-client")
 		self.assertContains(response, "Can we review the dashboard export tomorrow?")
 
+	def test_dashboard_project_message_supports_file_and_link_attachments(self):
+		self.client.login(username="clientuser", password="client-pass-123")
+		attachment = SimpleUploadedFile("project-brief.docx", b"docx attachment content", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+		response = self.client.post(
+			reverse("project_chat_widget"),
+			{
+				"project": self.project.pk,
+				"body": "",
+				"attachment_link": "https://example.com/dashboard-spec",
+				"attachment_file": attachment,
+			},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		message = ProjectMessage.objects.get(project=self.project)
+		self.assertTrue(message.attachment_file.name.endswith("project-brief.docx"))
+		self.assertEqual(message.attachment_link, "https://example.com/dashboard-spec")
+		self.assertContains(response, "project-brief.docx")
+		self.assertContains(response, "Open shared link")
+		self.assertIn("project-brief.docx", mail.outbox[0].body)
+		self.assertIn("https://example.com/dashboard-spec", mail.outbox[0].body)
+
 	def test_admin_project_message_sends_client_notification(self):
 		admin = ProjectMessageAdmin(ProjectMessage, AdminSite())
 		request = RequestFactory().post("/admin/clients/projectmessage/add/")
 		request.user = self.staff_user
-		message = ProjectMessage(project=self.project, sender=self.staff_user, body="The latest dashboard draft is ready for review.")
+		message = ProjectMessage(project=self.project, sender=self.staff_user, body="The latest dashboard draft is ready for review.", attachment_link="https://example.com/review-draft")
 
 		admin.save_model(request, message, form=None, change=False)
 
 		self.assertEqual(len(mail.outbox), 1)
 		self.assertEqual(mail.outbox[0].to, ["client@example.com"])
 		self.assertIn("The latest dashboard draft is ready for review.", mail.outbox[0].body)
+		self.assertIn("https://example.com/review-draft", mail.outbox[0].body)
 
 	def test_project_admin_editor_excludes_chat_preview(self):
 		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Can we update the filters on the dashboard?")
@@ -111,7 +137,7 @@ class ClientProjectTests(TestCase):
 		self.assertTrue(inline.can_delete)
 
 	def test_admin_client_chat_widget_endpoint_returns_shared_thread(self):
-		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Please confirm the revised chart labels.")
+		ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Please confirm the revised chart labels.", attachment_link="https://example.com/chart-labels")
 		self.client.force_login(self.staff_user)
 
 		response = self.client.get(
@@ -123,6 +149,7 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, "project-chat-widget__bubble-client")
 		self.assertContains(response, "Please confirm the revised chart labels.")
+		self.assertContains(response, "Open shared link")
 
 	def test_client_admin_workspace_and_chat_preview_render_without_error(self):
 		ProjectSubtask.objects.create(project=self.project, title="Review export mappings", is_completed=False)

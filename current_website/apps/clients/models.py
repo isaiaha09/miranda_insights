@@ -150,7 +150,9 @@ class ProjectNote(models.Model):
 class ProjectMessage(models.Model):
 	project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="messages")
 	sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="project_messages")
-	body = models.TextField()
+	body = models.TextField(blank=True)
+	attachment_file = models.FileField(upload_to="project-message-attachments/%Y/%m/%d/", blank=True)
+	attachment_link = models.URLField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
@@ -176,6 +178,23 @@ class ProjectMessage(models.Model):
 			return full_name or self.sender.username
 		return self.project.client.contact_name
 
+	@property
+	def has_attachment(self):
+		return bool(self.attachment_file or self.attachment_link)
+
+	@property
+	def attachment_file_name(self):
+		if not self.attachment_file:
+			return ""
+		return self.attachment_file.name.rsplit("/", 1)[-1]
+
+	@property
+	def attachment_file_url(self):
+		if not self.attachment_file:
+			return ""
+		base_url = getattr(settings, "SITE_URL", "http://localhost:8000").rstrip("/")
+		return f"{base_url}{self.attachment_file.url}"
+
 	def send_notification(self):
 		recipient = (self.recipient_email or "").strip()
 		if not recipient:
@@ -193,6 +212,9 @@ class ProjectMessage(models.Model):
 				"client_name": self.project.client.contact_name,
 				"sender_name": self.sender_label,
 				"message_body": self.body,
+				"attachment_file_name": self.attachment_file_name,
+				"attachment_file_url": self.attachment_file_url,
+				"attachment_link": self.attachment_link,
 				"portal_url": portal_url,
 			},
 			from_email=settings.DEFAULT_FROM_EMAIL,

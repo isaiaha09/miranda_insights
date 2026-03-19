@@ -311,7 +311,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 			return self.render_to_response(context)
 
 		if action == "project_message":
-			form = ProjectMessageForm(request.POST, client=client)
+			form = ProjectMessageForm(request.POST, request.FILES, client=client)
 			if form.is_valid():
 				project_message = form.save(commit=False)
 				project_message.sender = request.user
