@@ -1,0 +1,28 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/project-chat.css' %}" />
+{% endblock %}
+
+{% block form_top %}
+  {{ block.super }}
+  {% if original and client_primary_project_edit_url %}
+    <div class="client-admin-top-actions">
+      <a class="client-admin-object-tool" href="{{ client_primary_project_edit_url }}">Open project editor</a>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block after_field_sets %}
+  {{ block.super }}
+  {% if original and project_chat_widget_html %}
+    <div id="client-project-chat-admin">{{ project_chat_widget_html|safe }}</div>
+  {% endif %}
+{% endblock %}
+
+{% block admin_change_form_document_ready %}
+  {{ block.super }}
+  <script src="{% static 'js/project-chat.js' %}"></script>
+{% endblock %}

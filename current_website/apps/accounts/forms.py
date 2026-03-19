@@ -57,6 +57,27 @@ class NewsletterPreferenceForm(forms.Form):
     subscribe_to_newsletter = forms.BooleanField(required=False, label="Email me newsletter updates and product insights")
 
 
+class DeleteAccountForm(forms.Form):
+    password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder": "Retype your password",
+                "autocomplete": "current-password",
+            }
+        )
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        if not self.user or not self.user.check_password(password):
+            raise forms.ValidationError("Enter your current password to confirm account deletion.")
+        return password
+
+
 class TwoFactorChallengeForm(forms.Form):
     otp_code = forms.CharField(
         max_length=6,

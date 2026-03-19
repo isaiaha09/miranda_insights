@@ -7,6 +7,7 @@
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/project-chat.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -30,17 +31,17 @@
       </div>
     </header>
 
-    <section class="dashboard-grid dashboard-grid-two">
-      <article class="dashboard-panel">
+    <section class="dashboard-project-layout">
+      <article class="dashboard-panel dashboard-project-panel dashboard-project-panel-active">
         <div class="dashboard-panel-head">
           <h2>Active Projects</h2>
           <span>{{ active_projects|length }} active</span>
         </div>
-        <div class="project-list">
+        <div class="project-list dashboard-project-list dashboard-project-list-active">
           {% for project in active_projects %}
             <div class="project-card">
               <h3>{{ project.name }}</h3>
-              <p class="project-meta">{{ project.client }} | {{ project.status }}</p>
+              <p class="project-meta">{{ project.consultant }} | {{ project.status }}</p>
               <div class="progress-row">
                 <div class="progress-track" aria-hidden="true">
                   <span class="progress-fill" style="width: {{ project.progress }}%"></span>
@@ -48,53 +49,106 @@
                 <span class="progress-value">{{ project.progress }}%</span>
               </div>
               <p class="project-note">Next: {{ project.next_step }}</p>
+              <p class="project-subtask-summary">{{ project.next_step_details }}</p>
+              <div class="project-subtasks-block">
+                <strong class="project-subtasks-title">Subtasks</strong>
+                <ul class="project-subtasks-list">
+                  {% for subtask in project.subtasks %}
+                    <li class="project-subtask-item">
+                      <div class="project-subtask-head">
+                        <span>{{ subtask.title }}</span>
+                        <span>{% if subtask.is_completed %}Done{% else %}Due {{ subtask.due_date }}{% endif %}</span>
+                      </div>
+                      <p>{{ subtask.details }}</p>
+                    </li>
+                  {% empty %}
+                    <li class="project-subtask-item project-subtask-item-empty">
+                      <p>No subtasks shared yet.</p>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
             </div>
           {% endfor %}
         </div>
       </article>
 
-      <article class="dashboard-panel">
-        <div class="dashboard-panel-head">
-          <h2>Completed Projects</h2>
-          <span>{{ completed_projects|length }} completed</span>
-        </div>
-        <div class="project-list">
-          {% for project in completed_projects %}
-            <div class="project-card project-card-complete">
-              <h3>{{ project.name }}</h3>
-              <p class="project-meta">{{ project.client }}</p>
-              <p class="project-note">Completed {{ project.completed_on }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      </article>
+      <div class="dashboard-project-sidebar">
+        <article class="dashboard-panel dashboard-project-panel dashboard-project-panel-completed">
+          <div class="dashboard-panel-head">
+            <h2>Completed Projects</h2>
+            <span>{{ completed_projects|length }} completed</span>
+          </div>
+          <div class="project-list dashboard-project-list dashboard-project-list-completed">
+            {% for project in completed_projects %}
+              <div class="project-card project-card-complete">
+                <h3>{{ project.name }}</h3>
+                <p class="project-meta">{{ project.client }}</p>
+                <p class="project-note">Completed {{ project.completed_on }}</p>
+              </div>
+            {% empty %}
+              <p class="dashboard-empty-state">No completed projects yet.</p>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="dashboard-panel">
+          <div class="dashboard-panel-head">
+            <h2>Project Progress Updates</h2>
+            <span>{{ progress_updates|length }} updates</span>
+          </div>
+          <div class="dashboard-update-list">
+            {% for update in progress_updates %}
+              <article class="dashboard-update-card dashboard-update-card-{{ update.kind }}">
+                <div class="dashboard-update-head">
+                  <strong>{{ update.label }}</strong>
+                  <span>{{ update.project_name }} | {{ update.timestamp|date:"M j, Y g:i A" }}</span>
+                </div>
+                <h3>{{ update.title }}</h3>
+                <p>{{ update.body }}</p>
+              </article>
+            {% empty %}
+              <p class="dashboard-empty-state">No completed subtasks or project notes yet.</p>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="dashboard-panel">
+          <div class="dashboard-panel-head">
+            <h2>Reports &amp; Deliverables</h2>
+          </div>
+          <div class="deliverable-list">
+            {% for report in reports %}
+              <article class="deliverable-card">
+                <strong>{{ report.title }}</strong>
+                {% if report.latest_note %}
+                  <span>{{ report.latest_note.content }}</span>
+                  <small class="deliverable-note-time">Updated {{ report.latest_note.created_at|date:"M j, Y g:i A" }}</small>
+                {% else %}
+                  <span>{{ report.description }}</span>
+                {% endif %}
+                {% if report.past_notes %}
+                  <details class="deliverable-history">
+                    <summary>Show past notes</summary>
+                    <div class="deliverable-history-list">
+                      {% for note in report.past_notes %}
+                        <article class="deliverable-history-note">
+                          <small>{{ note.created_at|date:"M j, Y g:i A" }}</small>
+                          <p>{{ note.content }}</p>
+                        </article>
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        </article>
+      </div>
     </section>
 
-    <section class="dashboard-grid dashboard-grid-two">
-      <article class="dashboard-panel">
-        <div class="dashboard-panel-head">
-          <h2>Project Progress Updates</h2>
-        </div>
-        <ul class="update-list">
-          {% for update in progress_updates %}
-            <li>{{ update }}</li>
-          {% endfor %}
-        </ul>
-      </article>
-
-      <article class="dashboard-panel">
-        <div class="dashboard-panel-head">
-          <h2>Reports &amp; Deliverables</h2>
-        </div>
-        <div class="deliverable-list">
-          {% for report in reports %}
-            <a class="deliverable-card" href="{{ report.href }}">
-              <strong>{{ report.title }}</strong>
-              <span>{{ report.description }}</span>
-            </a>
-          {% endfor %}
-        </div>
-      </article>
+    <section class="dashboard-grid dashboard-grid-single">
+      {{ project_chat_widget_html|safe }}
     </section>
 
     <section class="dashboard-grid dashboard-grid-single">
@@ -154,20 +208,18 @@
             <button class="btn btn-primary" type="submit">Set up 2FA</button>
           </form>
         {% endif %}
-      </article>
-    </section>
 
-    <section class="dashboard-grid dashboard-grid-single">
-      <article class="dashboard-panel dashboard-contact-panel">
-        <div class="dashboard-panel-head">
-          <h2>Message or Contact Our Team</h2>
-        </div>
-        <p class="dashboard-contact-copy">Need an update, have a question, or want to request a new deliverable? Reach out and we will follow up with your project team.</p>
+        <div class="dashboard-settings-divider"></div>
+
+        <p class="dashboard-contact-copy">Review the full deletion summary, including project progress and message history, before scheduling your account for removal.</p>
         <div class="dashboard-contact-actions">
-          <a class="btn btn-primary" href="{% url 'contact_support' %}">Send a message</a>
-          <a class="btn btn-ghost" href="mailto:{{ footer_contact_email|urlencode }}">Email support</a>
+          <a class="btn btn-ghost dashboard-danger-button" href="{% url 'delete_account' %}">Review account deletion</a>
         </div>
       </article>
     </section>
   </section>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/project-chat.js' %}"></script>
 {% endblock %}

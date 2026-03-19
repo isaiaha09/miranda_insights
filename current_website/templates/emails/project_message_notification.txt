@@ -1,0 +1,10 @@
+You have a new project message for {{ project_name }}.
+
+From: {{ sender_name }}
+Client: {{ client_name }}
+
+Message:
+{{ message_body }}
+
+Review the conversation in the portal:
+{{ portal_url }}

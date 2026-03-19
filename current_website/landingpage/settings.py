@@ -27,6 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # load environment variables from .env at project root
 load_dotenv(str(BASE_DIR / '.env'))
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -177,4 +178,5 @@ NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
 # Contact / support
 CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')
 SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', CONTACT_RECIPIENT)
+COMPANY_NOTIFICATION_EMAIL = os.getenv('COMPANY_NOTIFICATION_EMAIL', 'company@mirandainsights.com')
 

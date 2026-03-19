@@ -1,0 +1,52 @@
+<section class="project-chat-widget" data-project-chat-widget data-refresh-url="{{ chat_refresh_url }}" data-submit-url="{{ chat_submit_url }}">
+  <div class="project-chat-widget__header">
+    <div>
+      <p class="project-chat-widget__eyebrow">{{ chat_widget_subtitle }}</p>
+      <h2>{{ chat_widget_title }}</h2>
+    </div>
+    <span class="project-chat-widget__count">{{ chat_message_count }} messages</span>
+  </div>
+
+  <form method="post" action="{{ chat_submit_url }}" class="project-chat-widget__controls" data-project-chat-form>
+    {% csrf_token %}
+    <div class="project-chat-widget__field">
+      <label for="{{ project_message_form.project.id_for_label }}">Project</label>
+      {{ project_message_form.project }}
+      {% if project_message_form.project.errors %}<small class="project-chat-widget__error">{{ project_message_form.project.errors|striptags }}</small>{% endif %}
+    </div>
+
+    <div class="project-chat-widget__channel" role="log" aria-live="polite">
+      {% if chat_selected_project %}
+        {% for message in chat_messages %}
+          <div class="project-chat-widget__row {% if message.is_staff_message %}project-chat-widget__row-staff{% else %}project-chat-widget__row-client{% endif %}">
+            <article class="project-chat-widget__bubble {% if message.is_staff_message %}project-chat-widget__bubble-staff{% else %}project-chat-widget__bubble-client{% endif %}">
+              <div class="project-chat-widget__meta">
+                <strong>{{ message.sender_label }}</strong>
+                <span>{{ message.project.name }} | {{ message.created_at|date:"M j, Y g:i A" }}</span>
+              </div>
+              <p>{{ message.body }}</p>
+            </article>
+          </div>
+        {% empty %}
+          <p class="project-chat-widget__empty">No messages in this project yet. Start the conversation below.</p>
+        {% endfor %}
+      {% else %}
+        <p class="project-chat-widget__empty">Create or select a project to open the shared chat channel.</p>
+      {% endif %}
+    </div>
+
+    <div class="project-chat-widget__composer">
+      <div class="project-chat-widget__field">
+        <label for="{{ project_message_form.body.id_for_label }}">Message</label>
+        {{ project_message_form.body }}
+        {% if project_message_form.body.errors %}<small class="project-chat-widget__error">{{ project_message_form.body.errors|striptags }}</small>{% endif %}
+      </div>
+      <div class="project-chat-widget__actions">
+        <button class="btn btn-primary project-chat-widget__send-button" data-chat-submit-button type="submit" {% if not chat_projects %}disabled{% endif %}>
+          <span class="project-chat-widget__send-label">Send message</span>
+          <span class="project-chat-widget__send-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+  </form>
+</section>

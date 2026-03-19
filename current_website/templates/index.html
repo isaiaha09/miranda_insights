@@ -14,20 +14,19 @@
     <section class="hero-landing">
       <div class="hero-inner">
         <div class="hero-left">
-          <h1>Welcome to Insights</h1>
-
-          <form class="hero-search" action="#" role="search">
-            <input type="search" placeholder="Search insights, reports..." aria-label="Search" />
-          </form>
+          <h1>Welcome to Miranda Insights</h1>
 
           <div class="hero-summary">
             <p class="hero-summary-lead">Data Insights that drive better decisions</p>
             <p class="hero-summary-copy">We help school districts, organizations, and agencies turn complex data into clear, actionable insights.</p>
+            <p class="hero-summary-copy">Have you signed up yet? To get in contact with us, please fill out the contact form or register an account through our website and 
+              schedule a consultation with us. We look forward to working with you.
+            </p>
           </div>
 
           <p class="hero-cta">
             <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact us</a>
-            <a class="btn btn-ghost" href="#">See more</a>
+            <a class="btn btn-ghost" href="{% url 'signup' %}">Sign Up</a>
           </p>
         </div>
       </div>

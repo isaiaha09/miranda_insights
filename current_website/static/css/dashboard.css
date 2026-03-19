@@ -74,10 +74,24 @@
 
 .dashboard-grid-two {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
 }
 
 .dashboard-grid-single {
     grid-template-columns: 1fr;
+}
+
+.dashboard-project-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(19rem, 0.9fr);
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+    align-items: start;
+}
+
+.dashboard-project-sidebar {
+    display: grid;
+    gap: 1.25rem;
 }
 
 .dashboard-panel {
@@ -108,6 +122,53 @@
     gap: 0.9rem;
 }
 
+.dashboard-project-panel {
+    align-self: start;
+}
+
+.dashboard-project-list {
+    overflow-y: auto;
+    padding-right: 0.35rem;
+    scrollbar-gutter: stable;
+}
+
+.dashboard-project-list-active {
+    max-height: 36rem;
+}
+
+.dashboard-project-list-completed {
+    max-height: 24rem;
+}
+
+.dashboard-grid-two > .dashboard-panel {
+    min-height: 0;
+}
+
+.dashboard-grid-two > .dashboard-panel .project-list {
+    max-height: 42rem;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+}
+
+.dashboard-grid-two > .dashboard-panel .project-list::-webkit-scrollbar {
+    width: 0.65rem;
+}
+
+.dashboard-grid-two > .dashboard-panel .project-list::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.28);
+    border-radius: 999px;
+}
+
+.dashboard-grid-two > .dashboard-panel .project-list::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--accent) 38%, rgba(148, 163, 184, 0.5));
+    border-radius: 999px;
+}
+
+.dashboard-grid-two > .dashboard-panel .project-list {
+    scrollbar-color: color-mix(in srgb, var(--accent) 38%, rgba(148, 163, 184, 0.5)) rgba(15, 23, 42, 0.28);
+    scrollbar-width: thin;
+}
+
 .project-card,
 .deliverable-card {
     padding: 1rem;
@@ -126,6 +187,7 @@
 
 .project-meta,
 .project-note,
+.project-subtask-summary,
 .deliverable-card span,
 .dashboard-contact-copy,
 .update-list {
@@ -134,9 +196,67 @@
 
 .project-meta,
 .project-note,
+.project-subtask-summary,
 .deliverable-card span {
     margin: 0;
     line-height: 1.65;
+}
+
+.project-subtask-summary {
+    margin-top: -0.05rem;
+}
+
+.project-subtasks-block {
+    margin-top: 1rem;
+    padding-top: 0.95rem;
+    border-top: 1px solid var(--border-soft);
+}
+
+.project-subtasks-title {
+    display: block;
+    margin-bottom: 0.7rem;
+    color: var(--text);
+    font-size: 0.92rem;
+}
+
+.project-subtasks-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.project-subtask-item {
+    padding: 0.75rem 0.85rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface) 42%, transparent);
+}
+
+.project-subtask-item p {
+    margin: 0.3rem 0 0 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.project-subtask-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.project-subtask-head span:last-child {
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 500;
+}
+
+.project-subtask-item-empty p {
+    margin-top: 0;
 }
 
 .project-card-complete {
@@ -177,8 +297,55 @@
     line-height: 1.8;
 }
 
+.dashboard-update-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.dashboard-update-card {
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface) 56%, transparent);
+}
+
+.dashboard-update-card h3 {
+    margin: 0.2rem 0 0.3rem 0;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.dashboard-update-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.dashboard-update-card-note {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border-soft));
+}
+
+.dashboard-update-card-subtask {
+    border-color: color-mix(in srgb, #16a34a 30%, var(--border-soft));
+}
+
+.dashboard-update-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+}
+
+.dashboard-update-head strong {
+    color: var(--text);
+}
+
+.dashboard-update-head span {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
 .deliverable-card {
-    text-decoration: none;
     transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
 }
 
@@ -186,6 +353,50 @@
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--accent) 30%, var(--border-soft));
     background: color-mix(in srgb, var(--surface) 74%, transparent);
+}
+
+.deliverable-note-time {
+    display: block;
+    margin-top: 0.55rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.deliverable-history {
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-soft);
+}
+
+.deliverable-history summary {
+    cursor: pointer;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.deliverable-history-list {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 0.75rem;
+}
+
+.deliverable-history-note {
+    padding: 0.75rem 0.85rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface) 40%, transparent);
+}
+
+.deliverable-history-note small {
+    display: block;
+    color: var(--muted);
+    margin-bottom: 0.35rem;
+}
+
+.deliverable-history-note p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
 }
 
 .dashboard-contact-panel {
@@ -302,6 +513,17 @@
     padding: 0.78rem 0.9rem;
 }
 
+.dashboard-code-field select,
+.dashboard-code-field textarea {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--input-border);
+    background: color-mix(in srgb, var(--input-bg) 92%, #0a0f1a);
+    color: var(--text);
+    font: inherit;
+    padding: 0.78rem 0.9rem;
+}
+
 .dashboard-code-field input:focus {
     outline: none;
     border-color: color-mix(in srgb, var(--accent) 56%, var(--input-border));
@@ -309,10 +531,237 @@
     background: color-mix(in srgb, var(--input-bg) 100%, #0b1220);
 }
 
+.dashboard-code-field select:focus,
+.dashboard-code-field textarea:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--accent) 56%, var(--input-border));
+    box-shadow: 0 0 0 3px var(--ring);
+    background: color-mix(in srgb, var(--input-bg) 100%, #0b1220);
+}
+
+.dashboard-password-field {
+    margin-bottom: 0.25rem;
+}
+
+.dashboard-panel-head-stack {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.dashboard-panel-head-stack span {
+    margin-top: -0.35rem;
+}
+
 .dashboard-contact-copy {
     max-width: 42rem;
     margin: 0 auto;
     line-height: 1.8;
+}
+
+.dashboard-danger-box {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, #dc2626 50%, var(--border-soft));
+    background: color-mix(in srgb, #7f1d1d 16%, var(--surface));
+}
+
+.dashboard-danger-title {
+    margin: 0 0 0.5rem 0;
+    color: #fecaca;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.dashboard-danger-hero {
+    align-items: flex-start;
+}
+
+.dashboard-danger-note {
+    margin: 1rem 0 0 0;
+    color: #fecaca;
+}
+
+.dashboard-danger-list {
+    margin: 1rem auto 0 auto;
+    padding-left: 1.2rem;
+    max-width: 42rem;
+    text-align: left;
+    color: #fee2e2;
+    line-height: 1.75;
+}
+
+.dashboard-danger-list li + li {
+    margin-top: 0.7rem;
+}
+
+.dashboard-danger-list strong {
+    display: block;
+    color: #ffffff;
+}
+
+.dashboard-danger-list span {
+    color: #fecaca;
+}
+
+.dashboard-danger-help {
+    margin: 0.2rem 0 0 0;
+    color: #fca5a5;
+}
+
+.dashboard-delete-meta {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.dashboard-delete-meta strong {
+    color: #ffffff;
+}
+
+.dashboard-delete-meta span {
+    color: #fecaca;
+}
+
+.dashboard-message-log-list {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.dashboard-chat-thread {
+    display: grid;
+    gap: 0.9rem;
+    max-height: 32rem;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+}
+
+.dashboard-chat-row {
+    display: flex;
+}
+
+.dashboard-chat-row-client {
+    justify-content: flex-start;
+}
+
+.dashboard-chat-row-staff {
+    justify-content: flex-end;
+}
+
+.dashboard-chat-bubble {
+    width: min(100%, 42rem);
+    padding: 1rem;
+    border-radius: 1.2rem;
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.16);
+}
+
+.dashboard-chat-bubble-client {
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    border-bottom-left-radius: 0.35rem;
+}
+
+.dashboard-chat-bubble-staff {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 36%, transparent), color-mix(in srgb, var(--accent-2) 34%, transparent));
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border-soft));
+    border-bottom-right-radius: 0.35rem;
+}
+
+.dashboard-chat-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+    margin-bottom: 0.45rem;
+}
+
+.dashboard-chat-meta strong {
+    display: block;
+}
+
+.dashboard-chat-meta span {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.dashboard-chat-bubble p {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.dashboard-message-log-card {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface) 56%, transparent);
+}
+
+.dashboard-message-log-card strong {
+    display: block;
+    margin-bottom: 0.35rem;
+}
+
+.dashboard-message-log-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+}
+
+.dashboard-message-log-head span {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.dashboard-message-log-card p,
+.dashboard-message-log-card span {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.dashboard-message-log-card-staff {
+    border-color: color-mix(in srgb, #16a34a 30%, var(--border-soft));
+}
+
+.dashboard-message-log-card-client {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border-soft));
+}
+
+.dashboard-message-form {
+    align-items: stretch;
+}
+
+.dashboard-message-field {
+    width: 100%;
+    max-width: 44rem;
+}
+
+.dashboard-message-body-field textarea {
+    min-height: 8rem;
+    resize: vertical;
+}
+
+.dashboard-empty-state {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.dashboard-danger-button {
+    border-color: color-mix(in srgb, #dc2626 56%, var(--border-soft));
+    color: #ffffff;
+    background: color-mix(in srgb, #991b1b 36%, transparent);
+}
+
+.dashboard-danger-button:hover,
+.dashboard-danger-button:focus-visible {
+    border-color: color-mix(in srgb, #ef4444 65%, var(--border-soft));
+    background: color-mix(in srgb, #991b1b 55%, transparent);
 }
 
 .dashboard-contact-actions {
@@ -326,6 +775,10 @@
 @media (max-width: 900px) {
     .dashboard-hero,
     .dashboard-grid-two {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-project-layout {
         grid-template-columns: 1fr;
     }
 

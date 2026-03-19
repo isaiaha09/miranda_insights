@@ -18,6 +18,14 @@
         <p>Enter your username and password to access your Insights account.</p>
       </div>
 
+      {% if messages %}
+        <div class="auth-messages" aria-live="polite">
+          {% for message in messages %}
+            <p class="auth-message auth-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       {% if form.non_field_errors %}
         <div class="auth-messages" aria-live="polite">
           {% for error in form.non_field_errors %}

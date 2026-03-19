@@ -3,20 +3,23 @@ from io import BytesIO
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login
+from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import RedirectURLMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.utils import timezone
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views import View
 from django.views.generic import FormView, TemplateView
 
 from apps.news.models import NewsletterSubscriber
+from apps.clients.chat import render_project_chat_widget
+from apps.clients.forms import ProjectMessageForm
+from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 from landingpage.emailing import send_templated_email
 from landingpage.turnstile import is_turnstile_enabled, verify_turnstile
 
-from .forms import LoginForm, NewsletterPreferenceForm, SignupForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
+from .forms import DeleteAccountForm, LoginForm, NewsletterPreferenceForm, SignupForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
+from .models import AccountDeletionRequest, purge_expired_account_deletions
 from .two_factor import build_totp_uri, generate_totp_secret, verify_totp
 
 
@@ -48,12 +51,174 @@ def _verify_turnstile_request(request):
 	return verify_turnstile(token, _client_ip(request))
 
 
+def _recover_scheduled_deletion(request, user):
+	deletion_request = getattr(user, "account_deletion_request", None)
+	if deletion_request and deletion_request.is_recoverable:
+		deletion_request.delete()
+		messages.success(request, "Your scheduled account deletion has been canceled. All account data has been restored.")
+
+
+class PortalContextMixin:
+	def _get_client_record(self):
+		return get_or_create_client_for_user(self.request.user)
+
+	def _get_account_profile(self):
+		return getattr(self.request.user, "account_profile", None)
+
+	def _get_newsletter_initial(self):
+		return {"subscribe_to_newsletter": NewsletterSubscriber.objects.filter(email__iexact=self.request.user.email, is_active=True).exists()}
+
+	def _build_portal_snapshot(self):
+		client = self._get_client_record()
+		projects = client.projects.select_related("consultant").prefetch_related("subtasks", "notes")
+		active_projects = []
+		completed_projects = []
+		reports = []
+
+		for project in projects:
+			next_subtask = project.subtasks.filter(is_completed=False).order_by("due_date", "created_at").first()
+			latest_note = project.latest_note
+			project_notes = list(project.notes.order_by("-created_at")[:6])
+			latest_note_entry = project_notes[0] if project_notes else None
+			past_note_entries = project_notes[1:]
+			subtask_items = [
+				{
+					"title": subtask.title,
+					"details": subtask.details or "No details shared yet.",
+					"is_completed": subtask.is_completed,
+					"due_date": subtask.due_date.strftime("%B %d, %Y") if subtask.due_date else "No due date",
+				}
+				for subtask in project.subtasks.order_by("is_completed", "due_date", "created_at")[:4]
+			]
+			project_payload = {
+				"name": project.name,
+				"client": client.organization_name or client.contact_name,
+				"consultant": (project.consultant.get_full_name().strip() or project.consultant.username) if project.consultant else "Unassigned consultant",
+				"progress": project.progress_percentage,
+				"status": project.get_status_display(),
+				"next_step": next_subtask.title if next_subtask else ("Awaiting next update" if project.status != Project.STATUS_COMPLETED else "Project wrapped"),
+				"next_step_details": next_subtask.details if next_subtask and next_subtask.details else "No additional details shared yet.",
+				"subtasks": subtask_items,
+			}
+			if project.status == Project.STATUS_COMPLETED:
+				completed_projects.append(
+					{
+						"name": project.name,
+						"client": client.organization_name or client.contact_name,
+						"completed_on": project.end_date.strftime("%B %Y") if project.end_date else "Completed",
+					}
+				)
+			elif project.status != Project.STATUS_CANCELLED:
+				active_projects.append(project_payload)
+
+			reports.append(
+				{
+					"title": project.name,
+					"description": (latest_note_entry.content[:120] + "...") if latest_note_entry and len(latest_note_entry.content) > 120 else (latest_note_entry.content if latest_note_entry else (project.description or "No deliverable summary yet.")),
+					"latest_note": {
+						"content": latest_note_entry.content,
+						"created_at": latest_note_entry.created_at,
+					} if latest_note_entry else None,
+					"past_notes": [
+						{
+							"content": note.content,
+							"created_at": note.created_at,
+						}
+						for note in past_note_entries
+					],
+					"href": "#",
+				}
+			)
+
+		progress_updates = []
+		for subtask in ProjectSubtask.objects.filter(project__client=client, is_completed=True).select_related("project", "completed_by"):
+			progress_updates.append(
+				{
+					"kind": "subtask",
+					"label": "Completed subtask",
+					"project_name": subtask.project.name,
+					"title": subtask.title,
+					"body": subtask.details or "Marked complete.",
+					"summary": f"Completed subtask for {subtask.project.name}: {subtask.title}",
+					"timestamp": subtask.completed_at or subtask.created_at,
+				}
+			)
+
+		progress_updates.sort(key=lambda update: update["timestamp"], reverse=True)
+		progress_updates = progress_updates[:6]
+
+		message_logs = [
+			{
+				"project_name": message.project.name,
+				"sender": message.sender.get_full_name().strip() or message.sender.username,
+				"body": message.body,
+				"logged_at": message.created_at,
+				"is_staff_message": message.is_staff_message,
+			}
+			for message in ProjectMessage.objects.filter(project__client=client).select_related("project", "sender").order_by("-created_at")[:8]
+		]
+
+		return {
+			"active_projects": active_projects,
+			"completed_projects": completed_projects,
+			"progress_updates": progress_updates,
+			"reports": reports[:5],
+			"message_logs": message_logs,
+			"client_record": client,
+		}
+
+	def _get_delete_account_rundown(self):
+		profile = self._get_account_profile()
+		snapshot = self._build_portal_snapshot()
+		items = [
+			{
+				"title": "Portal access and sign-in history",
+				"description": "Your account login, dashboard access, and saved portal activity will be permanently removed after the 7-day recovery window.",
+			},
+			{
+				"title": "Project records and progress history",
+				"description": f"The {len(snapshot['active_projects'])} active projects, {len(snapshot['completed_projects'])} completed project records, and their stored progress details will be erased.",
+			},
+			{
+				"title": "Portal updates and message logs",
+				"description": f"The {len(snapshot['progress_updates'])} progress updates and {len(snapshot['message_logs'])} message log entries currently shown in your portal will be erased.",
+			},
+			{
+				"title": "Reports and deliverable access",
+				"description": "Your access to report packages, deliverables, and portal download links will be removed with the account.",
+			},
+		]
+
+		if profile:
+			items.append(
+				{
+					"title": "Profile settings and security setup",
+					"description": "Your saved contact information, profile preferences, and authenticator setup tied to this portal account will be erased.",
+				}
+			)
+
+		return items
+
+	def _get_deletion_context(self):
+		deletion_request = getattr(self.request.user, "account_deletion_request", None)
+		newsletter_active = NewsletterSubscriber.objects.filter(email__iexact=self.request.user.email, is_active=True).exists()
+		snapshot = self._build_portal_snapshot()
+		context = {
+			"delete_account_rundown": self._get_delete_account_rundown(),
+			"newsletter_subscription_active": newsletter_active,
+			"deletion_request": deletion_request,
+		}
+		context.update(snapshot)
+		return context
+
+
 class LoginView(RedirectURLMixin, FormView):
 	template_name = "registration/login.html"
 	form_class = LoginForm
 	redirect_authenticated_user = True
 
 	def dispatch(self, request, *args, **kwargs):
+		purge_expired_account_deletions()
 		if self.redirect_authenticated_user and request.user.is_authenticated:
 			return redirect(self.get_success_url())
 		return super().dispatch(request, *args, **kwargs)
@@ -75,6 +240,7 @@ class LoginView(RedirectURLMixin, FormView):
 			return redirect("login_2fa")
 
 		login(self.request, user)
+		_recover_scheduled_deletion(self.request, user)
 		return redirect(self.get_success_url())
 
 
@@ -105,24 +271,20 @@ class TwoFactorChallengeView(FormView):
 
 		user.backend = backend or "django.contrib.auth.backends.ModelBackend"
 		login(self.request, user)
+		_recover_scheduled_deletion(self.request, user)
 		self.request.session.pop("pending_2fa_user_id", None)
 		self.request.session.pop("pending_2fa_backend", None)
 		messages.success(self.request, "Two-factor authentication complete.")
 		return redirect(settings.LOGIN_REDIRECT_URL)
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
+class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 	template_name = "accounts/dashboard.html"
 	login_url = "login"
 
-	def _get_account_profile(self):
-		return getattr(self.request.user, "account_profile", None)
-
-	def _get_newsletter_initial(self):
-		return {"subscribe_to_newsletter": NewsletterSubscriber.objects.filter(email__iexact=self.request.user.email, is_active=True).exists()}
-
 	def post(self, request, *args, **kwargs):
 		action = (request.POST.get("settings_action") or "newsletter").strip()
+		client = self._get_client_record()
 
 		if action == "newsletter":
 			form = NewsletterPreferenceForm(request.POST)
@@ -146,6 +308,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 				return redirect("dashboard")
 
 			context = self.get_context_data(newsletter_form=form)
+			return self.render_to_response(context)
+
+		if action == "project_message":
+			form = ProjectMessageForm(request.POST, client=client)
+			if form.is_valid():
+				project_message = form.save(commit=False)
+				project_message.sender = request.user
+				project_message.save()
+				project_message.send_notification()
+				messages.success(request, "Your project message has been sent.")
+				return redirect("dashboard")
+
+			context = self.get_context_data(project_message_form=form)
 			return self.render_to_response(context)
 
 		profile = self._get_account_profile()
@@ -193,8 +368,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 		context = super().get_context_data(**kwargs)
 		pending_secret = self.request.session.get("pending_2fa_secret", "")
 		profile = self._get_account_profile()
+		client = self._get_client_record()
 		context["newsletter_form"] = kwargs.get("newsletter_form") or NewsletterPreferenceForm(initial=self._get_newsletter_initial())
 		context["two_factor_setup_form"] = kwargs.get("two_factor_setup_form") or TwoFactorSetupForm()
+		context["project_chat_widget_html"] = render_project_chat_widget(
+			self.request,
+			client,
+			form=kwargs.get("project_message_form"),
+			submit_url=reverse("project_chat_widget"),
+			refresh_url=reverse("project_chat_widget"),
+		)
 		context.update(
 			{
 				"turnstile_enabled": is_turnstile_enabled(),
@@ -204,47 +387,52 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 				"two_factor_setup_key": pending_secret,
 				"two_factor_otpauth_uri": build_totp_uri(pending_secret, self.request.user.username) if pending_secret else "",
 				"two_factor_qr_data_uri": _build_qr_data_uri(build_totp_uri(pending_secret, self.request.user.username)) if pending_secret else "",
-				"active_projects": [
-					{
-						"name": "District Performance Dashboard",
-						"client": "North Valley School District",
-						"progress": 72,
-						"status": "In progress",
-						"next_step": "Dashboard review with stakeholder team",
-					},
-					{
-						"name": "Grant Outcomes Evaluation",
-						"client": "State Education Agency",
-						"progress": 54,
-						"status": "Data analysis",
-						"next_step": "Drafting interim findings summary",
-					},
-				],
-				"completed_projects": [
-					{
-						"name": "Community Needs Assessment",
-						"client": "Regional Nonprofit Coalition",
-						"completed_on": "February 2026",
-					},
-					{
-						"name": "Program Evaluation Summary",
-						"client": "Metro Youth Services",
-						"completed_on": "December 2025",
-					},
-				],
-				"progress_updates": [
-					"New attendance trend files were received and validated for the district dashboard project.",
-					"Interim visual mockups are ready for the next stakeholder review meeting.",
-					"Final narrative edits are underway for the grant outcomes evaluation report.",
-				],
-				"reports": [
-					{"title": "Project Status Summary", "description": "Weekly project snapshot and milestone overview.", "href": "#"},
-					{"title": "Latest Deliverables", "description": "Download the most recent report package and presentation files.", "href": "#"},
-					{"title": "Data Export", "description": "Access the latest approved export for your internal review.", "href": "#"},
-				],
 			}
 		)
+		context.update(self._build_portal_snapshot())
 		return context
+
+
+class DeleteAccountView(LoginRequiredMixin, PortalContextMixin, FormView):
+	template_name = "accounts/delete_account.html"
+	form_class = DeleteAccountForm
+	login_url = "login"
+
+	def get_form_kwargs(self):
+		kwargs = super().get_form_kwargs()
+		kwargs["user"] = self.request.user
+		return kwargs
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		context.update(self._get_deletion_context())
+		return context
+
+	def form_valid(self, form):
+		deletion_request = AccountDeletionRequest.schedule_for_user(self.request.user)
+		if self.request.user.email:
+			send_templated_email(
+				subject="Your Insights account deletion request",
+				to=[self.request.user.email],
+				template_prefix="account_deletion_scheduled",
+				context={
+					"email_title": "Account Deletion Scheduled",
+					"heading": "Your account deletion has been scheduled",
+					"subheading": "You have 7 days to recover your account by logging back in.",
+					"scheduled_for": deletion_request.scheduled_for,
+					"login_url": f"{getattr(settings, 'SITE_URL', 'http://localhost:8000').rstrip('/')}{reverse('login')}",
+				},
+				from_email=settings.DEFAULT_FROM_EMAIL,
+			)
+		self.request.session.pop("pending_2fa_secret", None)
+		self.request.session.pop("pending_2fa_user_id", None)
+		self.request.session.pop("pending_2fa_backend", None)
+		logout(self.request)
+		messages.success(
+			self.request,
+			"Your account is scheduled for deletion in 7 days. Log back in before then to cancel the deletion and restore full access.",
+		)
+		return redirect("login")
 
 
 class SignupView(FormView):
@@ -269,6 +457,7 @@ class SignupView(FormView):
 			return self.form_invalid(form)
 
 		user = form.save()
+		get_or_create_client_for_user(user)
 		if form.cleaned_data.get("subscribe_to_newsletter"):
 			NewsletterSubscriber.objects.update_or_create(
 				email=user.email,

@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Account{% endblock %}
+
+{% block body_class %}dashboard-page delete-account-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="dashboard-shell container">
+    {% if messages %}
+      <div class="dashboard-messages" aria-live="polite">
+        {% for message in messages %}
+          <p class="dashboard-message dashboard-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <header class="dashboard-hero dashboard-danger-hero">
+      <div>
+        <p class="dashboard-eyebrow">Delete Account</p>
+        <h1>Review everything scheduled for removal</h1>
+        <p>If you continue, your account will be scheduled for deletion in 7 days. Log back in at any point during that window to cancel the deletion and restore full access.</p>
+        {% if newsletter_subscription_active %}
+          <p class="dashboard-danger-note">Your newsletter subscription will stay active unless you unsubscribe separately.</p>
+        {% endif %}
+      </div>
+      <div class="dashboard-actions">
+        <a class="btn btn-ghost" href="{% url 'dashboard' %}">Back to settings</a>
+      </div>
+    </header>
+
+    <section class="dashboard-grid dashboard-grid-two">
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head dashboard-panel-head-stack">
+          <h2>What Will Be Erased</h2>
+          <span>Removed after the recovery window ends</span>
+        </div>
+        <ul class="dashboard-danger-list">
+          {% for item in delete_account_rundown %}
+            <li>
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.description }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </article>
+
+      <article class="dashboard-panel dashboard-danger-box">
+        <div class="dashboard-panel-head dashboard-panel-head-stack">
+          <h2>Recovery Window</h2>
+          <span>7 days to change your mind</span>
+        </div>
+        <p class="dashboard-contact-copy">We will keep your account data intact during the recovery window. If you log back in before the scheduled deletion date, the deletion request is canceled automatically.</p>
+        <div class="dashboard-delete-meta">
+          <div>
+            <strong>Deletion timing</strong>
+            <span>Your data remains intact for 7 days after you confirm this action.</span>
+          </div>
+          <div>
+            <strong>Account recovery</strong>
+            <span>Logging back in within those 7 days restores your account and removes the scheduled deletion flag.</span>
+          </div>
+          <div>
+            <strong>Newsletter</strong>
+            <span>{% if newsletter_subscription_active %}Your newsletter subscription remains active.{% else %}No newsletter subscription is tied to this account email right now.{% endif %}</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-two">
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Active Projects</h2>
+          <span>{{ active_projects|length }} active</span>
+        </div>
+        <div class="project-list">
+          {% for project in active_projects %}
+            <div class="project-card">
+              <h3>{{ project.name }}</h3>
+              <p class="project-meta">{{ project.client }} | {{ project.status }}</p>
+              <div class="progress-row">
+                <div class="progress-track" aria-hidden="true">
+                  <span class="progress-fill" style="width: {{ project.progress }}%"></span>
+                </div>
+                <span class="progress-value">{{ project.progress }}%</span>
+              </div>
+              <p class="project-note">Next: {{ project.next_step }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Completed Projects</h2>
+          <span>{{ completed_projects|length }} completed</span>
+        </div>
+        <div class="project-list">
+          {% for project in completed_projects %}
+            <div class="project-card project-card-complete">
+              <h3>{{ project.name }}</h3>
+              <p class="project-meta">{{ project.client }}</p>
+              <p class="project-note">Completed {{ project.completed_on }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-two">
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Progress Updates</h2>
+          <span>{{ progress_updates|length }} updates</span>
+        </div>
+        <ul class="update-list">
+          {% for update in progress_updates %}
+            <li>{{ update.summary }}</li>
+          {% endfor %}
+        </ul>
+      </article>
+
+      <article class="dashboard-panel">
+        <div class="dashboard-panel-head">
+          <h2>Message Logs</h2>
+          <span>{{ message_logs|length }} entries</span>
+        </div>
+        <div class="dashboard-message-log-list">
+          {% for log in message_logs %}
+            <div class="dashboard-chat-row {% if log.is_staff_message %}dashboard-chat-row-staff{% else %}dashboard-chat-row-client{% endif %}">
+              <article class="dashboard-chat-bubble {% if log.is_staff_message %}dashboard-chat-bubble-staff{% else %}dashboard-chat-bubble-client{% endif %}">
+                <div class="dashboard-chat-meta">
+                  <strong>{{ log.sender }}</strong>
+                  <span>{{ log.project_name }} | {{ log.logged_at|date:"M j, Y g:i A" }}</span>
+                </div>
+                <p>{{ log.body }}</p>
+              </article>
+            </div>
+          {% empty %}
+            <p class="dashboard-empty-state">No project messages have been logged yet.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-single">
+      <article class="dashboard-panel dashboard-danger-box">
+        <div class="dashboard-panel-head dashboard-panel-head-stack">
+          <h2>Confirm Deletion Schedule</h2>
+          <span>Retype your password to start the 7-day deletion window</span>
+        </div>
+        <form method="post" class="dashboard-settings-form">
+          {% csrf_token %}
+          <div class="dashboard-code-field dashboard-password-field">
+            <label for="{{ form.password.id_for_label }}">Retype your password to confirm</label>
+            {{ form.password }}
+          </div>
+          {% if form.password.errors %}<small class="dashboard-field-error">{{ form.password.errors|striptags }}</small>{% endif %}
+          <p class="dashboard-danger-help">After you submit, you will be logged out and your deletion request will remain recoverable for 7 days.</p>
+          <button class="btn btn-ghost dashboard-danger-button" type="submit">Schedule account deletion</button>
+        </form>
+      </article>
+    </section>
+  </section>
+{% endblock %}

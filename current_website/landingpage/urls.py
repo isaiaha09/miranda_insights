@@ -26,6 +26,7 @@ urlpatterns = [
     path("service-worker.js", pwa.service_worker, name="service_worker"),
     path("offline/", pwa.offline, name="offline"),
     path('', include('apps.accounts.urls')),
+    path('', include('apps.clients.urls')),
     path('', include('apps.news.urls')),
 ]
 

@@ -1,12 +1,13 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from .views import DashboardView, LoginView, SignupView, TermsView, TwoFactorChallengeView, UsernameRecoveryView
+from .views import DashboardView, DeleteAccountView, LoginView, SignupView, TermsView, TwoFactorChallengeView, UsernameRecoveryView
 from .forms import StyledPasswordResetForm
 
 
 urlpatterns = [
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
+    path("dashboard/delete-account/", DeleteAccountView.as_view(), name="delete_account"),
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),
     path("login/2fa/", TwoFactorChallengeView.as_view(), name="login_2fa"),

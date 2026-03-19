@@ -1,0 +1,8 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <p style="margin:0 0 16px 0;">You have a new project message for <strong>{{ project_name }}</strong>.</p>
+  <p style="margin:0 0 16px 0;">From: <strong>{{ sender_name }}</strong><br />Client: <strong>{{ client_name }}</strong></p>
+  <div style="padding:18px 20px;border:1px solid rgba(230,238,246,0.12);border-radius:16px;background:rgba(255,255,255,0.03);margin:18px 0;white-space:pre-wrap;">{{ message_body }}</div>
+  <p style="margin:0;">Review the conversation in the portal: <a href="{{ portal_url }}" style="color:#7db5ff;text-decoration:none;">{{ portal_url }}</a></p>
+{% endblock %}
