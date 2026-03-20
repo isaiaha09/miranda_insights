@@ -29,6 +29,15 @@ function registerServiceWorker() {
   });
 }
 
+function isPwaDisplayMode() {
+  var displayModes = ['standalone', 'window-controls-overlay', 'minimal-ui', 'fullscreen'];
+  var hasMatchingDisplayMode = displayModes.some(function (mode) {
+    return window.matchMedia('(display-mode: ' + mode + ')').matches;
+  });
+
+  return hasMatchingDisplayMode || window.navigator.standalone === true || document.referrer.indexOf('android-app://') === 0;
+}
+
 function setupPwaInstallExperience() {
   var banner = document.getElementById('pwa-install-banner');
   var title = document.getElementById('pwa-install-title');
@@ -45,7 +54,7 @@ function setupPwaInstallExperience() {
   var dismissKey = 'insights-pwa-install-dismissed-at';
   var dismissDurationMs = 7 * 24 * 60 * 60 * 1000;
   var userAgent = window.navigator.userAgent || '';
-  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var isStandalone = isPwaDisplayMode();
   var isTouchDevice = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 820px)').matches;
   var isIOS = /iPad|iPhone|iPod/.test(userAgent) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
   var isAndroid = /Android/i.test(userAgent);
@@ -163,6 +172,47 @@ function setupPwaInstallExperience() {
   );
 }
 
+function syncPwaModeInputs() {
+  var isStandalone = isPwaDisplayMode();
+
+  document.querySelectorAll('[data-pwa-mode-input]').forEach(function (input) {
+    input.value = isStandalone ? '1' : '0';
+  });
+}
+
+function setupLoginSubmitLoading() {
+  var form = document.querySelector('[data-login-submit-form]');
+  if (!form) {
+    return;
+  }
+
+  var submitButton = form.querySelector('[data-login-submit-button]');
+  if (!submitButton) {
+    return;
+  }
+
+  form.addEventListener('submit', function (event) {
+    if (form.dataset.submitting === 'true') {
+      return;
+    }
+
+    event.preventDefault();
+    form.dataset.submitting = 'true';
+    submitButton.disabled = true;
+    submitButton.classList.add('is-loading');
+    var label = submitButton.querySelector('.auth-submit__label');
+    if (label) {
+      label.textContent = 'Logging in...';
+    }
+
+    window.requestAnimationFrame(function () {
+      window.setTimeout(function () {
+        form.submit();
+      }, 120);
+    });
+  });
+}
+
 syncBrowserChromeColor();
 registerServiceWorker();
 
@@ -170,6 +220,8 @@ registerServiceWorker();
 document.addEventListener('DOMContentLoaded', function(){
   syncBrowserChromeColor();
   setupPwaInstallExperience();
+  syncPwaModeInputs();
+  setupLoginSubmitLoading();
   // Example: simple console message
   console.debug('Insights site JS loaded');
   // Update footer year dynamically so it stays current

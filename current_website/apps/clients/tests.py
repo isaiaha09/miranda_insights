@@ -4,6 +4,8 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 import os
 import tempfile
 
@@ -127,6 +129,38 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, "Message for project two")
 		self.assertNotContains(response, "Message for project one")
+
+	def test_dashboard_chat_widget_prunes_messages_older_than_seven_days(self):
+		expired_message = ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Expired project update")
+		recent_message = ProjectMessage.objects.create(project=self.project, sender=self.client_user, body="Recent project update")
+		ProjectMessage.objects.filter(pk=expired_message.pk).update(created_at=timezone.now() - timedelta(days=8))
+		ProjectMessage.objects.filter(pk=recent_message.pk).update(created_at=timezone.now() - timedelta(days=2))
+		self.client.login(username="clientuser", password="client-pass-123")
+
+		response = self.client.get(
+			reverse("project_chat_widget"),
+			{"project": self.project.pk},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertFalse(ProjectMessage.objects.filter(pk=expired_message.pk).exists())
+		self.assertTrue(ProjectMessage.objects.filter(pk=recent_message.pk).exists())
+		self.assertNotContains(response, "Expired project update")
+		self.assertContains(response, "Recent project update")
+
+	def test_dashboard_chat_widget_renders_retention_disclaimer_and_mobile_expand_control(self):
+		self.client.login(username="clientuser", password="client-pass-123")
+
+		response = self.client.get(
+			reverse("project_chat_widget"),
+			{"project": self.project.pk},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Messages in this chat automatically delete after 7 days.")
+		self.assertContains(response, "data-chat-expand-toggle")
 
 	def test_admin_chat_widget_filters_messages_to_selected_project(self):
 		second_project = Project.objects.create(

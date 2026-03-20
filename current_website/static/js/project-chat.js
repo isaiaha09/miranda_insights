@@ -1,4 +1,147 @@
 (function () {
+  var widgetStates = new WeakMap();
+  var keyboardInsetResetTimer = null;
+
+  function getWidgetState(widget) {
+    var state = widgetStates.get(widget);
+    if (!state) {
+      state = {
+        requestToken: 0,
+        isSubmitting: false,
+      };
+      widgetStates.set(widget, state);
+    }
+    return state;
+  }
+
+  function beginWidgetRequest(widget, options) {
+    var state = getWidgetState(widget);
+    state.requestToken += 1;
+    if (options && options.submitting) {
+      state.isSubmitting = true;
+    }
+    return state.requestToken;
+  }
+
+  function shouldApplyWidgetResponse(widget, token) {
+    return document.body.contains(widget) && getWidgetState(widget).requestToken === token;
+  }
+
+  function finishWidgetRequest(widget, token, options) {
+    if (!shouldApplyWidgetResponse(widget, token)) {
+      return false;
+    }
+    if (options && options.submitting) {
+      getWidgetState(widget).isSubmitting = false;
+    }
+    return true;
+  }
+
+  function isMobileChatViewport() {
+    return window.matchMedia("(max-width: 800px)").matches;
+  }
+
+  function setKeyboardInset(value) {
+    document.documentElement.style.setProperty("--project-chat-keyboard-inset", value + "px");
+  }
+
+  function getExpandedWidget() {
+    return document.querySelector(".project-chat-widget-mobile-expanded");
+  }
+
+  function getExpandedComposerField() {
+    var widget = getExpandedWidget();
+    if (!widget) {
+      return null;
+    }
+    return widget.querySelector('.project-chat-widget__composer .project-chat-widget__field textarea[name="body"]');
+  }
+
+  function updateKeyboardInset() {
+    if (!document.body.classList.contains("project-chat-mobile-open") || !isMobileChatViewport()) {
+      setKeyboardInset(0);
+      return;
+    }
+
+    var visualViewport = window.visualViewport;
+    if (!visualViewport) {
+      setKeyboardInset(0);
+      return;
+    }
+
+    var keyboardInset = Math.max(0, window.innerHeight - (visualViewport.height + visualViewport.offsetTop));
+    setKeyboardInset(keyboardInset);
+
+    if (keyboardInset > 0) {
+      var composerField = getExpandedComposerField();
+      if (composerField && document.activeElement === composerField) {
+        window.requestAnimationFrame(function () {
+          composerField.scrollIntoView({ block: "nearest" });
+        });
+      }
+    }
+  }
+
+  function scheduleKeyboardInsetUpdate(delay) {
+    window.clearTimeout(keyboardInsetResetTimer);
+    keyboardInsetResetTimer = window.setTimeout(updateKeyboardInset, delay || 0);
+  }
+
+  function getMobileCloseButton() {
+    var closeButton = document.querySelector("[data-chat-mobile-close]");
+    if (closeButton) {
+      return closeButton;
+    }
+    closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "project-chat-widget__mobile-close";
+    closeButton.setAttribute("data-chat-mobile-close", "true");
+    closeButton.setAttribute("aria-label", "Close expanded chat");
+    closeButton.hidden = true;
+    closeButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path></svg>';
+    closeButton.addEventListener("click", function () {
+      document.querySelectorAll("[data-project-chat-widget]").forEach(function (widget) {
+        setWidgetExpanded(widget, false);
+      });
+    });
+    document.body.appendChild(closeButton);
+    return closeButton;
+  }
+
+  function syncMobileCloseButton() {
+    var closeButton = getMobileCloseButton();
+    closeButton.hidden = !document.body.classList.contains("project-chat-mobile-open");
+  }
+
+  function setWidgetExpanded(widget, expanded) {
+    if (!widget) {
+      return;
+    }
+    var isExpanded = Boolean(expanded && isMobileChatViewport());
+    var expandButton = widget.querySelector("[data-chat-expand-toggle]");
+    var expandLabel = widget.querySelector("[data-chat-expand-label]");
+    widget.classList.toggle("project-chat-widget-mobile-expanded", isExpanded);
+    document.documentElement.classList.toggle("project-chat-mobile-open", isExpanded);
+    document.body.classList.toggle("project-chat-mobile-open", isExpanded);
+    if (expandButton) {
+      expandButton.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+      expandButton.setAttribute("aria-label", isExpanded ? "Collapse chat" : "Expand chat");
+    }
+    if (expandLabel) {
+      expandLabel.textContent = isExpanded ? "Close" : "Expand";
+    }
+    syncMobileCloseButton();
+    if (!isExpanded) {
+      setKeyboardInset(0);
+    } else {
+      scheduleKeyboardInsetUpdate(0);
+    }
+  }
+
+  function syncExpandedWidget(widget) {
+    setWidgetExpanded(widget, document.body.classList.contains("project-chat-mobile-open"));
+  }
+
   function getCookie(name) {
     var cookieValue = null;
     if (!document.cookie) {
@@ -112,14 +255,16 @@
   async function refreshWidget(widget, options) {
     options = options || {};
     var refreshUrl = widget.dataset.refreshUrl;
-    if (!refreshUrl || (!options.force && isUserInteracting(widget))) {
+    var state = getWidgetState(widget);
+    if (!refreshUrl || state.isSubmitting || (!options.force && isUserInteracting(widget))) {
       return;
     }
+    var requestToken = beginWidgetRequest(widget);
     var response = await fetch(buildUrl(refreshUrl, selectedProject(widget)), {
       headers: { "X-Requested-With": "XMLHttpRequest" },
       credentials: "same-origin",
     });
-    if (!response.ok) {
+    if (!response.ok || !shouldApplyWidgetResponse(widget, requestToken)) {
       return;
     }
     replaceWidget(widget, await response.text());
@@ -217,6 +362,13 @@
       });
     }
 
+    var expandButton = widget.querySelector("[data-chat-expand-toggle]");
+    if (expandButton) {
+      expandButton.addEventListener("click", function () {
+        setWidgetExpanded(widget, !widget.classList.contains("project-chat-widget-mobile-expanded"));
+      });
+    }
+
     var form = widget.querySelector("form[data-project-chat-form]");
     if (form) {
       var fileInput = form.querySelector(".project-chat-widget__file-input");
@@ -246,6 +398,10 @@
 
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
+        var widgetState = getWidgetState(widget);
+        if (widgetState.isSubmitting) {
+          return;
+        }
         var submitButton = event.submitter || form.querySelector("[data-chat-submit-button]");
         var formData = new FormData(form);
         if (submitButton && submitButton.name) {
@@ -260,6 +416,7 @@
             submitButton.classList.add("is-loading");
           }
         }
+        var requestToken = beginWidgetRequest(widget, { submitting: true });
         var response = await fetch(form.action, {
           method: "POST",
           body: formData,
@@ -267,10 +424,14 @@
           credentials: "same-origin",
         });
         if (!response.ok) {
+          finishWidgetRequest(widget, requestToken, { submitting: true });
           if (submitButton) {
             submitButton.disabled = false;
             submitButton.classList.remove("is-loading");
           }
+          return;
+        }
+        if (!finishWidgetRequest(widget, requestToken, { submitting: true })) {
           return;
         }
         replaceWidget(widget, await response.text());
@@ -281,11 +442,52 @@
     if (channel) {
       channel.scrollTop = channel.scrollHeight;
     }
+    syncExpandedWidget(widget);
     scheduleRefresh(widget);
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-project-chat-widget]").forEach(initWidget);
     document.querySelectorAll("[data-client-workspace]").forEach(initWorkspace);
+    getMobileCloseButton();
+    setKeyboardInset(0);
   });
+
+  window.addEventListener("resize", function () {
+    if (isMobileChatViewport()) {
+      scheduleKeyboardInsetUpdate(0);
+      return;
+    }
+    document.querySelectorAll("[data-project-chat-widget]").forEach(function (widget) {
+      setWidgetExpanded(widget, false);
+    });
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape" || !document.body.classList.contains("project-chat-mobile-open")) {
+      return;
+    }
+    document.querySelectorAll("[data-project-chat-widget]").forEach(function (widget) {
+      setWidgetExpanded(widget, false);
+    });
+  });
+
+  document.addEventListener("focusin", function (event) {
+    if (!event.target.matches('.project-chat-widget-mobile-expanded textarea[name="body"]')) {
+      return;
+    }
+    scheduleKeyboardInsetUpdate(50);
+  });
+
+  document.addEventListener("focusout", function (event) {
+    if (!event.target.matches('.project-chat-widget-mobile-expanded textarea[name="body"]')) {
+      return;
+    }
+    scheduleKeyboardInsetUpdate(150);
+  });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", updateKeyboardInset);
+    window.visualViewport.addEventListener("scroll", updateKeyboardInset);
+  }
 })();

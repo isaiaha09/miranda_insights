@@ -181,6 +181,37 @@
     align-self: center;
     border-radius: var(--radius-md);
     padding: 0.72rem 1.1rem;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-width: 8.5rem;
+}
+
+.auth-submit__spinner {
+    display: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 2px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-top-color: currentColor;
+    animation: auth-submit-spin 0.7s linear infinite;
+}
+
+.auth-submit.is-loading {
+    pointer-events: none;
+    opacity: 0.92;
+}
+
+.auth-submit.is-loading .auth-submit__spinner {
+    display: inline-block;
+}
+
+@keyframes auth-submit-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .auth-links {

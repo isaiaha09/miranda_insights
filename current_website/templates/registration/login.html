@@ -34,8 +34,9 @@
         </div>
       {% endif %}
 
-      <form method="post" novalidate class="auth-form">
+      <form method="post" novalidate class="auth-form" data-login-submit-form>
         {% csrf_token %}
+        <input type="hidden" name="pwa_mode" value="0" data-pwa-mode-input />
 
         <div class="field-row">
           <label for="id_username">Username</label>
@@ -49,7 +50,10 @@
           {% if form.password.errors %}<small class="field-error">{{ form.password.errors|striptags }}</small>{% endif %}
         </div>
 
-        <button class="btn btn-primary auth-submit" type="submit">Login</button>
+        <button class="btn btn-primary auth-submit" type="submit" data-login-submit-button>
+          <span class="auth-submit__label">Login</span>
+          <span class="auth-submit__spinner" aria-hidden="true"></span>
+        </button>
       </form>
 
       <div class="auth-links">

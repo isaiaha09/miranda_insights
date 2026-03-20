@@ -1,10 +1,23 @@
+from datetime import timedelta
+
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 
 from .forms import ProjectMessageForm
+from .models import ProjectMessage
+
+
+CHAT_MESSAGE_RETENTION_DAYS = 7
+
+
+def prune_expired_project_messages(client):
+	cutoff_date = timezone.localdate() - timedelta(days=CHAT_MESSAGE_RETENTION_DAYS - 1)
+	ProjectMessage.objects.filter(project__client=client, created_at__date__lt=cutoff_date).delete()
 
 
 def build_project_chat_context(request, client, *, selected_project_id=None, form=None, submit_url="", refresh_url="", is_admin=False, notice="", notice_level="info"):
+	prune_expired_project_messages(client)
 	projects = list(client.projects.exclude(status="cancelled").order_by("name"))
 	selected_project = None
 	if selected_project_id:
@@ -34,6 +47,7 @@ def build_project_chat_context(request, client, *, selected_project_id=None, for
 		"chat_is_admin": is_admin,
 		"chat_notice": notice,
 		"chat_notice_level": notice_level,
+		"chat_message_retention_days": CHAT_MESSAGE_RETENTION_DAYS,
 		"chat_widget_title": "Project Chat",
 		"chat_widget_subtitle": client.display_name,
 	}

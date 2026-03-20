@@ -8,6 +8,7 @@ from django.test import RequestFactory
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from unittest.mock import patch
 
 from .admin import AccountProfileAdmin, StaffUserAdmin
 from .models import AccountDeletionRequest, AccountProfile
@@ -77,6 +78,81 @@ class LoginViewTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertFalse(AccountDeletionRequest.objects.filter(user=user).exists())
 		self.assertContains(response, "Your scheduled account deletion has been canceled. All account data has been restored.")
+
+	def test_pwa_login_redirects_staff_user_to_admin_index(self):
+		staff_user = User.objects.create_user(
+			username="pwaadmin",
+			email="pwaadmin@example.com",
+			password="correct-pass-123",
+			is_staff=True,
+		)
+
+		response = self.client.post(
+			reverse("login"),
+			{"username": "pwaadmin", "password": "correct-pass-123", "pwa_mode": "1"},
+		)
+
+		self.assertRedirects(response, reverse("admin:index"), fetch_redirect_response=False)
+		self.assertEqual(int(self.client.session.get("_auth_user_id")), staff_user.pk)
+
+	def test_staff_login_redirects_to_admin_index_even_without_pwa_flag(self):
+		User.objects.create_user(
+			username="browseradmin",
+			email="browseradmin@example.com",
+			password="correct-pass-123",
+			is_staff=True,
+		)
+
+		response = self.client.post(
+			reverse("login"),
+			{"username": "browseradmin", "password": "correct-pass-123", "pwa_mode": "0"},
+		)
+
+		self.assertRedirects(response, reverse("admin:index"), fetch_redirect_response=False)
+
+	@patch("apps.accounts.views.verify_totp", return_value=True)
+	def test_pwa_staff_login_with_2fa_redirects_to_admin_index(self, mocked_verify_totp):
+		staff_user = User.objects.create_user(
+			username="pwaadmin2fa",
+			email="pwaadmin2fa@example.com",
+			password="correct-pass-123",
+			is_staff=True,
+		)
+		AccountProfile.objects.create(
+			user=staff_user,
+			industry_type=AccountProfile.INDUSTRY_OTHER,
+			phone_number="555-0203",
+			two_factor_enabled=True,
+			two_factor_secret="BASE32SECRET",
+		)
+
+		login_response = self.client.post(
+			reverse("login"),
+			{"username": "pwaadmin2fa", "password": "correct-pass-123", "pwa_mode": "1"},
+		)
+
+		self.assertRedirects(login_response, reverse("login_2fa"), fetch_redirect_response=False)
+
+		two_factor_response = self.client.post(
+			reverse("login_2fa"),
+			{"otp_code": "123456"},
+		)
+
+		self.assertRedirects(two_factor_response, reverse("admin:index"), fetch_redirect_response=False)
+		self.assertTrue(mocked_verify_totp.called)
+
+	def test_dashboard_redirects_staff_users_to_admin_index(self):
+		staff_user = User.objects.create_user(
+			username="dashadmin",
+			email="dashadmin@example.com",
+			password="correct-pass-123",
+			is_staff=True,
+		)
+
+		self.client.force_login(staff_user)
+		response = self.client.get(reverse("dashboard"))
+
+		self.assertRedirects(response, reverse("admin:index"), fetch_redirect_response=False)
 
 
 class StaffUserAdminTests(TestCase):

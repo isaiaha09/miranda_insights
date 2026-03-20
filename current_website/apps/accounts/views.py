@@ -58,6 +58,19 @@ def _recover_scheduled_deletion(request, user):
 		messages.success(request, "Your scheduled account deletion has been canceled. All account data has been restored.")
 
 
+def _is_pwa_login_request(request):
+	value = request.POST.get("pwa_mode") or request.GET.get("pwa_mode") or request.session.get("pending_login_pwa_mode")
+	return str(value).strip().lower() in {"1", "true", "yes", "on", "standalone"}
+
+
+def _build_login_success_url(request, user, *, redirect_url=""):
+	if redirect_url:
+		return redirect_url
+	if user.is_staff:
+		return reverse("admin:index")
+	return settings.LOGIN_REDIRECT_URL
+
+
 class PortalContextMixin:
 	def _get_client_record(self):
 		return get_or_create_client_for_user(self.request.user)
@@ -229,19 +242,25 @@ class LoginView(RedirectURLMixin, FormView):
 		return kwargs
 
 	def get_success_url(self):
-		return self.get_redirect_url() or settings.LOGIN_REDIRECT_URL
+		if not self.request.user.is_authenticated:
+			return self.get_redirect_url() or settings.LOGIN_REDIRECT_URL
+		return _build_login_success_url(self.request, self.request.user, redirect_url=self.get_redirect_url())
 
 	def form_valid(self, form):
 		user = form.get_user()
+		success_url = _build_login_success_url(self.request, user, redirect_url=self.get_redirect_url())
 		profile = getattr(user, "account_profile", None)
 		if profile and profile.two_factor_enabled and profile.two_factor_secret:
 			self.request.session["pending_2fa_user_id"] = user.pk
 			self.request.session["pending_2fa_backend"] = getattr(user, "backend", "django.contrib.auth.backends.ModelBackend")
+			self.request.session["pending_2fa_success_url"] = success_url
+			self.request.session["pending_login_pwa_mode"] = "1" if _is_pwa_login_request(self.request) else "0"
 			return redirect("login_2fa")
 
 		login(self.request, user)
 		_recover_scheduled_deletion(self.request, user)
-		return redirect(self.get_success_url())
+		self.request.session.pop("pending_login_pwa_mode", None)
+		return redirect(success_url)
 
 
 class TwoFactorChallengeView(FormView):
@@ -258,11 +277,14 @@ class TwoFactorChallengeView(FormView):
 	def form_valid(self, form):
 		user_id = self.request.session.get("pending_2fa_user_id")
 		backend = self.request.session.get("pending_2fa_backend")
+		success_url = self.request.session.get("pending_2fa_success_url") or settings.LOGIN_REDIRECT_URL
 		user = User.objects.filter(pk=user_id).select_related("account_profile").first()
 		if not user or not getattr(user, "account_profile", None) or not user.account_profile.two_factor_secret:
 			messages.error(self.request, "Your 2FA session expired. Please sign in again.")
 			self.request.session.pop("pending_2fa_user_id", None)
 			self.request.session.pop("pending_2fa_backend", None)
+			self.request.session.pop("pending_2fa_success_url", None)
+			self.request.session.pop("pending_login_pwa_mode", None)
 			return redirect("login")
 
 		if not verify_totp(user.account_profile.two_factor_secret, form.cleaned_data["otp_code"]):
@@ -274,13 +296,20 @@ class TwoFactorChallengeView(FormView):
 		_recover_scheduled_deletion(self.request, user)
 		self.request.session.pop("pending_2fa_user_id", None)
 		self.request.session.pop("pending_2fa_backend", None)
+		self.request.session.pop("pending_2fa_success_url", None)
+		self.request.session.pop("pending_login_pwa_mode", None)
 		messages.success(self.request, "Two-factor authentication complete.")
-		return redirect(settings.LOGIN_REDIRECT_URL)
+		return redirect(success_url)
 
 
 class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 	template_name = "accounts/dashboard.html"
 	login_url = "login"
+
+	def dispatch(self, request, *args, **kwargs):
+		if request.user.is_authenticated and request.user.is_staff:
+			return redirect("admin:index")
+		return super().dispatch(request, *args, **kwargs)
 
 	def post(self, request, *args, **kwargs):
 		action = (request.POST.get("settings_action") or "newsletter").strip()
