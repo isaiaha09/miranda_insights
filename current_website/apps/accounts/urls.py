@@ -1,7 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from .views import DashboardView, DeleteAccountView, LoginView, SignupView, TermsView, TwoFactorChallengeView, UsernameRecoveryView
+from .views import DashboardView, DeleteAccountView, LoginView, PrivacyView, SignupView, TermsView, TwoFactorChallengeView, UsernameRecoveryView
 from .forms import StyledPasswordResetForm
 
 
@@ -28,4 +28,5 @@ urlpatterns = [
     path("reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view(template_name="registration/password_reset_confirm.html"), name="password_reset_confirm"),
     path("reset/done/", auth_views.PasswordResetCompleteView.as_view(template_name="registration/password_reset_complete.html"), name="password_reset_complete"),
     path("terms/", TermsView.as_view(), name="terms"),
+    path("privacy/", PrivacyView.as_view(), name="privacy"),
 ]

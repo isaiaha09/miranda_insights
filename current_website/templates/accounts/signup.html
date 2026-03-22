@@ -117,7 +117,7 @@
 
           <div class="checkbox-row">
             {{ form.agree_to_terms }}
-            <label for="id_agree_to_terms">I agree to the <a href="{% url 'terms' %}">Terms &amp; Agreement</a>.</label>
+            <label for="id_agree_to_terms">I agree to the <a href="{% url 'terms' %}">Terms &amp; Agreement</a> and <a href="{% url 'privacy' %}">Privacy Policy</a>.</label>
           </div>
           {% if form.agree_to_terms.errors %}<small class="field-error auth-actions-error">{{ form.agree_to_terms.errors|striptags }}</small>{% endif %}
 

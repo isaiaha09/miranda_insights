@@ -3,29 +3,119 @@
 
 {% block title %}Terms & Agreement{% endblock %}
 
-{% block body_class %}auth-page terms-page{% endblock %}
+{% block body_class %}legal-page terms-page{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/legal-pages.css' %}" />
 {% endblock %}
 
 {% block content %}
-  <section class="auth-shell container">
-    <article class="auth-card auth-card-narrow">
-      <div class="auth-intro">
-        <p class="auth-eyebrow">Terms</p>
-        <h1>Terms &amp; Agreement</h1>
-      </div>
+  {% now "F j, Y" as legal_last_updated %}
+  <section class="legal-shell container">
+    <article class="legal-card">
+      <header class="legal-hero">
+        <p class="legal-eyebrow">Legal</p>
+        <h1>Terms of Service and Client Agreement</h1>
+        <p class="legal-lead">These terms describe the rules for using the Miranda Insights website, client portal, and related communications. They are written to match the current features and workflows already implemented on the site.</p>
+        <p class="legal-meta">Last updated: {{ legal_last_updated }}</p>
+      </header>
 
-      <div class="auth-text-block">
-        <h2>Use of Service</h2>
-        <p>By creating an account, you agree to use the Insights platform responsibly and only for lawful business or professional purposes.</p>
+      <div class="legal-body">
+        <section class="legal-section">
+          <h2>1. Scope of these terms</h2>
+          <p>These Terms of Service and Client Agreement apply to your use of the public website, account registration, client portal, booking tools, contact forms, newsletter signup, and project communication tools offered by Miranda Insights LLC.</p>
+          <p>By accessing the site, creating an account, submitting a form, or using the portal, you agree to these terms.</p>
+        </section>
 
-        <h2>Account Responsibility</h2>
-        <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account.</p>
+        <section class="legal-section">
+          <h2>2. Services and site purpose</h2>
+          <p>The site is used to present services, assessments, and frameworks, receive inquiries, support newsletter subscriptions, provide account-based client access, facilitate booking, and support project communication and visibility for active clients.</p>
+          <p>Public content on the site is informational. A submitted inquiry, account registration, or portal access request does not by itself guarantee that Miranda Insights will accept a project or enter into a paid engagement.</p>
+        </section>
 
-        <h2>Data and Communication</h2>
-        <p>You consent to receiving service-related communications needed to manage your account, projects, and support requests.</p>
+        <section class="legal-section">
+          <h2>3. Account registration and access</h2>
+          <p>Some features, including the client dashboard and project messaging tools, require an account. When you create an account, you agree to provide accurate and current information, including your name, email address, phone number, and any applicable organization details.</p>
+          <p>You are responsible for safeguarding your username, password, and any authentication codes associated with your account. You are also responsible for activity that occurs under your account unless you notify Miranda Insights of unauthorized access promptly.</p>
+          <p>Miranda Insights may suspend or restrict access to accounts used in violation of these terms, for misuse of the portal, or to protect the security and integrity of the platform.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>4. Two-factor authentication and account security</h2>
+          <p>The client portal currently supports optional two-factor authentication. If you enable it, you are responsible for maintaining access to your authenticator application and setup credentials.</p>
+          <p>Miranda Insights is not responsible for delays or access issues caused by lost devices, incorrect setup, or your failure to maintain access to your authentication method.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>5. Acceptable use</h2>
+          <p>You agree not to misuse the site or portal. This includes attempting unauthorized access, interfering with normal operation, uploading unlawful or harmful material, impersonating another person, sending spam, or using the project messaging features for abusive, deceptive, or unrelated purposes.</p>
+          <p>If you upload files or submit links through the portal, you are responsible for the legality, accuracy, and appropriateness of that material.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>6. Project communications and client materials</h2>
+          <p>Active clients may use the portal to view project progress, deliverable notes, updates, messages, attachments, and booking information connected to their work. This information is provided to support project visibility and coordination.</p>
+          <p>You retain responsibility for the materials, data, files, and links you submit to Miranda Insights. By submitting them through the site or portal, you confirm that you have the right to share them and that Miranda Insights may use them as reasonably necessary to provide services, communicate with you, and maintain project records.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>7. Booking and scheduling</h2>
+          <p>The client portal may be used to request or schedule consultations, project meetings, and similar appointments. A requested time is not guaranteed until confirmed by Miranda Insights.</p>
+          <p>You are responsible for providing accurate booking information and for reviewing any confirmation, rescheduling, or cancellation details provided through the portal or related communications.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>8. Deliverables, timelines, and project scope</h2>
+          <p>Any project-specific deliverables, schedules, payment terms, or scope commitments should be confirmed separately through written communication or a project-specific agreement. Content on the website does not create a fixed promise regarding turnaround times, outcomes, or service availability.</p>
+          <p>Portal progress indicators, subtasks, and updates are operational tools intended to help communicate status. They do not replace any separate written agreement regarding scope, deadlines, or acceptance of work.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>9. Communications</h2>
+          <p>By using the site, you agree that Miranda Insights may send service-related communications needed to operate your account, respond to your inquiry, notify you about project activity, confirm support requests, or support account security and recovery.</p>
+          <p>Where booking tools are used, this also includes appointment confirmations, reminders, rescheduling notices, or related scheduling communications.</p>
+          <p>If you choose to subscribe to the newsletter, you also agree to receive newsletter and product-related updates until you unsubscribe.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>10. Intellectual property</h2>
+          <p>The website design, copy, branding, and site functionality provided by Miranda Insights remain the property of Miranda Insights or its licensors unless a separate written agreement states otherwise.</p>
+          <p>Client-owned materials, datasets, and uploaded project content remain subject to the rights held by the client or the applicable rights holder.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>11. Availability and changes</h2>
+          <p>Miranda Insights may update, suspend, or change site features at any time. The platform is provided on an as-available basis, and uninterrupted access is not guaranteed.</p>
+          <p>Features described on the public site may evolve over time. Not every concept, service description, or product direction shown on the site is a guarantee of immediate public availability.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>12. Disclaimer</h2>
+          <p>The website and portal are provided in good faith to support communication, visibility, and service delivery. To the fullest extent permitted by law, Miranda Insights disclaims warranties not expressly stated, including implied warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
+          <p>Nothing on the site should be treated as legal, financial, or regulatory advice.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>13. Limitation of liability</h2>
+          <p>To the fullest extent permitted by applicable law, Miranda Insights will not be liable for indirect, incidental, special, consequential, or punitive damages arising from your use of the site or portal, including loss of data, interruption, or loss of business opportunity.</p>
+          <p>Where liability cannot be excluded, it will be limited to the amount paid by you to Miranda Insights for the specific services directly giving rise to the claim, if any.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>14. Account deletion and termination</h2>
+          <p>The portal currently supports scheduled account deletion with a recovery window. If you request deletion through the dashboard, your account is scheduled for removal and may remain recoverable for a limited period before permanent deletion is processed.</p>
+          <p>Miranda Insights may also suspend or terminate access where necessary to protect the platform, comply with legal obligations, or respond to misuse.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>15. Updates to these terms</h2>
+          <p>Miranda Insights may revise these terms from time to time to reflect operational, legal, or product changes. Updated terms will be posted on this page with a revised effective date. Continued use of the site after an update means you accept the revised terms.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>16. Contact</h2>
+          <p>If you have questions about these terms, use the website contact form or reach out through the support email listed in the site footer.</p>
+        </section>
       </div>
     </article>
   </section>

@@ -535,3 +535,7 @@ class UsernameRecoveryView(FormView):
 
 class TermsView(TemplateView):
 	template_name = "accounts/terms.html"
+
+
+class PrivacyView(TemplateView):
+	template_name = "accounts/privacy.html"

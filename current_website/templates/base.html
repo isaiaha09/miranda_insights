@@ -32,10 +32,10 @@
         </div>
 
         <div class="nav-center" id="nav-menu">
-          <a href="#">About</a>
+          <a href="{% url 'about' %}">About</a>
           <a href="{% url 'services' %}">Services</a>
-          <a href="#">Products</a>
-          <a href="#">FAQ</a>
+          <a href="{% url 'products' %}">Products</a>
+          <a href="{% url 'faq' %}">FAQ</a>
         </div>
 
         <div class="nav-right">
@@ -92,12 +92,12 @@
           <h4>Quick Links</h4>
           <ul>
             <li><a href="{% url 'home' %}">Home</a></li>
-            <li><a href="#">About</a></li>
+            <li><a href="{% url 'about' %}">About</a></li>
             <li><a href="{% url 'services' %}">Services</a></li>
-            <li><a href="#">Products</a></li>
+            <li><a href="{% url 'products' %}">Products</a></li>
             <li><a href="{% url 'dashboard' %}">Client Portal</a></li>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="{% url 'faq' %}">FAQ</a></li>
+            <li><a href="{% url 'privacy' %}">Privacy Policy</a></li>
             <li><a href="{% url 'terms' %}">Terms of Service</a></li>
           </ul>
         </div>

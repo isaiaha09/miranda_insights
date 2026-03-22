@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FAQ{% endblock %}
+
+{% block body_class %}faq-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/marketing-pages.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="marketing-shell container">
+    <header class="marketing-hero marketing-hero-wide">
+      <p class="marketing-eyebrow">FAQ</p>
+      <h1>Frequently asked questions</h1>
+      <p class="marketing-lead">These answers are based on the current website experience, the defined service and product catalog, and the client portal workflows including booking, messaging, and project visibility.</p>
+    </header>
+
+    <section class="marketing-section" aria-labelledby="faq-list-heading">
+      <div class="marketing-section-head">
+        <p class="marketing-kicker">Answers</p>
+        <h2 id="faq-list-heading">What visitors and clients are most likely to ask</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary>How can we get in contact with you?</summary>
+          <p>You can reach out through the website contact form. Clients can also use the portal for project-related communication and booking conversations directly with Miranda Insights.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How are rates decided?</summary>
+          <p>Rates depend on the service ID selected, the project scope, deliverables, complexity, and timeline. Retainer Agreement R-001 is also available for clients who want priority access and lower service rates across a contract period.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What is the client portal?</summary>
+          <p>The client portal is a dedicated workspace where authenticated clients can track project progress, review updates, view deliverable history, send project messages, share attachments, and use the booking system to schedule meetings.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Do I need an executive-level project for this to be a fit?</summary>
+          <p>No. Miranda Insights can support work ranging from straightforward CSV or XLSX analysis projects to recurring survey cycles, program evaluation, frameworks, and website development.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What industries do you work with?</summary>
+          <p>The strongest public positioning today is education, agencies, nonprofits, and other mission-driven organizations, while the account structure also leaves room for broader industry use.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How long does a project take?</summary>
+          <p>That depends on the service type, the amount of data involved, the reporting depth, and whether the work is recurring. Timelines should be defined during the initial conversation or booking so expectations and milestones are clear from the start.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Do you offer ongoing support?</summary>
+          <p>Yes. R-001 Retainer Agreement is designed for clients who want ongoing support across their data needs, with priority service and lower rates during the contract term.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What tools or outputs do you provide?</summary>
+          <p>Outputs vary by service, but current offerings include data analysis, InsightSurveys-based survey collection and analysis, assessment reports, dashboards, research design, program evaluation, website delivery, and portal-based communication and scheduling.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is my data secure?</summary>
+          <p>The current platform already uses authenticated accounts, optional two-factor authentication for the portal, and protected contact flows. Public copy should stay at that level unless additional security controls are documented and implemented.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can we request custom solutions?</summary>
+          <p>Yes. The services, portal structure, and product direction all point toward tailored support rather than a rigid one-size-fits-all package.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How do bookings work?</summary>
+          <p>Bookings can be handled through the client portal. That allows scheduling to stay connected to account access, project context, and ongoing communication with the Miranda Insights team.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="faq-cta-heading">
+      <article class="marketing-banner">
+        <div>
+          <p class="marketing-kicker">Next Step</p>
+          <h2 id="faq-cta-heading">Still deciding whether the fit is right?</h2>
+          <p>Use the contact form or the portal booking workflow to describe the project, team, or question you have in mind.</p>
+        </div>
+        <div class="marketing-actions marketing-actions-stacked">
+          <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Through Portal</a>
+          <a class="btn btn-ghost" href="{% url 'services' %}">Review Services</a>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

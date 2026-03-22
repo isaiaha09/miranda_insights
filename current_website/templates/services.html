@@ -6,33 +6,155 @@
 {% block body_class %}services-page{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="{% static 'css/services.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/marketing-pages.css' %}" />
 {% endblock %}
 
 {% block content %}
-  <section class="services-shell container">
-    <header class="services-intro">
-      <p class="services-eyebrow">What We Do</p>
-      <h1>Services Built Around Clear, Actionable Insight</h1>
-      <p>We partner with districts, agencies, and organizations to turn raw information into reporting, systems, and decisions that move work forward.</p>
+  <section class="marketing-shell container">
+    <header class="marketing-hero marketing-hero-wide">
+      <p class="marketing-eyebrow">Services</p>
+      <h1>Structured data, survey, evaluation, and web services with a clear service catalog.</h1>
+      <p class="marketing-lead">Miranda Insights works with school districts, agencies, nonprofits, and organizations that need defined service options, practical reporting support, and a client portal where they can stay aligned, communicate directly, and book time with the team.</p>
+      <div class="marketing-actions">
+        <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Through Portal</a>
+        <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Us</a>
+      </div>
     </header>
 
-    <section class="services-grid" aria-label="Services offered">
-      <article class="service-card">
-        <h2>Data Analytics</h2>
-        <p>We analyze complex datasets to uncover trends, performance patterns, and practical next steps for leadership teams.</p>
+    <section class="marketing-section" aria-labelledby="services-core-heading">
+      <div class="marketing-section-head">
+        <p class="marketing-kicker">Service Catalog</p>
+        <h2 id="services-core-heading">Current service IDs and delivery types</h2>
+        <p>These offerings are the defined service options currently represented by Miranda Insights.</p>
+      </div>
+      <div class="card-grid card-grid-services">
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-001</span>
+            <span class="marketing-badge">Data Project</span>
+          </div>
+          <h3>Single Data Project</h3>
+          <p>A single analysis project built from CSV or XLSX files.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-002</span>
+            <span class="marketing-badge">Data Project</span>
+          </div>
+          <h3>Multi-Data Project</h3>
+          <p>Multiple analysis projects built from CSV or XLSX files.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-003</span>
+            <span class="marketing-badge">InsightSurveys</span>
+          </div>
+          <h3>Single Survey/Test Non-Recurring</h3>
+          <p>A single survey analysis for one distinct survey administered and analyzed once using InsightSurveys for data collection. Miranda Insights offers both standard survey options and a custom survey add-on.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-004</span>
+            <span class="marketing-badge">InsightSurveys</span>
+          </div>
+          <h3>Single Survey/Test Recurring</h3>
+          <p>Multiple survey analyses for one distinct survey administered and analyzed more than once using InsightSurveys for data collection, with standard survey options and a custom survey add-on.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-005</span>
+            <span class="marketing-badge">InsightSurveys</span>
+          </div>
+          <h3>Multi-Survey/Test Non-Recurring</h3>
+          <p>Multiple survey analyses for multiple different surveys, each administered and analyzed once using InsightSurveys for data collection, with standard survey options and a custom survey add-on.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-006</span>
+            <span class="marketing-badge">InsightSurveys</span>
+          </div>
+          <h3>Multi-Survey/Test Recurring</h3>
+          <p>Multiple survey analyses for multiple different surveys, each administered and analyzed more than once using InsightSurveys for data collection, with standard survey options and a custom survey add-on.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-007</span>
+            <span class="marketing-badge">Evaluation</span>
+          </div>
+          <h3>Research Design &amp; Program Eval</h3>
+          <p>A custom research design or program evaluation developed in collaboration with the client to solidify methodology before administering data processes and analyzing results.</p>
+        </article>
+        <article class="marketing-card">
+          <div class="marketing-card-meta">
+            <span class="marketing-card-tag">S-008</span>
+            <span class="marketing-badge">Web</span>
+          </div>
+          <h3>Website Development &amp; Hosting</h3>
+          <p>A single website developed and hosted for a client with their desired customizations.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="marketing-section marketing-section-split" aria-labelledby="services-fit-heading">
+      <article class="marketing-panel">
+        <p class="marketing-kicker">Who We Work With</p>
+        <h2 id="services-fit-heading">Built for mission-driven teams</h2>
+        <ul class="marketing-list">
+          <li>School districts and education-focused teams</li>
+          <li>Government and public agencies</li>
+          <li>Organizations and nonprofits</li>
+          <li>Other groups that need structured reporting and better visibility</li>
+        </ul>
       </article>
-      <article class="service-card">
-        <h2>Dashboard Development</h2>
-        <p>We design focused dashboards that help teams monitor outcomes, track priorities, and communicate progress clearly.</p>
+      <article class="marketing-panel">
+        <p class="marketing-kicker">How We Work</p>
+        <h2>Simple process, visible progress</h2>
+        <ol class="marketing-list marketing-list-numbered">
+          <li>Discovery</li>
+          <li>Data Analysis</li>
+          <li>Insight Development</li>
+          <li>Reporting and Communication</li>
+        </ol>
       </article>
-      <article class="service-card">
-        <h2>Program Evaluation</h2>
-        <p>We evaluate initiatives with rigorous reporting frameworks that show what is working, what is changing, and where to improve.</p>
-      </article>
-      <article class="service-card">
-        <h2>Data Systems</h2>
-        <p>We help build practical data systems that improve collection, organization, governance, and day-to-day usability.</p>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="services-portal-heading">
+      <div class="marketing-section-head">
+        <p class="marketing-kicker">Client Experience</p>
+        <h2 id="services-portal-heading">Projects do not disappear into email threads</h2>
+        <p>Active clients have access to a secure portal experience that keeps project work visible, organized, and schedulable.</p>
+      </div>
+      <div class="card-grid card-grid-three-up">
+        <article class="marketing-card">
+          <h3>Project tracking</h3>
+          <p>Clients can monitor active projects, view progress percentages, and see current subtasks and next steps.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Deliverable visibility</h3>
+          <p>Reports and update history stay accessible in one place so deliverables are easier to review over time.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Booking and scheduling</h3>
+          <p>The client portal includes booking access so clients can schedule consultations, project touchpoints, and follow-up conversations from the same workspace.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Direct communication</h3>
+          <p>The portal supports project messaging and file or link sharing so questions and updates remain connected to the work.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="services-support-heading">
+      <article class="marketing-banner">
+        <div>
+          <p class="marketing-kicker">Ongoing Support</p>
+          <h2 id="services-support-heading">R-001: Retainer Agreement</h2>
+          <p>An agreement that guarantees Miranda Insights services for a client’s data needs over the contract duration while providing priority service and lower service rates.</p>
+        </div>
+        <div class="marketing-actions marketing-actions-stacked">
+          <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Retainer Consultation</a>
+          <a class="btn btn-ghost" href="{% url 'contact_support' %}">Ask About R-001</a>
+        </div>
       </article>
     </section>
   </section>
