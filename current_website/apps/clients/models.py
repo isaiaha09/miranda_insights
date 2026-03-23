@@ -207,7 +207,7 @@ class ProjectMessage(models.Model):
 		if not self.attachment_file:
 			return ""
 		base_url = getattr(settings, "SITE_URL", "http://localhost:8000").rstrip("/")
-		return f"{base_url}{self.attachment_file.url}"
+		return f"{base_url}{reverse('project_message_attachment_download', args=[self.pk])}"
 
 	def send_notification(self):
 		recipient = (self.recipient_email or "").strip()

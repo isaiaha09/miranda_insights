@@ -1,11 +1,21 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from apps.accounts.models import AccountProfile
 from .models import Client, Project, ProjectMessage
 
 
 User = get_user_model()
+
+MAX_PROJECT_ATTACHMENT_BYTES = 10 * 1024 * 1024
+BLOCKED_PROJECT_ATTACHMENT_EXTENSIONS = {
+	".ade", ".adp", ".apk", ".appx", ".bat", ".cab", ".chm", ".cmd", ".com",
+	".cpl", ".dll", ".dmg", ".exe", ".hta", ".html", ".htm", ".iso", ".jar",
+	".js", ".jse", ".lnk", ".msi", ".msp", ".msix", ".msh", ".ps1", ".psm1",
+	".reg", ".scr", ".sh", ".svg", ".url", ".vb", ".vbe", ".vbs", ".wsf",
+	".xhtml",
+}
 
 
 class ProjectMessageForm(forms.ModelForm):
@@ -47,6 +57,13 @@ class ProjectMessageForm(forms.ModelForm):
 		body = (cleaned_data.get("body") or "").strip()
 		attachment_file = cleaned_data.get("attachment_file")
 		attachment_link = (cleaned_data.get("attachment_link") or "").strip()
+		if attachment_file:
+			lower_name = attachment_file.name.lower()
+			blocked_extension = next((ext for ext in BLOCKED_PROJECT_ATTACHMENT_EXTENSIONS if lower_name.endswith(ext)), None)
+			if blocked_extension:
+				raise ValidationError(f"Files ending in {blocked_extension} are not allowed for project attachments.")
+			if attachment_file.size > MAX_PROJECT_ATTACHMENT_BYTES:
+				raise ValidationError("Project attachments must be 10 MB or smaller.")
 		if not body and not attachment_file and not attachment_link:
 			raise forms.ValidationError("Add a message, upload a file, or include a link before sending.")
 		cleaned_data["body"] = body

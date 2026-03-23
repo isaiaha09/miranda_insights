@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 
@@ -33,12 +33,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host.strip()]
 
 
 # Application definition
@@ -179,6 +179,20 @@ NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
 CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')
 SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', CONTACT_RECIPIENT)
 COMPANY_NOTIFICATION_EMAIL = os.getenv('COMPANY_NOTIFICATION_EMAIL', 'company@mirandainsights.com')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', True)
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
+    SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', True)
 
 UNFOLD = {
     "SITE_TITLE": "Miranda Insights Admin",

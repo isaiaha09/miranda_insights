@@ -41,12 +41,12 @@ def delete_account_for_user(user, *, send_confirmation_email=True):
 
 	normalized_email = normalize_account_email(getattr(user, "email", ""))
 	preserve_newsletter = has_active_newsletter_subscription(normalized_email)
-	client_filters = Q(user=user)
-	if normalized_email:
-		client_filters |= Q(contact_email__iexact=normalized_email)
 
 	with transaction.atomic():
-		Client.objects.filter(client_filters).delete()
+		# Only delete the client record explicitly linked to this user. Matching on email
+		# would allow one account deletion to remove unrelated client rows that happen
+		# to share the same contact address.
+		Client.objects.filter(user=user).delete()
 		if normalized_email and not preserve_newsletter:
 			NewsletterSubscriber.objects.filter(email__iexact=normalized_email).delete()
 		user.delete()

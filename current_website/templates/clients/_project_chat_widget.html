@@ -40,7 +40,7 @@
               {% if message.attachment_file or message.attachment_link %}
                 <div class="project-chat-widget__attachments">
                   {% if message.attachment_file %}
-                    <a class="project-chat-widget__attachment-link" href="{{ message.attachment_file.url }}" target="_blank" rel="noopener noreferrer">{{ message.attachment_file_name }}</a>
+                    <a class="project-chat-widget__attachment-link" href="{% url 'project_message_attachment_download' message.pk %}">{{ message.attachment_file_name }}</a>
                   {% endif %}
                   {% if message.attachment_link %}
                     <a class="project-chat-widget__attachment-link" href="{{ message.attachment_link }}" target="_blank" rel="noopener noreferrer">Open shared link</a>

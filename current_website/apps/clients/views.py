@@ -1,11 +1,11 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
-from django.shortcuts import redirect
+from django.http import FileResponse, Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 
 from .chat import render_project_chat_widget
 from .forms import ProjectMessageForm
-from .models import get_or_create_client_for_user
+from .models import ProjectMessage, get_or_create_client_for_user
 
 
 class ProjectChatWidgetView(LoginRequiredMixin, View):
@@ -43,3 +43,22 @@ class ProjectChatWidgetView(LoginRequiredMixin, View):
 		if request.headers.get("x-requested-with") == "XMLHttpRequest":
 			return HttpResponse(widget)
 		return redirect("dashboard")
+
+
+class ProjectMessageAttachmentDownloadView(LoginRequiredMixin, View):
+	def get(self, request, message_id, *args, **kwargs):
+		message = get_object_or_404(ProjectMessage.objects.select_related("project__client", "sender"), pk=message_id)
+		if not message.attachment_file:
+			raise Http404("Attachment not found.")
+
+		if request.user.is_staff:
+			allowed = True
+		else:
+			client = get_or_create_client_for_user(request.user)
+			allowed = message.project.client_id == client.pk
+
+		if not allowed:
+			raise Http404("Attachment not found.")
+
+		message.attachment_file.open("rb")
+		return FileResponse(message.attachment_file, as_attachment=True, filename=message.attachment_file_name or None)
