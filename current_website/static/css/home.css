@@ -274,6 +274,68 @@ body.landing .hero-right {
     scroll-margin-top: calc(var(--header-height) + 1rem);
 }
 
+.booking-section {
+    padding: 0 1rem 2.75rem 1rem;
+}
+
+.booking-shell {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.4rem, 3vw, 2rem);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-lg) + 0.2rem);
+    background:
+        radial-gradient(760px circle at 10% -18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%),
+        radial-gradient(640px circle at 100% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 48%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, #05070c), color-mix(in srgb, var(--surface) 88%, #05070c));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.24);
+}
+
+.booking-copy {
+    width: min(100%, 44rem);
+    margin: 0 auto 1.35rem auto;
+    text-align: center;
+}
+
+.booking-eyebrow {
+    margin: 0 0 0.55rem 0;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--accent) 75%, var(--text));
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.booking-heading {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+    line-height: 1.08;
+}
+
+.booking-description {
+    margin: 0.8rem 0 0 0;
+    color: var(--muted);
+    line-height: 1.75;
+}
+
+.booking-embed-frame {
+    border-radius: calc(var(--radius-lg) - 0.1rem);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--border-soft));
+    background: color-mix(in srgb, var(--surface) 60%, #07101d);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.booking-embed {
+    display: block;
+    width: 100%;
+    min-height: 700px;
+    border: 0;
+    background: #ffffff;
+}
+
 .subscribe:focus,
 .subscribe:focus-visible {
     outline: none;
@@ -468,6 +530,22 @@ body.landing .hero-right {
 }
 
 @media (max-width: 900px) {
+    .booking-section {
+        padding-bottom: 2rem;
+    }
+
+    .booking-shell {
+        padding: 1.15rem;
+    }
+
+    .booking-copy {
+        margin-bottom: 1rem;
+    }
+
+    .booking-embed {
+        min-height: 780px;
+    }
+
     .subscribe {
         padding: 1.5rem 0 2rem 0;
     }
@@ -532,6 +610,19 @@ body.landing .hero-right {
     .content-row {
         display: block;
         padding: 0 1rem;
+    }
+
+    .booking-section {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .booking-heading {
+        font-size: clamp(1.6rem, 8vw, 2.2rem);
+    }
+
+    .booking-embed {
+        min-height: 700px;
     }
 
     /* Mobile landing: keep hero centered and avoid transform-created blank bands */
