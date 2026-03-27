@@ -1,0 +1,13 @@
+{
+  "name": "insights-website",
+  "private": true,
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i ./static/css/tailwind.css -o ./static/css/tailwind-build.css --minify",
+    "watch:css": "tailwindcss -c tailwind.config.js -i ./static/css/tailwind.css -o ./static/css/tailwind-build.css --watch"
+  }
+}

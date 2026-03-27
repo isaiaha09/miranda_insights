@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block body_class %}legal-page privacy-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/legal-pages.css' %}" />
+{% endblock %}
+
+{% block content %}
+  {% now "F j, Y" as legal_last_updated %}
+  <section class="legal-shell container">
+    <article class="legal-card">
+      <header class="legal-hero">
+        <p class="legal-eyebrow">Legal</p>
+        <h1>Privacy Policy</h1>
+        <p class="legal-lead">This Privacy Policy explains what information Miranda Insights currently collects through the website and client portal, how that information is used, and the choices available to users based on the features that are already implemented today.</p>
+        <p class="legal-meta">Last updated: {{ legal_last_updated }}</p>
+      </header>
+
+      <div class="legal-body">
+        <section class="legal-section">
+          <h2>1. Information we collect</h2>
+          <p>Miranda Insights collects information that you provide directly through the website and portal, including:</p>
+          <ul>
+            <li>Account registration details such as first name, last name, username, email address, phone number, industry type, and organization information</li>
+            <li>Booking and scheduling information submitted through the client portal, such as requested appointment details and related notes</li>
+            <li>Contact form submissions, including your name, organization, email address, phone number, business location, selected subject, and message content</li>
+            <li>Newsletter subscription details, primarily your email address</li>
+            <li>Client portal content such as project messages, attachments, attachment links, project profile details, and settings preferences</li>
+            <li>Two-factor authentication status and setup information if you choose to enable optional 2FA</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>2. Information collected automatically</h2>
+          <p>The site also uses technical information needed to operate the platform. This includes standard web request data that may be available to the application, such as IP address information used for security verification, session-related information required for login and authentication, and browser interactions related to site functionality.</p>
+          <p>The site currently includes progressive web app behavior and may store limited browser-side information, such as whether an install prompt has been dismissed, in local browser storage.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>3. How we use personal information</h2>
+          <p>Miranda Insights uses collected information to:</p>
+          <ul>
+            <li>Create and manage user accounts</li>
+            <li>Provide access to the client portal and related project tools</li>
+            <li>Support booking, scheduling, confirmations, reminders, and related client coordination</li>
+            <li>Respond to contact requests and support inquiries</li>
+            <li>Send service-related emails, project notifications, and account recovery communications</li>
+            <li>Send newsletter updates if you choose to subscribe</li>
+            <li>Maintain project records, message history, and portal visibility for active client work</li>
+            <li>Support account security, including optional two-factor authentication and form verification</li>
+            <li>Operate, troubleshoot, and improve the website and portal</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>4. Contact and support communications</h2>
+          <p>If you submit a support or contact form, Miranda Insights uses the information you provide to review the request, respond to you, and send a confirmation email. Replies may be sent through configured email providers or infrastructure used to deliver site email.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>5. Booking communications</h2>
+          <p>If you use the client portal booking system, Miranda Insights may use your booking information to schedule, confirm, remind, reschedule, or otherwise manage appointments and consultation-related communications.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>6. Newsletter communications</h2>
+          <p>If you subscribe to the newsletter, Miranda Insights stores your email address so newsletter and product updates can be sent to you. You can unsubscribe using the unsubscribe option included with those communications or by contacting Miranda Insights.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>7. Portal, project messages, attachments, and bookings</h2>
+          <p>For active clients, the portal stores project messages, project notes, progress-related information, booking-related information, and any files or links submitted through the messaging workflow. This data is used to support project communication, scheduling, maintain visibility into work status, and keep a record of interactions tied to the project.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>8. Security and fraud prevention tools</h2>
+          <p>The site currently uses Cloudflare Turnstile on certain forms to help reduce spam and abusive submissions. When those forms are used, related technical information may be processed as part of that verification workflow.</p>
+          <p>The client portal also supports optional two-factor authentication. If enabled, associated 2FA information is used only for account protection and login verification.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>9. Cookies, sessions, and browser storage</h2>
+          <p>The platform uses standard session and security mechanisms needed for authentication, CSRF protection, and account-based functionality. The site may also use local browser storage for limited front-end behavior, such as dismissing the PWA install prompt for a period of time.</p>
+          <p>These technologies are used to operate the site rather than to advertise to you across third-party websites.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>10. How we share information</h2>
+          <p>Miranda Insights does not describe the site as a public data marketplace or ad-supported platform. Information may be shared only as reasonably necessary to operate the site and services, including with:</p>
+          <ul>
+            <li>Email delivery providers or infrastructure used to send support, account, newsletter, or project notification emails</li>
+            <li>Scheduling or booking-related service providers used to operate appointment workflows, if applicable</li>
+            <li>Security and verification providers, such as the Turnstile verification workflow</li>
+            <li>Service providers helping host or support the site and portal</li>
+            <li>Authorities or other parties where disclosure is required by law or reasonably necessary to protect rights, security, or the operation of the service</li>
+          </ul>
+        </section>
+
+        <section class="legal-section">
+          <h2>11. Data retention</h2>
+          <p>Miranda Insights retains information for as long as it is reasonably needed to operate accounts, maintain project records, provide services, meet legal obligations, or resolve disputes.</p>
+          <p>The current platform includes scheduled account deletion with a recovery window. When deletion is completed, related account and associated portal data are removed according to the application’s deletion workflow. Newsletter subscription records are retained until you unsubscribe or the record is otherwise removed.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>12. Your choices and access</h2>
+          <p>You may update certain account and organization information through the client dashboard. You may also unsubscribe from newsletters, request support, or request account deletion using the tools currently available on the site.</p>
+          <p>If you need help updating or removing information that is not directly editable through the portal, contact Miranda Insights through the website support channel.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>13. Security practices</h2>
+          <p>Miranda Insights uses reasonable administrative and technical measures to support account and platform security, including authentication controls, optional two-factor authentication, and form verification tools. No internet-based system can be guaranteed completely secure, so users should also protect their own credentials and submitted materials.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>14. Children’s privacy</h2>
+          <p>The site and portal are designed for professional, organizational, and client use. They are not intended to be used independently by children.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>15. Changes to this policy</h2>
+          <p>Miranda Insights may update this Privacy Policy over time to reflect operational, legal, or product changes. Updates will be posted on this page with a revised date.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>16. Contact</h2>
+          <p>If you have questions about this Privacy Policy or your information, use the website contact form or the support email listed in the site footer.</p>
+        </section>
+      </div>
+    </article>
+  </section>
+{% endblock %}

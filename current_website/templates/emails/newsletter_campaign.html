@@ -1,0 +1,8 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <div style="margin:0 0 18px 0;">{{ body_html|safe }}</div>
+  <div style="margin-top:24px;padding-top:18px;border-top:1px solid rgba(230,238,246,0.10);font-size:14px;color:#9aa6b2;">
+    {{ unsubscribe_footer_text }} <a href="{{ unsubscribe_url }}" style="color:#7db5ff;text-decoration:none;font-weight:600;">{{ unsubscribe_label }}</a>.
+  </div>
+{% endblock %}

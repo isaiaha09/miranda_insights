@@ -1,0 +1,13 @@
+Hi {{ name }},
+
+Thanks for contacting Miranda Insights support. We received your message and will respond as soon as possible.
+
+Request summary:
+Organization: {{ organization }}
+Subject: {{ subject }}
+{% if phone %}Phone: {{ phone }}
+{% endif %}{% if business_location %}Business Location: {{ business_location }}
+{% endif %}Message:
+{{ message }}
+
+If you need to add details, simply reply to this email.

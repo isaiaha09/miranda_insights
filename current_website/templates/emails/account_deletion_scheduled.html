@@ -1,0 +1,11 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <p style="margin:0 0 16px 0;">Your Insights account deletion has been scheduled.</p>
+  <p style="margin:0 0 16px 0;">Your account and portal data are still recoverable for 7 days. If you want to keep your account, log back in before <strong>{{ scheduled_for|date:"F j, Y g:i A" }}</strong>.</p>
+  <div style="padding:18px 20px;border:1px solid rgba(230,238,246,0.12);border-radius:16px;background:rgba(255,255,255,0.03);margin:18px 0;">
+    <a href="{{ login_url }}" style="display:inline-block;padding:12px 20px;border-radius:12px;background:linear-gradient(90deg,#58a6ff,#7c9cff);color:#ffffff;text-decoration:none;font-weight:700;">Log in to recover your account</a>
+  </div>
+  <p style="margin:0 0 16px 0;">If you do nothing, your account and associated portal data will be permanently deleted after the recovery window ends.</p>
+  <p style="margin:0;">Your newsletter subscription is not affected by this request.</p>
+{% endblock %}

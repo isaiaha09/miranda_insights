@@ -1,0 +1,12 @@
+Your Insights account deletion has been scheduled.
+
+Your account and portal data are still recoverable for 7 days.
+You have 7 days to recover your account by logging back in.
+If you want to keep your account, log back in before {{ scheduled_for|date:"F j, Y g:i A" }}.
+
+Recover your account here:
+{{ login_url }}
+
+If you do nothing, your account and associated portal data will be permanently deleted after the recovery window ends.
+
+Your newsletter subscription is not affected by this request.

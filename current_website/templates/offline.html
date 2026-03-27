@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Offline | Insights{% endblock %}
+
+{% block body_class %}offline-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/offline.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="offline-shell container">
+    <article class="offline-card">
+      <p class="offline-eyebrow">Offline</p>
+      <h1>You are offline right now.</h1>
+      <p class="offline-copy">Previously visited pages stay available, but new content needs a connection. Reconnect and refresh to continue browsing Insights.</p>
+      <div class="offline-actions">
+        <a class="btn btn-primary" href="{% url 'home' %}">Go Home</a>
+        <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Support</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

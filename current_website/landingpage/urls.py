@@ -18,8 +18,26 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from landingpage import pwa
 
+admin.site.login_template = "admin/login_portal.html"
+admin.site.site_header = "Miranda Insights Admin"
+admin.site.site_title = "Miranda Insights Admin"
+admin.site.index_title = "Management Workspace"
 
 urlpatterns = [
     path(f"{settings.DJANGO_ADMIN_URL}/", admin.site.urls),
+    path("manifest.webmanifest", pwa.manifest, name="webmanifest"),
+    path("service-worker.js", pwa.service_worker, name="service_worker"),
+    path("offline/", pwa.offline, name="offline"),
+    path('', include('apps.accounts.urls')),
+    path('', include('apps.clients.urls')),
+    path('', include('apps.news.urls')),
 ]
+
+# Serve static files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=str(settings.BASE_DIR / 'static'))
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

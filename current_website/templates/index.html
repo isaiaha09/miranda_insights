@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome to Insights{% endblock %}
+
+{% block body_class %}landing{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <div class="hero-block">
+    <section class="hero-landing">
+      <div class="hero-inner">
+        <div class="hero-left">
+          <h1>Welcome to Miranda Insights</h1>
+
+          <div class="hero-summary">
+            <p class="hero-summary-lead">Data Insights that drive better decisions</p>
+            <p class="hero-summary-copy">We help school districts, organizations, and agencies turn complex data into clear, actionable insights.</p>
+            <p class="hero-summary-copy">Have we already discussed your project? If not, book a free consultation meeting with us below. That way, 
+              we can learn more about your goals and how we can assist you. For any additional questions, please fill out the contact form or email us directly at <a href="mailto:info@mirandainsights.com">support@mirandainsights.com</a>.
+            </p>
+          </div>
+
+          <p class="hero-cta">
+            <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact us</a>
+            <a class="btn btn-ghost" href="{% url 'signup' %}">Sign Up</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="booking-section" aria-labelledby="booking-heading">
+      <div class="booking-shell">
+        <div class="booking-copy">
+          <p class="booking-eyebrow">Consultation Scheduling</p>
+          <h2 id="booking-heading" class="booking-heading">Book time with the Miranda Insights team</h2>
+          <p class="booking-description">Choose a time that works for your team to discuss goals, project planning, or the next step in your data strategy.</p>
+        </div>
+        <div class="booking-embed-frame">
+          <iframe class="booking-embed" src="https://miranda-insights.circlecal.app/bus/miranda-insights/?embed=1&amp;key=AQuZAHZhDIvPpruyyHZCUpdYB3O2txvV" title="Miranda Insights booking calendar" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subscribe / Newsletter -->
+    <section class="subscribe" id="{{ newsletter_section_id|default:'newsletter-signup' }}" tabindex="-1">
+      <div class="container subscribe-inner">
+        <h3>Subscribe to our newsletter</h3>
+        <p>Get monthly insights and product updates delivered to your inbox.</p>
+        <div class="subscribe-messages" aria-live="polite" data-subscribe-messages {% if not messages %}hidden{% endif %}>
+          {% for message in messages %}
+            <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+        <form class="subscribe-form" action="{% url 'newsletter_subscribe' %}" method="post" data-subscribe-form data-section-id="{{ newsletter_section_id|default:'newsletter-signup' }}">
+          {% csrf_token %}
+          <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="features-section" aria-labelledby="what-we-do-heading">
+      <h2 id="what-we-do-heading" class="features-heading">What We Do</h2>
+      <div class="features">
+        <a class="card feature-card" href="{% url 'services' %}">Data Analytics</a>
+        <a class="card feature-card" href="{% url 'services' %}">Dashboard Development</a>
+        <a class="card feature-card" href="{% url 'services' %}">Program Evaluation</a>
+        <a class="card feature-card" href="{% url 'services' %}">Data Systems</a>
+      </div>
+    </section>
+
+    <section class="features-section" aria-labelledby="who-we-work-with-heading">
+      <h2 id="who-we-work-with-heading" class="features-heading">Who We Work With</h2>
+      <div class="features features-audience">
+        <div class="card feature-card feature-card-static">School Districts</div>
+        <div class="card feature-card feature-card-static">Government and Public Agencies</div>
+        <div class="card feature-card feature-card-static">Organizations and Nonprofits</div>
+      </div>
+    </section>
+
+    <section class="features-section" aria-labelledby="our-process-heading">
+      <h2 id="our-process-heading" class="features-heading">Our Process</h2>
+      <div class="features features-process">
+        <div class="card feature-card feature-card-static">1. Discovery</div>
+        <div class="card feature-card feature-card-static">2. Data Analysis</div>
+        <div class="card feature-card feature-card-static">3. Insight Development</div>
+        <div class="card feature-card feature-card-static">4. Reporting and Communication</div>
+      </div>
+    </section>
+
+    <div class="cta-grid">
+      <section class="cta-section" aria-labelledby="client-access-heading">
+        <div class="cta-panel">
+          <h2 id="client-access-heading" class="cta-heading">Client Access</h2>
+          <p class="cta-copy">Our clients receive secure access to a project dashboard where they can monitor progress, download reports, and much more.</p>
+          <p class="cta-actions">
+            <a class="btn btn-ghost" href="{% url 'dashboard' %}">Client Portal</a>
+            <a class="btn btn-primary" href="{% url 'signup' %}">Sign Up</a>
+          </p>
+        </div>
+      </section>
+
+      <section class="cta-section" aria-labelledby="contact-us-heading">
+        <div class="cta-panel cta-panel-contact">
+          <h2 id="contact-us-heading" class="cta-heading">Contact Us</h2>
+          <p class="cta-copy">Have a project in mind?</p>
+          <p class="cta-actions">
+            <a class="btn btn-primary" href="{% url 'contact_support' %}">Fill out this form</a>
+          </p>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/home.js' %}"></script>
+{% endblock %}

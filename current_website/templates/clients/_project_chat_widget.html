@@ -1,0 +1,121 @@
+<section class="project-chat-widget" data-project-chat-widget data-refresh-url="{{ chat_refresh_url }}" data-submit-url="{{ chat_submit_url }}">
+  <div class="project-chat-widget__header">
+    <div>
+      <p class="project-chat-widget__eyebrow">{{ chat_widget_subtitle }}</p>
+      <h2>{{ chat_widget_title }}</h2>
+    </div>
+    <div class="project-chat-widget__header-actions">
+      <button class="project-chat-widget__expand-button" type="button" data-chat-expand-toggle aria-expanded="false" aria-label="Expand chat">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4H4v4m0-4 6 6m6-6h4v4m0-4-6 6m6 6v4h-4m4 0-6-6M8 20H4v-4m0 4 6-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></svg>
+        <span data-chat-expand-label>Expand</span>
+      </button>
+      <span class="project-chat-widget__count">{{ chat_message_count }} messages</span>
+    </div>
+  </div>
+
+  {% if chat_notice %}
+    <p class="project-chat-widget__notice project-chat-widget__notice-{{ chat_notice_level }}">{{ chat_notice }}</p>
+  {% endif %}
+
+  <p class="project-chat-widget__disclaimer">Messages in this chat automatically delete after {{ chat_message_retention_days }} days. Save any updates or files you need before they expire.</p>
+
+  <form method="post" action="{{ chat_submit_url }}" class="project-chat-widget__controls" data-project-chat-form enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="project-chat-widget__field">
+      <label for="{{ project_message_form.project.id_for_label }}">Project</label>
+      {{ project_message_form.project }}
+      {% if project_message_form.project.errors %}<small class="project-chat-widget__error">{{ project_message_form.project.errors|striptags }}</small>{% endif %}
+    </div>
+
+    <div class="project-chat-widget__channel" role="log" aria-live="polite">
+      {% if chat_selected_project %}
+        {% for message in chat_messages %}
+          <div class="project-chat-widget__row {% if message.is_staff_message %}project-chat-widget__row-staff{% else %}project-chat-widget__row-client{% endif %}">
+            <article class="project-chat-widget__bubble {% if message.is_staff_message %}project-chat-widget__bubble-staff{% else %}project-chat-widget__bubble-client{% endif %}">
+              <div class="project-chat-widget__meta">
+                <strong>{{ message.sender_label }}</strong>
+                <span>{{ message.project.name }} | {{ message.created_at|date:"M j, Y g:i A" }}</span>
+              </div>
+              {% if message.body %}<p>{{ message.body }}</p>{% endif %}
+              {% if message.attachment_file or message.attachment_link %}
+                <div class="project-chat-widget__attachments">
+                  {% if message.attachment_file %}
+                    <a class="project-chat-widget__attachment-link" href="{% url 'project_message_attachment_download' message.pk %}">{{ message.attachment_file_name }}</a>
+                  {% endif %}
+                  {% if message.attachment_link %}
+                    <a class="project-chat-widget__attachment-link" href="{{ message.attachment_link }}" target="_blank" rel="noopener noreferrer">Open shared link</a>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </article>
+          </div>
+        {% empty %}
+          <p class="project-chat-widget__empty">No messages in this project yet. Start the conversation below.</p>
+        {% endfor %}
+      {% else %}
+        <p class="project-chat-widget__empty">Create or select a project to open the shared chat channel.</p>
+      {% endif %}
+    </div>
+
+    <div class="project-chat-widget__composer">
+      <div class="project-chat-widget__field">
+        <div class="project-chat-widget__message-head">
+          <label for="{{ project_message_form.body.id_for_label }}">Message</label>
+          <div class="project-chat-widget__utility-column">
+            <div class="project-chat-widget__utility-stack">
+              <div class="project-chat-widget__attachment-control">
+                {{ project_message_form.attachment_file }}
+                <label class="project-chat-widget__icon-button project-chat-widget__icon-button-icononly project-chat-widget__icon-button-attachment" for="{{ project_message_form.attachment_file.id_for_label }}" title="Attach a file" aria-label="Attach a file">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.5 6.5v8.75a4.25 4.25 0 1 1-8.5 0V5.75a2.75 2.75 0 1 1 5.5 0v8.5a1.25 1.25 0 1 1-2.5 0V7.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></svg>
+                  <span class="project-chat-widget__sr-only">Attach file</span>
+                </label>
+                <small class="project-chat-widget__file-name" data-file-name>{% if project_message_form.instance.attachment_file %}Attachment ready to send: {{ project_message_form.instance.attachment_file_name }}{% else %}No attachment selected yet{% endif %}</small>
+                {% if project_message_form.attachment_file.errors %}<small class="project-chat-widget__error">{{ project_message_form.attachment_file.errors|striptags }}</small>{% endif %}
+              </div>
+              <div class="project-chat-widget__link-control">
+                <button class="project-chat-widget__icon-button project-chat-widget__icon-button-icononly project-chat-widget__icon-button-link" type="button" data-link-toggle aria-expanded="{% if project_message_form.attachment_link.value %}true{% else %}false{% endif %}" title="Add a link" aria-label="Add a link">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10.5 13.5l3-3m-5.75 6.25-1.5 1.5a3.182 3.182 0 1 1-4.5-4.5l3.5-3.5a3.182 3.182 0 0 1 4.5 0m3.5 3.5a3.182 3.182 0 0 1 4.5 0 3.182 3.182 0 0 1 0 4.5l-3.5 3.5a3.182 3.182 0 1 1-4.5-4.5l1.5-1.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></svg>
+                  <span class="project-chat-widget__sr-only">Add link</span>
+                </button>
+                <div class="project-chat-widget__link-popover{% if project_message_form.attachment_link.value %} is-open{% endif %}" data-link-popover>
+                  <label class="project-chat-widget__link-popover-label" for="{{ project_message_form.attachment_link.id_for_label }}">Share a link</label>
+                  {{ project_message_form.attachment_link }}
+                </div>
+                <small class="project-chat-widget__link-status" data-link-status>{% if project_message_form.attachment_link.value %}Link ready to send{% else %}No link added yet{% endif %}</small>
+                {% if project_message_form.attachment_link.errors %}<small class="project-chat-widget__error">{{ project_message_form.attachment_link.errors|striptags }}</small>{% endif %}
+              </div>
+              <button class="project-chat-widget__icon-button project-chat-widget__icon-button-icononly project-chat-widget__icon-button-send-inline" type="submit" data-chat-submit-button-inline aria-label="Send message" title="Send message" {% if not chat_projects %}disabled{% endif %}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11.5 20 4l-4.5 16-3.25-5.25L4 11.5Zm8.25 3.25L20 4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"/></svg>
+                <span class="project-chat-widget__sr-only">Send message</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        {{ project_message_form.body }}
+        {% if project_message_form.body.errors %}<small class="project-chat-widget__error">{{ project_message_form.body.errors|striptags }}</small>{% endif %}
+      </div>
+      <div class="project-chat-widget__composer-footer">
+        <div class="project-chat-widget__actions project-chat-widget__actions-right">
+          {% if chat_is_admin %}
+            <button
+              class="btn btn-ghost project-chat-widget__clear-button"
+              type="submit"
+              name="chat_action"
+              value="clear_project_log"
+              data-chat-clear-button
+              data-confirm-message="This will permanently delete all messages, links, and attachments for the selected project. Continue?"
+              {% if not chat_selected_project or not chat_messages %}disabled{% endif %}
+            >
+              Clear message log
+            </button>
+          {% endif %}
+          <button class="btn btn-primary project-chat-widget__send-button" data-chat-submit-button type="submit" {% if not chat_projects %}disabled{% endif %}>
+            <span class="project-chat-widget__send-label">Send message</span>
+            <span class="project-chat-widget__send-spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+      {% if project_message_form.non_field_errors %}<small class="project-chat-widget__error">{{ project_message_form.non_field_errors|striptags }}</small>{% endif %}
+    </div>
+  </form>
+</section>

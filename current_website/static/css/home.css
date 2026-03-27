@@ -1,0 +1,679 @@
+/* Home / landing page specific styles */
+
+body.landing .site-main {
+    /* Keep a constant layout height and use transform to avoid scroll fighting */
+    padding-top: var(--header-height);
+    transform: translateY(calc(-1 * var(--landing-main-shift, var(--header-height))));
+    will-change: transform;
+}
+
+body.landing .site-header {
+    top: calc(100dvh - var(--header-height));
+}
+
+/* Hero / upper page sections */
+.hero {
+    padding: 3rem 0;
+    background: linear-gradient(180deg, var(--hero-start), var(--hero-end));
+}
+
+.hero h1 {
+    margin: 0 0 .5rem;
+    font-size: 3rem;
+    text-align: left;
+    line-height: 1.05;
+}
+
+/* Two-column layout wrapper: kept for home variants */
+.content-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.content-row .hero {
+    flex: 1 1 auto;
+    padding: 0;
+}
+
+.content-row .hero .container {
+    padding: 0;
+}
+
+/* Landing hero styles */
+.hero-block {
+    width: 100%;
+    background: transparent;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-landing {
+    width: 100%;
+    background: transparent;
+    color: var(--text);
+    padding: 3.5rem 0 1.5rem 0;
+}
+
+/* Landing: make room for the nav when it starts at the bottom */
+body.landing .hero-landing {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    padding-bottom: calc(1.5rem + var(--header-height));
+    transform: translateY(calc(-1 * var(--landing-hero-shift, 0px)));
+    will-change: transform;
+}
+
+.hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: clamp(1rem, 3vw, 2rem);
+}
+
+body.landing .hero-inner {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    max-width: 1400px;
+}
+
+body.landing .hero-left {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+body.landing .hero-right {
+    flex: 0 0 auto;
+    width: 100%;
+    justify-content: center;
+}
+
+body.landing .hero-info {
+    text-align: center;
+    max-width: 44rem;
+}
+
+body.landing .hero-cta {
+    justify-content: center;
+}
+
+.hero-left {
+    flex: 0 0 55%;
+    animation: fade-up 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.hero-left h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    margin: 0 0 1rem 0;
+    color: var(--text);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+}
+
+body.landing .hero-left h1 {
+    font-size: clamp(2.8rem, 6vw, 4.6rem);
+    max-width: 22ch;
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-right {
+    flex: 0 0 35%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fade-up 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.hero-search {
+    margin: 0 0 0.9rem 0;
+}
+
+.hero-search input[type="search"] {
+    width: min(100%, 34rem);
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+body.landing .hero-search {
+    width: min(100%, 80rem);
+    animation: fade-up 1750ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 650ms;
+}
+
+body.landing .hero-search input[type="search"] {
+    width: 100%;
+    max-width: none;
+    padding: 1rem 1.2rem;
+    font-size: 1.02rem;
+}
+
+.hero-search input[type="search"]:focus {
+    box-shadow: 0 0 0 3px var(--ring);
+}
+
+.hero-search input[type="search"]::placeholder {
+    color: var(--muted);
+}
+
+.hero-summary {
+    width: min(100%, 56rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    text-wrap: balance;
+}
+
+.hero-summary-lead,
+.hero-summary-copy {
+    margin: 0;
+}
+
+.hero-summary-lead {
+    color: var(--text);
+    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+.hero-summary-copy {
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.hero-cta {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.hero-cta .btn-primary {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    background-size: 160% 160%;
+    background-position: 0% 50%;
+    padding: .65rem 1.1rem;
+    border-radius: var(--radius-lg);
+    border: 0;
+}
+
+body.landing .hero-cta {
+    animation: fade-up 1750ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 780ms;
+}
+
+body.landing .hero-cta .btn-primary,
+body.landing .hero-cta .btn-ghost {
+    padding: 0.75rem 1.25rem;
+    font-weight: 700;
+}
+
+body.landing .hero-cta .btn-primary {
+    box-shadow: 0 14px 34px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+body.landing .hero-left {
+    animation: fade-up 1600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: 450ms;
+}
+
+body.landing .hero-right {
+    animation-delay: 950ms;
+}
+
+.hero-info {
+    color: var(--text);
+    max-width: 360px;
+    text-align: left;
+}
+
+.hero-info h3 {
+    margin: 0 0 .5rem;
+    font-size: 1.25rem;
+}
+
+.hero-info p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.subscribe {
+    
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+.booking-section {
+    padding: 0 1rem 2.75rem 1rem;
+}
+
+.booking-shell {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.4rem, 3vw, 2rem);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-lg) + 0.2rem);
+    background:
+        radial-gradient(760px circle at 10% -18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%),
+        radial-gradient(640px circle at 100% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 48%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, #05070c), color-mix(in srgb, var(--surface) 88%, #05070c));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.24);
+}
+
+.booking-copy {
+    width: min(100%, 44rem);
+    margin: 0 auto 1.35rem auto;
+    text-align: center;
+}
+
+.booking-eyebrow {
+    margin: 0 0 0.55rem 0;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--accent) 75%, var(--text));
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.booking-heading {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+    line-height: 1.08;
+}
+
+.booking-description {
+    margin: 0.8rem 0 0 0;
+    color: var(--muted);
+    line-height: 1.75;
+}
+
+.booking-embed-frame {
+    border-radius: calc(var(--radius-lg) - 0.1rem);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--border-soft));
+    background: color-mix(in srgb, var(--surface) 60%, #07101d);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.booking-embed {
+    display: block;
+    width: 100%;
+    min-height: 700px;
+    border: 0;
+    background: #ffffff;
+}
+
+.subscribe:focus,
+.subscribe:focus-visible {
+    outline: none;
+}
+
+.subscribe-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+    padding: 1rem 0;
+    padding-bottom: 100px;
+}
+
+.subscribe h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.subscribe p {
+    margin: 0 0 0.5rem 0;
+    color: var(--muted);
+}
+
+.subscribe-messages {
+    width: min(100%, 44rem);
+}
+
+.subscribe-message {
+    margin: 0.35rem 0;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    font-size: 0.92rem;
+}
+
+.subscribe-message-info {
+    border-color: color-mix(in srgb, #64748b 55%, var(--border-soft));
+}
+
+.subscribe-message-success {
+    border-color: color-mix(in srgb, #16a34a 55%, var(--border-soft));
+}
+
+.subscribe-message-error {
+    border-color: color-mix(in srgb, #dc2626 55%, var(--border-soft));
+}
+
+.subscribe-form {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.subscribe-form input[type="email"] {
+    padding: .75rem 1rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--input-border);
+    width: 320px;
+    max-width: 60vw;
+    background: var(--input-bg);
+    color: var(--text);
+    transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.subscribe-form input[type="email"]:focus {
+    box-shadow: 0 0 0 3px var(--ring);
+}
+
+.subscribe-form input[type="email"]::placeholder {
+    color: var(--muted);
+}
+
+.subscribe-form button[disabled] {
+    opacity: 0.75;
+    cursor: wait;
+}
+
+.features-section {
+    padding: 0 1rem 2.5rem 1rem;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+   
+}
+
+.features-heading {
+    margin: 0 0 1.25rem 0;
+    text-align: center;
+    color: var(--text);
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.1;
+}
+
+.features {
+    background: transparent;
+    padding: 1.25rem 1rem 2.5rem 1rem;
+    margin-top: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.features .card {
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+}
+
+.feature-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.75rem;
+    padding: 1rem;
+    color: var(--text);
+    text-decoration: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.feature-card-static {
+    cursor: default;
+}
+
+.features-audience {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.features-process {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.cta-section {
+    padding: 0 1rem 2.5rem 1rem;
+}
+
+.cta-panel {
+    height: 100%;
+    padding: clamp(1.6rem, 3vw, 2.4rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background:
+        radial-gradient(720px circle at 10% -18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 40%),
+        radial-gradient(620px circle at 100% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 46%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, #05070c), color-mix(in srgb, var(--surface) 88%, #05070c));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.24);
+    text-align: center;
+}
+
+.cta-panel-contact {
+    max-width: none;
+}
+
+.cta-heading {
+    margin: 0 0 0.75rem 0;
+    color: var(--text);
+    font-size: clamp(1.6rem, 3vw, 2.3rem);
+    line-height: 1.1;
+}
+
+.cta-copy {
+    max-width: 42rem;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.75;
+}
+
+.cta-actions {
+    margin: 1.35rem 0 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+    .booking-section {
+        padding-bottom: 2rem;
+    }
+
+    .booking-shell {
+        padding: 1.15rem;
+    }
+
+    .booking-copy {
+        margin-bottom: 1rem;
+    }
+
+    .booking-embed {
+        min-height: 780px;
+    }
+
+    .subscribe {
+        padding: 1.5rem 0 2rem 0;
+    }
+
+    .hero-inner {
+        flex-direction: column;
+        text-align: left;
+    }
+
+    .hero-left {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .hero-left h1 {
+        transform: none;
+    }
+
+    .hero-search input[type="search"] {
+        width: 100%;
+    }
+
+    .hero-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .hero-info {
+        text-align: left;
+        max-width: none;
+    }
+
+    .subscribe-form {
+        flex-direction: column;
+    }
+
+    .subscribe-form input[type="email"] {
+        width: 100%;
+    }
+
+    .features {
+        grid-template-columns: 1fr;
+    }
+
+    .features-section {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .cta-section {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .cta-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+@media (max-width: 800px) {
+    .content-row {
+        display: block;
+        padding: 0 1rem;
+    }
+
+    .booking-section {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .booking-heading {
+        font-size: clamp(1.6rem, 8vw, 2.2rem);
+    }
+
+    .booking-embed {
+        min-height: 700px;
+    }
+
+    /* Mobile landing: keep hero centered and avoid transform-created blank bands */
+    body.landing .hero-landing {
+        align-items: center;
+        min-height: 100svh;
+        transform: none;
+        padding-top: 0;
+    }
+
+    body.landing .hero-inner {
+        justify-content: center;
+        padding-top: clamp(1rem, 5vw, 2rem);
+    }
+
+    body.landing .site-main {
+        padding-top: 0;
+        transform: none;
+    }
+
+    body.landing .site-header {
+        top: calc(100svh - var(--header-height));
+    }
+
+    /* If landing header is at the bottom, open mobile drawer above it. */
+    body.landing #site-nav.menu-anchor-bottom .nav-center {
+        top: auto;
+        bottom: var(--header-height);
+        height: calc(100svh - var(--header-height));
+        justify-content: flex-end;
+        flex-direction: column;
+        padding-top: 0.9rem;
+        padding-bottom: 0.55rem;
+    }
+
+    .hero h1 {
+        font-size: 2.25rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-search input[type="search"],
+    .subscribe-form input[type="email"] {
+        transition: none;
+    }
+
+    .hero-left,
+    .hero-right,
+    .hero-search,
+    .hero-cta,
+    .hero-block::before {
+        animation: none;
+    }
+}

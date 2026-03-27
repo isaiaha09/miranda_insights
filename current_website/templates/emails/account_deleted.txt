@@ -1,0 +1,5 @@
+Your Miranda Insights account has been successfully deleted.
+
+All account data associated with this email has been permanently removed from Miranda Insights, except any active newsletter subscription tied to this email.
+
+If this was a mistake, please contact Miranda Insights at {{ support_email }}.

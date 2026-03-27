@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block body_class %}auth-page signup-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Account Access</p>
+        <h1>Create Your Account</h1>
+        <p>Set up your Insights account to access your dashboard, reports, and client resources.</p>
+      </div>
+
+      {% if messages %}
+        <div aria-live="polite" class="auth-messages">
+          {% for message in messages %}
+            <p class="auth-message auth-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+        <div aria-live="polite" class="auth-messages">
+          {% for error in form.non_field_errors %}
+            <p class="auth-message auth-message-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate class="auth-form">
+        {% csrf_token %}
+
+        <div class="auth-grid">
+          <div class="field-row">
+            <label for="id_first_name">First Name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<small class="field-error">{{ form.first_name.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_last_name">Last Name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<small class="field-error">{{ form.last_name.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row field-row-wide">
+            <label for="id_organization_name">Business/Organization Name</label>
+            {{ form.organization_name }}
+            <p class="field-help">Share the name of your company, school, agency, or organization.</p>
+            {% if form.organization_name.errors %}<small class="field-error">{{ form.organization_name.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row field-row-wide">
+            <label for="id_organization_description">Business/Organization Description</label>
+            {{ form.organization_description }}
+            <p class="field-help">Give a short description so Miranda Insights has the right organizational context.</p>
+            {% if form.organization_description.errors %}<small class="field-error">{{ form.organization_description.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_industry_type">Industry Type</label>
+            {{ form.industry_type }}
+            {% if form.industry_type.errors %}<small class="field-error">{{ form.industry_type.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_phone_number">Phone Number</label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}<small class="field-error">{{ form.phone_number.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_email">Email Address</label>
+            {{ form.email }}
+            {% if form.email.errors %}<small class="field-error">{{ form.email.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_username">Username</label>
+            {{ form.username }}
+            {% if form.username.errors %}<small class="field-error">{{ form.username.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_password1">Password</label>
+            {{ form.password1 }}
+            {% if form.password1.help_text %}<p class="field-help">{{ form.password1.help_text|safe }}</p>{% endif %}
+            {% if form.password1.errors %}<small class="field-error">{{ form.password1.errors|striptags }}</small>{% endif %}
+          </div>
+
+          <div class="field-row">
+            <label for="id_password2">Confirm Password</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}<small class="field-error">{{ form.password2.errors|striptags }}</small>{% endif %}
+          </div>
+        </div>
+
+        <div class="auth-form-actions">
+          {% if turnstile_enabled %}
+            <div class="turnstile-wrap">
+              <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-mobile-size="normal" data-desktop-size="flexible"></div>
+            </div>
+          {% endif %}
+
+          <div class="checkbox-row">
+            {{ form.subscribe_to_newsletter }}
+            <label for="id_subscribe_to_newsletter">Send me newsletter updates and product insights.</label>
+          </div>
+          {% if form.subscribe_to_newsletter.errors %}<small class="field-error auth-actions-error">{{ form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
+
+          <div class="checkbox-row">
+            {{ form.agree_to_terms }}
+            <label for="id_agree_to_terms">I agree to the <a href="{% url 'terms' %}">Terms &amp; Agreement</a> and <a href="{% url 'privacy' %}">Privacy Policy</a>.</label>
+          </div>
+          {% if form.agree_to_terms.errors %}<small class="field-error auth-actions-error">{{ form.agree_to_terms.errors|striptags }}</small>{% endif %}
+
+          <button class="btn btn-primary auth-submit" type="submit">Create account</button>
+        </div>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'login' %}">Already have an account? Login here</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+  {% if turnstile_enabled %}
+    <script>
+      function fitTurnstileWidgets() {
+        document.querySelectorAll('.turnstile-wrap').forEach(function (wrapper) {
+          var widget = wrapper.querySelector('.cf-turnstile');
+          var iframe = wrapper.querySelector('iframe');
+
+          if (!widget || !iframe) {
+            return;
+          }
+
+          widget.style.transform = '';
+          widget.style.transformOrigin = '';
+          wrapper.style.minHeight = '';
+
+          var isMobile = window.matchMedia('(max-width: 520px)').matches;
+          if (!isMobile) {
+            return;
+          }
+
+          var widgetWidth = iframe.offsetWidth || 300;
+          var widgetHeight = iframe.offsetHeight || 65;
+          var availableWidth = wrapper.clientWidth;
+
+          if (!availableWidth || availableWidth >= widgetWidth) {
+            wrapper.style.minHeight = widgetHeight + 'px';
+            return;
+          }
+
+          var scale = availableWidth / widgetWidth;
+          widget.style.transform = 'scale(' + scale + ')';
+          widget.style.transformOrigin = 'left top';
+          wrapper.style.minHeight = Math.ceil(widgetHeight * scale) + 'px';
+        });
+      }
+
+      function renderResponsiveTurnstile() {
+        if (!window.turnstile) {
+          return;
+        }
+
+        var isMobile = window.matchMedia('(max-width: 520px)').matches;
+        document.querySelectorAll('.cf-turnstile').forEach(function (element) {
+          if (element.dataset.widgetId) {
+            return;
+          }
+
+          var size = isMobile ? (element.dataset.mobileSize || 'compact') : (element.dataset.desktopSize || 'flexible');
+          var widgetId = window.turnstile.render(element, {
+            sitekey: element.dataset.sitekey,
+            size: size,
+          });
+
+          element.dataset.widgetId = widgetId;
+        });
+
+        window.requestAnimationFrame(fitTurnstileWidgets);
+      }
+
+      window.onloadTurnstileCallback = renderResponsiveTurnstile;
+      window.addEventListener('resize', fitTurnstileWidgets);
+    </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback" async defer></script>
+  {% endif %}
+{% endblock %}

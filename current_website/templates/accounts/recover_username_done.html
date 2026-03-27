@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Username Recovery Sent{% endblock %}
+
+{% block body_class %}auth-page recover-username-done-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card auth-card-narrow">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Account Recovery</p>
+        <h1>Check Your Email</h1>
+        <p>If an account exists for {{ email }}, a username reminder has been sent.</p>
+      </div>
+
+      <div class="auth-links">
+        <a href="{% url 'login' %}">Return to login</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

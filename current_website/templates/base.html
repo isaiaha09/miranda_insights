@@ -1,0 +1,125 @@
+{% load static %}
+<!doctype html>
+<html lang="en" class="dark-mode">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="application-name" content="Insights" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-navbutton-color" content="#0c111b" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Insights" />
+    <meta name="description" content="Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions." />
+    <meta name="theme-color" content="#0c111b" />
+
+    <title>{% block title %}Insights Website{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}" />
+    <link rel="manifest" href="{% url 'webmanifest' %}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'pwa/icon-180.png' %}" />
+    <link rel="icon" sizes="192x192" href="{% static 'pwa/icon-192.png' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'css/tailwind-build.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="dark-mode {% block body_class %}{% endblock %}">
+    <header class="site-header">
+      <nav class="nav" id="site-nav">
+        <div class="nav-left">
+          <a class="brand" href="{% url 'home' %}">Insights</a>
+        </div>
+
+        <div class="nav-center" id="nav-menu">
+          <a href="{% url 'about' %}">About</a>
+          <a href="{% url 'services' %}">Services</a>
+          <a href="{% url 'products' %}">Products</a>
+          <a href="{% url 'faq' %}">FAQ</a>
+        </div>
+
+        <div class="nav-right">
+          <a class="client-portal" href="{% url 'dashboard' %}">Client Portal</a>
+          {% if request.user.is_authenticated %}
+            <form class="auth-action-form" action="{% url 'logout' %}" method="post">
+              {% csrf_token %}
+              <button class="signup auth-action-button" type="submit">Logout</button>
+            </form>
+          {% else %}
+            <a class="signup" href="{% url 'signup' %}">Sign Up</a>
+          {% endif %}
+          <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Menu" aria-controls="nav-menu" aria-expanded="false">
+            <span class="hamburger" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <div class="nav-overlay" id="nav-overlay" hidden></div>
+
+    <main class="site-main">
+      {% block content %}{% endblock %}
+    </main>
+
+    <aside class="pwa-install-banner" id="pwa-install-banner" hidden aria-live="polite" aria-labelledby="pwa-install-title">
+      <div class="pwa-install-banner__media" aria-hidden="true">
+        <img src="{% static 'pwa/icon-192.png' %}" alt="" />
+      </div>
+      <div class="pwa-install-banner__content">
+        <p class="pwa-install-banner__eyebrow">Install Insights</p>
+        <h2 class="pwa-install-banner__title" id="pwa-install-title">Keep Insights one tap away.</h2>
+        <p class="pwa-install-banner__copy" id="pwa-install-copy">Install the web app for faster access to dashboards, updates, and support.</p>
+        <p class="pwa-install-banner__steps" id="pwa-install-steps" hidden></p>
+      </div>
+      <div class="pwa-install-banner__actions">
+        <button class="btn btn-primary" id="pwa-install-action" type="button">Install app</button>
+        <button class="pwa-install-banner__dismiss" id="pwa-install-dismiss" type="button" aria-label="Dismiss install prompt">Not now</button>
+      </div>
+    </aside>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-col footer-our-goal">
+          <h4>Our Goal</h4>
+          <p>Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions.</p>
+        </div>
+
+        <div class="footer-col footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="{% url 'about' %}">About</a></li>
+            <li><a href="{% url 'services' %}">Services</a></li>
+            <li><a href="{% url 'products' %}">Products</a></li>
+            <li><a href="{% url 'dashboard' %}">Client Portal</a></li>
+            <li><a href="{% url 'faq' %}">FAQ</a></li>
+            <li><a href="{% url 'privacy' %}">Privacy Policy</a></li>
+            <li><a href="{% url 'terms' %}">Terms of Service</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col footer-contact">
+          <h4>Contact</h4>
+          <p><a href="mailto:{{ footer_contact_email|urlencode }}">{{ footer_contact_label }}</a></p>
+          <p><a href="{% url 'contact_support' %}">Contact us</a></p>
+        </div>
+      </div>
+
+      <div class="container footer-bottom">
+        <p>Copyright &copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC - All Rights Reserved</p>
+      </div>
+    </footer>
+
+    <script>
+      window.insightsPwaConfig = {
+        serviceWorkerUrl: "{% url 'service_worker' %}",
+      };
+    </script>
+    <script src="{% static 'js/base.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

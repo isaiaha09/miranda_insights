@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Client Dashboard{% endblock %}
+
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/project-chat.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="dashboard-shell container">
+    {% if messages %}
+      <div class="dashboard-messages" aria-live="polite">
+        {% for message in messages %}
+          <p class="dashboard-message dashboard-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <header class="dashboard-hero">
+      <div>
+        <p class="dashboard-eyebrow">Client Portal</p>
+        <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
+        <p>Track project activity, review deliverables, and stay connected with the Insights team from one place.</p>
+      </div>
+      <div class="dashboard-actions">
+        <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact our team</a>
+      </div>
+    </header>
+
+    <section class="dashboard-grid dashboard-grid-single">
+      <article class="dashboard-panel dashboard-booking-panel" aria-labelledby="dashboard-booking-heading">
+        <div class="dashboard-panel-head dashboard-panel-head-stack">
+          <h2 id="dashboard-booking-heading">Schedule a working session</h2>
+          <span>Use the shared calendar to reserve time for project reviews, planning calls, or follow-up conversations.</span>
+        </div>
+        <div class="dashboard-booking-embed-wrap">
+          <iframe class="dashboard-booking-embed" src="https://miranda-insights.circlecal.app/bus/miranda-insights/?embed=1&amp;key=AQuZAHZhDIvPpruyyHZCUpdYB3O2txvV" title="Miranda Insights client scheduling calendar" loading="lazy"></iframe>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-project-layout">
+      <article class="dashboard-panel dashboard-project-panel dashboard-project-panel-active">
+        <div class="dashboard-panel-head">
+          <h2>Active Projects</h2>
+          <span>{{ active_projects|length }} active</span>
+        </div>
+        <div class="project-list dashboard-project-list dashboard-project-list-active">
+          {% for project in active_projects %}
+            <div class="project-card">
+              <h3>{{ project.name }}</h3>
+              <p class="project-meta">{{ project.consultant }} | {{ project.status }}</p>
+              <div class="progress-row">
+                <div class="progress-track" aria-hidden="true">
+                  <span class="progress-fill" style="width: {{ project.progress }}%"></span>
+                </div>
+                <span class="progress-value">{{ project.progress }}%</span>
+              </div>
+              <p class="project-note">Next: {{ project.next_step }}</p>
+              <p class="project-subtask-summary">{{ project.next_step_details }}</p>
+              <div class="project-subtasks-block">
+                <strong class="project-subtasks-title">Subtasks</strong>
+                <ul class="project-subtasks-list">
+                  {% for subtask in project.subtasks %}
+                    <li class="project-subtask-item">
+                      <div class="project-subtask-head">
+                        <span>{{ subtask.title }}</span>
+                        <span>{% if subtask.is_completed %}Done{% else %}Due {{ subtask.due_date }}{% endif %}</span>
+                      </div>
+                      <p>{{ subtask.details }}</p>
+                    </li>
+                  {% empty %}
+                    <li class="project-subtask-item project-subtask-item-empty">
+                      <p>No subtasks shared yet.</p>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <div class="dashboard-project-sidebar">
+        <article class="dashboard-panel dashboard-project-panel dashboard-project-panel-completed">
+          <div class="dashboard-panel-head">
+            <h2>Completed Projects</h2>
+            <span>{{ completed_projects|length }} completed</span>
+          </div>
+          <div class="project-list dashboard-project-list dashboard-project-list-completed">
+            {% for project in completed_projects %}
+              <div class="project-card project-card-complete">
+                <h3>{{ project.name }}</h3>
+                <p class="project-meta">{{ project.client }}</p>
+                <p class="project-note">Completed {{ project.completed_on }}</p>
+              </div>
+            {% empty %}
+              <p class="dashboard-empty-state">No completed projects yet.</p>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="dashboard-panel">
+          <div class="dashboard-panel-head">
+            <h2>Project Progress Updates</h2>
+            <span>{{ progress_updates|length }} updates</span>
+          </div>
+          <div class="dashboard-update-list">
+            {% for update in progress_updates %}
+              <article class="dashboard-update-card dashboard-update-card-{{ update.kind }}">
+                <div class="dashboard-update-head">
+                  <strong>{{ update.label }}</strong>
+                  <span>{{ update.project_name }} | {{ update.timestamp|date:"M j, Y g:i A" }}</span>
+                </div>
+                <h3>{{ update.title }}</h3>
+                <p>{{ update.body }}</p>
+              </article>
+            {% empty %}
+              <p class="dashboard-empty-state">No completed subtasks or project notes yet.</p>
+            {% endfor %}
+          </div>
+        </article>
+
+        <article class="dashboard-panel">
+          <div class="dashboard-panel-head">
+            <h2>Reports &amp; Deliverables</h2>
+          </div>
+          <div class="deliverable-list">
+            {% for report in reports %}
+              <article class="deliverable-card">
+                <strong>{{ report.title }}</strong>
+                {% if report.latest_note %}
+                  <span>{{ report.latest_note.content }}</span>
+                  <small class="deliverable-note-time">Updated {{ report.latest_note.created_at|date:"M j, Y g:i A" }}</small>
+                {% else %}
+                  <span>{{ report.description }}</span>
+                {% endif %}
+                {% if report.past_notes %}
+                  <details class="deliverable-history">
+                    <summary>Show past notes</summary>
+                    <div class="deliverable-history-list">
+                      {% for note in report.past_notes %}
+                        <article class="deliverable-history-note">
+                          <small>{{ note.created_at|date:"M j, Y g:i A" }}</small>
+                          <p>{{ note.content }}</p>
+                        </article>
+                      {% endfor %}
+                    </div>
+                  </details>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-single">
+      {{ project_chat_widget_html|safe }}
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-single">
+      <article class="dashboard-panel dashboard-settings-panel">
+        <div class="dashboard-panel-head">
+          <h2>Portal Settings</h2>
+        </div>
+        <p class="dashboard-contact-copy">Keep your business or organization details up to date for the client portal and admin workspace.</p>
+        <form method="post" class="dashboard-settings-form dashboard-settings-form-wide">
+          {% csrf_token %}
+          <input type="hidden" name="settings_action" value="client_profile" />
+          <div class="dashboard-form-grid">
+            <div class="dashboard-form-stack">
+              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
+                <label for="id_industry_type">Industry Type</label>
+                {{ client_profile_form.industry_type }}
+              </div>
+              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
+                <label for="id_organization_name">Business/Organization Name</label>
+                {{ client_profile_form.organization_name }}
+              </div>
+            </div>
+            <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-description">
+              <label for="id_organization_description">Business/Organization Description</label>
+              {{ client_profile_form.organization_description }}
+            </div>
+          </div>
+          {% if client_profile_form.industry_type.errors %}<small class="dashboard-field-error">{{ client_profile_form.industry_type.errors|striptags }}</small>{% endif %}
+          {% if client_profile_form.organization_name.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_name.errors|striptags }}</small>{% endif %}
+          {% if client_profile_form.organization_description.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_description.errors|striptags }}</small>{% endif %}
+          <div class="dashboard-form-actions dashboard-form-actions-right">
+            <button class="btn btn-primary" type="submit">Save business profile</button>
+          </div>
+        </form>
+
+        <div class="dashboard-settings-divider"></div>
+
+        <p class="dashboard-contact-copy">Manage your newsletter preference for account-related product updates and insights.</p>
+        <form method="post" class="dashboard-settings-form">
+          {% csrf_token %}
+          <input type="hidden" name="settings_action" value="newsletter" />
+          <div class="dashboard-checkbox-row">
+            {{ newsletter_form.subscribe_to_newsletter }}
+            <label for="id_subscribe_to_newsletter">Keep me subscribed to newsletter updates.</label>
+          </div>
+          {% if newsletter_form.subscribe_to_newsletter.errors %}<small class="dashboard-field-error">{{ newsletter_form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
+          <button class="btn btn-primary" type="submit">Save settings</button>
+        </form>
+
+        <div class="dashboard-settings-divider"></div>
+
+        <p class="dashboard-contact-copy">Secure your client portal login with an authenticator app.</p>
+        {% if two_factor_enabled %}
+          <div class="dashboard-status-pill">2FA enabled</div>
+          <form method="post" class="dashboard-settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="disable_2fa" />
+            <button class="btn btn-ghost" type="submit">Disable 2FA</button>
+          </form>
+        {% elif two_factor_pending %}
+          <div class="dashboard-setup-box">
+            <p class="dashboard-contact-copy">Add this setup key to your authenticator app, then enter the current 6-digit code to finish setup.</p>
+            {% if two_factor_qr_data_uri %}
+              <div class="dashboard-qr-wrap">
+                <img class="dashboard-qr-image" src="{{ two_factor_qr_data_uri }}" alt="QR code for authenticator app setup" />
+              </div>
+            {% endif %}
+            <p class="dashboard-setup-key">{{ two_factor_setup_key }}</p>
+          </div>
+          <form method="post" class="dashboard-settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="confirm_2fa_setup" />
+            <div class="dashboard-code-field">
+              <label for="id_otp_code">Authentication Code</label>
+              {{ two_factor_setup_form.otp_code }}
+            </div>
+            {% if two_factor_setup_form.otp_code.errors %}<small class="dashboard-field-error">{{ two_factor_setup_form.otp_code.errors|striptags }}</small>{% endif %}
+            <div class="dashboard-contact-actions">
+              <button class="btn btn-primary" type="submit">Enable 2FA</button>
+            </div>
+          </form>
+        {% else %}
+          <div class="dashboard-status-pill dashboard-status-pill-muted">2FA not enabled</div>
+          <form method="post" class="dashboard-settings-form">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="start_2fa_setup" />
+            <button class="btn btn-primary" type="submit">Set up 2FA</button>
+          </form>
+        {% endif %}
+
+        <div class="dashboard-settings-divider"></div>
+
+        <p class="dashboard-contact-copy">Review the full deletion summary, including project progress and message history, before scheduling your account for removal.</p>
+        <div class="dashboard-contact-actions">
+          <a class="btn btn-ghost dashboard-danger-button" href="{% url 'delete_account' %}">Review account deletion</a>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/project-chat.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,19 @@
+You have a new project message for {{ project_name }}.
+
+From: {{ sender_name }}
+Client: {{ client_name }}
+
+Message:
+{{ message_body }}
+
+{% if attachment_file_url %}Attachment:
+{{ attachment_file_name }}
+{{ attachment_file_url }}
+
+{% endif %}{% if attachment_link %}Shared link:
+{{ attachment_link }}
+
+{% endif %}
+
+Review the conversation in the portal:
+{{ portal_url }}

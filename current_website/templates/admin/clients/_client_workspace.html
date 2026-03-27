@@ -1,0 +1,175 @@
+<div class="client-workspace" data-client-workspace data-workspace-submit-url="{{ workspace_submit_url }}">
+  <div class="client-workspace__header client-workspace__header-main">
+    <div>
+      <p class="client-workspace__eyebrow">Client Workspace</p>
+      <h2>Projects, subtasks, and notes</h2>
+      {% if client.user and client.user.account_profile %}
+        <p class="client-workspace__notice">Industry: {{ client.user.account_profile.get_industry_type_display }}</p>
+      {% endif %}
+      {% if client.organization_name %}
+        <p class="client-workspace__notice">Organization: {{ client.organization_name }}</p>
+      {% endif %}
+      {% if client.organization_description %}
+        <p class="client-workspace__notice">{{ client.organization_description }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if workspace_notice %}
+    <p class="client-workspace__notice">{{ workspace_notice }}</p>
+  {% endif %}
+
+  <section class="client-workspace__section client-workspace__section-create">
+    <div class="client-workspace__header client-workspace__header-section">
+      <div>
+        <p class="client-workspace__eyebrow">Project Setup</p>
+        <h3>Create a project</h3>
+      </div>
+    </div>
+    <div class="client-workspace__card client-workspace__card-form">
+    <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+      <input type="hidden" name="workspace_action" value="create_project" />
+      <div class="client-workspace__grid">
+        {% for field in project_create_form %}
+          <div class="client-workspace__field {% if field.name == 'description' or field.name == 'consultant_custom_name' %}client-workspace__field-wide{% endif %}{% if field.name == 'consultant_custom_name' %} client-workspace__consultant-custom-field{% endif %}{% if field.name == 'consultant_custom_name' and project_create_form.consultant_choice.value != project_create_form.CONSULTANT_OPTION_CUSTOM_NAME %} is-hidden{% endif %}"
+            {% if field.name == 'consultant_custom_name' %}data-consultant-custom-field="true" style="{% if project_create_form.consultant_choice.value == project_create_form.CONSULTANT_OPTION_CUSTOM_NAME %}display:grid;{% else %}display:none;{% endif %}"{% endif %}>
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<small class="client-workspace__error">{{ field.errors|striptags }}</small>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="client-workspace__actions">
+        <button class="btn btn-primary client-workspace__button" type="button" data-client-workspace-submit>Create project</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="client-workspace__section client-workspace__section-subtask">
+    <div class="client-workspace__header client-workspace__header-section">
+      <div>
+        <p class="client-workspace__eyebrow">Task Planning</p>
+        <h3>Add a subtask</h3>
+      </div>
+    </div>
+    <div class="client-workspace__card client-workspace__card-form">
+    <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+      <input type="hidden" name="workspace_action" value="add_subtask" />
+      <div class="client-workspace__grid">
+        {% for field in subtask_form %}
+          {% if field.name == 'is_completed' %}
+            <div class="client-workspace__field client-workspace__field-checkbox client-workspace__field-wide">
+              <label class="client-workspace__checkbox-label" for="{{ field.id_for_label }}">
+                {{ field }}
+                <span>{{ field.label }}</span>
+              </label>
+              {% if field.errors %}<small class="client-workspace__error">{{ field.errors|striptags }}</small>{% endif %}
+            </div>
+          {% else %}
+            <div class="client-workspace__field {% if field.name == 'details' %}client-workspace__field-wide{% endif %}">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}<small class="client-workspace__error">{{ field.errors|striptags }}</small>{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="client-workspace__actions">
+        <button class="btn btn-ghost client-workspace__button" type="button" data-client-workspace-submit>Add subtask</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="client-workspace__section client-workspace__section-note">
+    <div class="client-workspace__header client-workspace__header-section">
+      <div>
+        <p class="client-workspace__eyebrow">Project Notes</p>
+        <h3>Add a note</h3>
+      </div>
+    </div>
+    <div class="client-workspace__card client-workspace__card-form">
+    <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+      <input type="hidden" name="workspace_action" value="add_note" />
+      <div class="client-workspace__grid">
+        {% for field in note_form %}
+          <div class="client-workspace__field {% if field.name == 'content' %}client-workspace__field-wide{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<small class="client-workspace__error">{{ field.errors|striptags }}</small>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="client-workspace__actions">
+        <button class="btn btn-ghost client-workspace__button" type="button" data-client-workspace-submit>Add note</button>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="client-workspace__section client-workspace__section-overview">
+    <div class="client-workspace__header client-workspace__header-section">
+      <div>
+        <p class="client-workspace__eyebrow">Project Overview</p>
+        <h3>Current projects</h3>
+      </div>
+    </div>
+    <div class="client-workspace__projects">
+    {% for entry in workspace_entries %}
+      {% with project=entry.project %}
+      <section class="client-workspace__card">
+        <div class="client-workspace__project-head">
+          <div>
+            <h3>{{ project.name }}</h3>
+            <p>Status: {{ project.get_status_display }} | Start: {{ project.start_date|default:"-" }} | End: {{ project.end_date|default:"-" }}</p>
+            <p>Consultant: {{ project.consultant_display }} | Progress: {{ project.progress_percentage }}%</p>
+          </div>
+          <a class="btn btn-primary client-workspace__editor-button" href="{{ entry.edit_url }}">Open full project editor</a>
+        </div>
+
+        <div class="client-workspace__columns">
+          <div>
+            <div class="client-workspace__section-head">
+              <h4>Subtasks</h4>
+            </div>
+            <ul class="client-workspace__list">
+              {% for subtask in project.subtasks.all %}
+                <li>
+                  <strong>{% if subtask.is_completed %}Done{% else %}Open{% endif %}</strong>
+                  <span>{{ subtask.title }}{% if subtask.details %} | {{ subtask.details }}{% endif %}</span>
+                </li>
+              {% empty %}
+                <li class="client-workspace__empty">No subtasks yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div>
+            <div class="client-workspace__section-head">
+              <h4>Notes</h4>
+            </div>
+            <ul class="client-workspace__list">
+              {% for note in project.notes.all|slice:':5' %}
+                <li>
+                  <span>{{ note.content }}</span>
+                </li>
+              {% empty %}
+                <li class="client-workspace__empty">No notes yet.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </section>
+      {% endwith %}
+    {% empty %}
+      <section class="client-workspace__card">
+        <p class="client-workspace__empty">No projects created for this client yet.</p>
+      </section>
+    {% endfor %}
+    </div>
+  </section>
+</div>

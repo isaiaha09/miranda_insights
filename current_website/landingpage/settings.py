@@ -9,9 +9,17 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+
+
+def env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,29 +27,40 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # load environment variables from .env at project root
 load_dotenv(str(BASE_DIR / '.env'))
 
+# load environment variables from .env at project root
+load_dotenv(str(BASE_DIR / '.env'))
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if host.strip()]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "unfold",
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # startapps:
+    'apps.accounts', 
+    'apps.chat',
+    'apps.clients',
+    'apps.news',
+   
+
 ]
 
 MIDDLEWARE = [
@@ -59,13 +78,14 @@ ROOT_URLCONF = 'landingpage.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'landingpage.context_processors.site_contact',
             ],
         },
     },
@@ -120,6 +140,92 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+
+DJANGO_ADMIN_URL=os.getenv('DJANGO_ADMIN_URL')
+
+# Project-level static and template folders
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Optional STATIC_ROOT for collectstatic (useful for deployments)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# Email (newsletter)
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', os.getenv('BREVO_SMTP_USER', ''))
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', os.getenv('BREVO_SMTP_PASSWORD', ''))
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS')
+EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Turnstile (for contact form and sign up pages)
+TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.getenv('TURNSTILE_SECRET_KEY', '')
+TURNSTILE_VERIFY_URL = os.getenv('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify')
+
+# Newsletter sender (use a dedicated address for outgoing newsletters)
+NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
+
+# Contact / support
+CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')
+SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', CONTACT_RECIPIENT)
+COMPANY_NOTIFICATION_EMAIL = os.getenv('COMPANY_NOTIFICATION_EMAIL', 'company@mirandainsights.com')
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', True)
+    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
+    SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', True)
+
+UNFOLD = {
+    "SITE_TITLE": "Miranda Insights Admin",
+    "SITE_HEADER": "Miranda Insights Admin",
+    "SITE_SUBHEADER": "Management Workspace",
+    "SITE_ICON": {
+        "light": f"/{STATIC_URL}pwa/icon-192.png",
+        "dark": f"/{STATIC_URL}pwa/icon-192.png",
+    },
+    "SITE_SYMBOL": "monitoring",
+    "STYLES": [
+        "css/admin-theme.css",
+    ],
+    "COLORS": {
+        "primary": {
+            "50": "#eff6ff",
+            "100": "#dbeafe",
+            "200": "#bfdbfe",
+            "300": "#93c5fd",
+            "400": "#60a5fa",
+            "500": "#3b82f6",
+            "600": "#2563eb",
+            "700": "#1d4ed8",
+            "800": "#1e40af",
+            "900": "#1e3a8a",
+            "950": "#172554",
+        },
+    },
+}
+
 
 # custom admin url from env, default to "admin"
 DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin").strip("/")

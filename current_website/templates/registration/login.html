@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block body_class %}auth-page login-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="auth-shell container">
+    <article class="auth-card auth-card-narrow">
+      <div class="auth-intro">
+        <p class="auth-eyebrow">Client Portal</p>
+        <h1>Login</h1>
+        <p>Enter your username and password to access your Insights account.</p>
+      </div>
+
+      {% if messages %}
+        <div class="auth-messages" aria-live="polite">
+          {% for message in messages %}
+            <p class="auth-message auth-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+        <div class="auth-messages" aria-live="polite">
+          {% for error in form.non_field_errors %}
+            <p class="auth-message auth-message-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate class="auth-form" data-login-submit-form>
+        {% csrf_token %}
+        <input type="hidden" name="pwa_mode" value="0" data-pwa-mode-input />
+
+        <div class="field-row">
+          <label for="id_username">Username</label>
+          {{ form.username }}
+          {% if form.username.errors %}<small class="field-error">{{ form.username.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <div class="field-row">
+          <label for="id_password">Password</label>
+          {{ form.password }}
+          {% if form.password.errors %}<small class="field-error">{{ form.password.errors|striptags }}</small>{% endif %}
+        </div>
+
+        <button class="btn btn-primary auth-submit" type="submit" data-login-submit-button>
+          <span class="auth-submit__label">Login</span>
+          <span class="auth-submit__spinner" aria-hidden="true"></span>
+        </button>
+      </form>
+
+      <div class="auth-links">
+        <a href="{% url 'recover_username' %}">Forgot username?</a>
+        <a href="{% url 'password_reset' %}">Forgot password?</a>
+        <a href="{% url 'signup' %}">Don't have an account yet? Sign up here</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

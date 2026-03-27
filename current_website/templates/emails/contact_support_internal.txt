@@ -1,0 +1,11 @@
+New support request submitted from website contact form.
+
+Name: {{ name }}
+Organization: {{ organization }}
+Email: {{ email }}
+{% if phone %}Phone: {{ phone }}
+{% endif %}{% if business_location %}Business Location: {{ business_location }}
+{% endif %}Subject: {{ subject }}
+
+Message:
+{{ message }}

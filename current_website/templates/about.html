@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About{% endblock %}
+
+{% block body_class %}about-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/marketing-pages.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <section class="marketing-shell container">
+    <header class="marketing-hero marketing-hero-wide">
+      <p class="marketing-eyebrow">About Miranda Insights</p>
+      <h1>Driven by data. Focused on practical impact.</h1>
+      <p class="marketing-lead">Miranda Insights exists to help teams turn complex information into reporting, communication, and decisions they can actually use. The goal is not just more data, but clearer direction.</p>
+    </header>
+
+    <section class="marketing-section marketing-section-split" aria-labelledby="about-overview-heading">
+      <article class="marketing-panel">
+        <p class="marketing-kicker">Overview</p>
+        <h2 id="about-overview-heading">What the work is built around</h2>
+        <p>Across the current site, the focus is consistent: support organizations that need data analysis, dashboards, evaluation, and stronger systems without turning the process into something harder to manage.</p>
+        <p>That same approach carries into the client experience, where project visibility, update history, and communication are already part of the platform.</p>
+      </article>
+      <article class="marketing-panel">
+        <p class="marketing-kicker">Who We Serve</p>
+        <h2>Best aligned with mission-driven teams</h2>
+        <ul class="marketing-list">
+          <li>School districts and education-focused organizations</li>
+          <li>Government and public agencies</li>
+          <li>Nonprofits and community-serving organizations</li>
+          <li>Other teams that need clear reporting and structured support</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="about-mission-heading">
+      <div class="card-grid card-grid-two-up">
+        <article class="marketing-card marketing-card-emphasis">
+          <p class="marketing-card-tag">Mission</p>
+          <h2 id="about-mission-heading">Make data work more accessible, actionable, and useful.</h2>
+          <p>Miranda Insights aims to make high-quality analysis and reporting more practical for organizations that need direction, visibility, and credible information to support decisions.</p>
+        </article>
+        <article class="marketing-card marketing-card-emphasis">
+          <p class="marketing-card-tag">Vision</p>
+          <h2>Build lasting value through data-informed partnership.</h2>
+          <p>The long-term goal is to keep building data-driven support for education and adjacent sectors in a way that remains clear, affordable, and adaptable as client needs evolve.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="about-values-heading">
+      <div class="marketing-section-head">
+        <p class="marketing-kicker">Core Values</p>
+        <h2 id="about-values-heading">Principles already reflected in the current product</h2>
+      </div>
+      <div class="card-grid card-grid-values">
+        <article class="marketing-card">
+          <h3>Transparency</h3>
+          <p>Clients should be able to see where work stands, what is changing, and what comes next.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Accessibility</h3>
+          <p>Analysis should be understandable and usable by the people making decisions, not only by technical specialists.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Impact</h3>
+          <p>Outputs should support action, not just documentation.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Innovation</h3>
+          <p>New tools, portal features, and product concepts should emerge from real client needs.</p>
+        </article>
+        <article class="marketing-card">
+          <h3>Partnership</h3>
+          <p>Strong work depends on responsive communication, visible progress, and shared context throughout a project.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="marketing-section" aria-labelledby="about-difference-heading">
+      <article class="marketing-banner">
+        <div>
+          <p class="marketing-kicker">What Makes Us Different</p>
+          <h2 id="about-difference-heading">A service model that connects analysis with delivery.</h2>
+          <ul class="marketing-list">
+            <li>Custom-built solutions instead of one-size-fits-all reporting</li>
+            <li>Scalable support for both smaller projects and ongoing work</li>
+            <li>Strong alignment with education and public-interest use cases</li>
+            <li>Client-first delivery through the portal, updates, and direct communication</li>
+          </ul>
+        </div>
+        <div class="marketing-actions marketing-actions-stacked">
+          <a class="btn btn-primary" href="{% url 'contact_support' %}">Work With Us</a>
+          <a class="btn btn-ghost" href="{% url 'services' %}">View Services</a>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

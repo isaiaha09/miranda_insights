@@ -1,0 +1,209 @@
+.newsletter-block-editor {
+  margin-top: 8px;
+}
+
+.newsletter-block-editor__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.newsletter-block-editor__panel,
+.newsletter-block-editor__preview {
+  background: #0d1726;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.newsletter-block-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.newsletter-block-editor__template-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.newsletter-block-editor__template-select {
+  min-width: 280px;
+  flex: 1 1 280px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #08101b;
+  color: #f4f8fd;
+  padding: 10px 12px;
+}
+
+.newsletter-block-editor__toolbar button,
+.newsletter-block-editor__block-actions button,
+.newsletter-block-editor__template-bar button {
+  border: 0;
+  border-radius: 999px;
+  background: #1d3a5a;
+  color: #eef4fb;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.newsletter-block-editor__list {
+  display: grid;
+  gap: 14px;
+}
+
+.newsletter-block-editor__block {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.newsletter-block-editor__block-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.newsletter-block-editor__block-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: #f5f9ff;
+}
+
+.newsletter-block-editor__block-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.newsletter-block-editor__fields {
+  display: grid;
+  gap: 10px;
+}
+
+.newsletter-block-editor__field {
+  display: grid;
+  gap: 6px;
+}
+
+.newsletter-block-editor__field label,
+.newsletter-block-editor__preview-title {
+  color: #d7e4f2;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.newsletter-block-editor__field input,
+.newsletter-block-editor__field select,
+.newsletter-block-editor__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #08101b;
+  color: #f4f8fd;
+  padding: 10px 12px;
+}
+
+.newsletter-block-editor__field textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.newsletter-block-editor__field small {
+  color: #8ea1b6;
+  line-height: 1.5;
+}
+
+.newsletter-block-editor__empty {
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 18px;
+  color: #a8b7c7;
+  text-align: center;
+}
+
+.newsletter-block-editor__preview-shell {
+  border-radius: 18px;
+  padding: 22px;
+  background: linear-gradient(180deg, #101927 0%, #08111d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.newsletter-block-editor__preview-content {
+  color: #dbe7f3;
+}
+
+.newsletter-block-editor__preview-content h1,
+.newsletter-block-editor__preview-content h2,
+.newsletter-block-editor__preview-content h3 {
+  color: #f7fbff;
+  margin: 0 0 12px 0;
+}
+
+.newsletter-block-editor__preview-content p,
+.newsletter-block-editor__preview-content ul,
+.newsletter-block-editor__preview-content blockquote,
+.newsletter-block-editor__preview-content figure,
+.newsletter-block-editor__preview-content .preview-button {
+  margin: 0 0 16px 0;
+}
+
+.newsletter-block-editor__preview-content figure {
+  text-align: center;
+}
+
+.newsletter-block-editor__preview-content img {
+  max-width: 100%;
+  border-radius: 14px;
+}
+
+.newsletter-block-editor__preview-content figcaption {
+  margin-top: 8px;
+  color: #9db0c3;
+  font-size: 13px;
+}
+
+.newsletter-block-editor__preview-content blockquote {
+  padding: 14px 16px;
+  border-left: 4px solid #7db5ff;
+  background: rgba(125, 181, 255, 0.08);
+}
+
+.newsletter-block-editor__preview-content .preview-button a {
+  display: inline-block;
+  padding: 12px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.newsletter-block-editor__preview-content .preview-button--primary a {
+  background: #7db5ff;
+  color: #07111f;
+}
+
+.newsletter-block-editor__preview-content .preview-button--secondary a {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #eef4fb;
+}
+
+@media (max-width: 1100px) {
+  .newsletter-block-editor__layout {
+    grid-template-columns: 1fr;
+  }
+}

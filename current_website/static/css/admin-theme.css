@@ -1,0 +1,27 @@
+/* Unfold admin branding aligned to the Miranda Insights site palette. */
+
+#site-name a,
+#site-name {
+  color: #f8fafc;
+}
+
+#site-name a:hover,
+#site-name a:focus-visible {
+  color: #93c5fd;
+}
+
+a:hover,
+a:focus-visible,
+.material-symbols-outlined:hover,
+.material-symbols-outlined:focus-visible {
+  color: #60a5fa;
+}
+
+[class*="text-primary-"] {
+  color: #60a5fa;
+}
+
+[class*="hover:text-primary-"]:hover,
+[class*="hover:text-primary-"]:focus-visible {
+  color: #93c5fd;
+}
