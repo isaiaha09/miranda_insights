@@ -80,6 +80,35 @@ class AccountDeletionRequest(models.Model):
 		return deletion_request
 
 
+class MobilePushDevice(models.Model):
+	PLATFORM_IOS = "ios"
+	PLATFORM_ANDROID = "android"
+	PLATFORM_UNKNOWN = "unknown"
+	PLATFORM_CHOICES = (
+		(PLATFORM_IOS, "iOS"),
+		(PLATFORM_ANDROID, "Android"),
+		(PLATFORM_UNKNOWN, "Unknown"),
+	)
+
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="mobile_push_devices")
+	token = models.CharField(max_length=255, unique=True)
+	platform = models.CharField(max_length=24, choices=PLATFORM_CHOICES, default=PLATFORM_UNKNOWN)
+	device_name = models.CharField(max_length=120, blank=True)
+	is_active = models.BooleanField(default=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	last_registered_at = models.DateTimeField(default=timezone.now)
+
+	class Meta:
+		verbose_name = "Mobile Push Device"
+		verbose_name_plural = "Mobile Push Devices"
+		ordering = ["-last_registered_at", "-updated_at"]
+
+	def __str__(self):
+		label = self.device_name or self.get_platform_display()
+		return f"{label} for {self.user.username}"
+
+
 def purge_expired_account_deletions(reference_time=None):
 	now = reference_time or timezone.now()
 	deletion_requests = list(AccountDeletionRequest.objects.filter(scheduled_for__lte=now).select_related("user"))

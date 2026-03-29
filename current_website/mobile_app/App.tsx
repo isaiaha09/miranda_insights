@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import * as Device from 'expo-device';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,7 @@ const WEB_LOADER_MIN_DURATION_MS = 2500;
 const MOBILE_LOGIN_PATH = '/mobile-api/login/';
 const MOBILE_USERNAME_RECOVERY_PATH = '/mobile-api/recover-username/';
 const MOBILE_PASSWORD_RESET_PATH = '/mobile-api/password-reset/';
+const MOBILE_PUSH_DEVICE_PATH = '/mobile-api/push-devices/';
 
 type NativeScreen = 'landing' | 'login' | 'twoFactor' | 'forgotUsername' | 'forgotPassword' | 'web';
 type NativeAppScreen = Exclude<NativeScreen, 'web'>;
@@ -55,6 +57,15 @@ type MobileApiResponse = {
   displayName?: string;
   fieldErrors?: Record<string, string[]>;
 };
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const MOBILE_WEBVIEW_CLEANUP_SCRIPT = `
   (function () {
@@ -107,6 +118,7 @@ export default function App() {
   const webViewRef = useRef<WebView>(null);
   const webLoaderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const webLoaderStartedAtRef = useRef<number>(0);
+  const pushRegistrationAttemptedRef = useRef(false);
   const drawerOffset = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const nativeScreenTranslate = useRef(new Animated.Value(0)).current;
   const previousNativeScreenTranslate = useRef(new Animated.Value(0)).current;
@@ -131,6 +143,7 @@ export default function App() {
   const [otpCode, setOtpCode] = useState('');
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [passwordResetEmail, setPasswordResetEmail] = useState('');
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -197,6 +210,47 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    function openNotificationRoute(routePath: string) {
+      const nextPath = routePath || '/dashboard/';
+      const nextUrl = buildRouteUrl(nextPath);
+      setCurrentUrl(nextUrl);
+      setCurrentTitle(getRouteForUrl(nextUrl)?.label || 'Client Portal');
+      setWebError(null);
+      beginWebLoader();
+      closeDrawer();
+      closeSearchSheet();
+      setNativeScreen('web');
+    }
+
+    function handleNotificationResponse(response: Notifications.NotificationResponse | null) {
+      const routePath = response?.notification?.request?.content?.data?.routePath;
+      openNotificationRoute(typeof routePath === 'string' ? routePath : '/dashboard/');
+    }
+
+    Notifications.getLastNotificationResponseAsync()
+      .then(handleNotificationResponse)
+      .catch(function () {
+        return null;
+      });
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (nativeScreen !== 'web' || pushRegistrationAttemptedRef.current) {
+      return;
+    }
+    pushRegistrationAttemptedRef.current = true;
+    ensurePushNotifications({ promptIfNeeded: true, showResultAlert: false }).catch(function () {
+      return null;
+    });
+  }, [nativeScreen]);
+
   function clearWebLoaderTimeout() {
     if (webLoaderTimeoutRef.current) {
       clearTimeout(webLoaderTimeoutRef.current);
@@ -253,6 +307,39 @@ export default function App() {
     closeSearchSheet();
   }
 
+  function syncPushTokenWithWebSession(token: string, action: 'register' | 'unregister' = 'register') {
+    const normalizedToken = String(token || '').trim();
+    if (!normalizedToken) {
+      return;
+    }
+
+    const deviceName = (Device.modelName || '').trim();
+    const syncUrl = buildRouteUrl(MOBILE_PUSH_DEVICE_PATH);
+    webViewRef.current?.injectJavaScript(`
+      (function () {
+        fetch(${JSON.stringify(syncUrl)}, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            action: ${JSON.stringify(action)},
+            token: ${JSON.stringify(normalizedToken)},
+            platform: ${JSON.stringify(Platform.OS)},
+            deviceName: ${JSON.stringify(deviceName)}
+          })
+        }).catch(function () {
+          return null;
+        });
+        return true;
+      })();
+      true;
+    `);
+  }
+
   function completeMobileLogout() {
     resetAuthFeedback();
     setUsername('');
@@ -276,25 +363,48 @@ export default function App() {
     webViewRef.current?.injectJavaScript(`
       (function () {
         var logoutForm = document.querySelector('form[action*="/logout/"]');
+        var mobilePushToken = ${JSON.stringify(expoPushToken)};
+        var pushSyncUrl = ${JSON.stringify(buildRouteUrl(MOBILE_PUSH_DEVICE_PATH))};
         if (!logoutForm) {
           window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-missing-form' }));
           return true;
         }
 
-        fetch(logoutForm.action, {
-          method: (logoutForm.method || 'POST').toUpperCase(),
-          body: new FormData(logoutForm),
-          credentials: 'same-origin'
-        })
-          .then(function (response) {
-            if (!response.ok) {
-              throw new Error('logout-failed');
-            }
-            window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-success' }));
-          })
-          .catch(function () {
-            window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-error' }));
+        var unregisterPromise = mobilePushToken
+          ? fetch(pushSyncUrl, {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              credentials: 'same-origin',
+              body: JSON.stringify({
+                action: 'unregister',
+                token: mobilePushToken,
+                platform: ${JSON.stringify(Platform.OS)}
+              })
+            }).catch(function () {
+              return null;
+            })
+          : Promise.resolve();
+
+        unregisterPromise.then(function () {
+          return fetch(logoutForm.action, {
+            method: (logoutForm.method || 'POST').toUpperCase(),
+            body: new FormData(logoutForm),
+            credentials: 'same-origin'
           });
+        })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('logout-failed');
+          }
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-success' }));
+        })
+        .catch(function () {
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-error' }));
+        });
 
         return true;
       })();
@@ -402,17 +512,58 @@ export default function App() {
   }
 
   async function requestNotifications() {
-    try {
-      const permission = await Notifications.requestPermissionsAsync();
+    await ensurePushNotifications({ promptIfNeeded: true, showResultAlert: true });
+  }
 
-      if (permission.status !== 'granted') {
-        Alert.alert('Notifications not enabled', 'Notification permission was not granted on this device.');
-        return;
+  async function ensurePushNotifications(options?: {
+    promptIfNeeded?: boolean;
+    showResultAlert?: boolean;
+  }) {
+    try {
+      if (!Device.isDevice) {
+        if (options?.showResultAlert) {
+          Alert.alert('Notifications unavailable', 'Push notifications require a physical mobile device.');
+        }
+        return null;
       }
 
-      Alert.alert('Notifications ready', 'Notification permission is enabled for the mobile shell.');
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.HIGH,
+          sound: 'default',
+        });
+      }
+
+      let permission = await Notifications.getPermissionsAsync();
+      if (!permission.granted && options?.promptIfNeeded !== false) {
+        permission = await Notifications.requestPermissionsAsync();
+      }
+
+      if (!permission.granted) {
+        if (options?.showResultAlert) {
+          Alert.alert('Notifications not enabled', 'Notification permission was not granted on this device.');
+        }
+        return null;
+      }
+
+      const tokenResponse = await Notifications.getExpoPushTokenAsync();
+      const nextToken = tokenResponse.data;
+      setExpoPushToken(nextToken);
+      if (nativeScreen === 'web') {
+        syncPushTokenWithWebSession(nextToken, 'register');
+      }
+
+      if (options?.showResultAlert) {
+        Alert.alert('Notifications enabled', 'Push notifications are ready for project messages and project updates.');
+      }
+
+      return nextToken;
     } catch (error) {
-      Alert.alert('Notifications unavailable', 'Notification permissions could not be requested in this session.');
+      if (options?.showResultAlert) {
+        Alert.alert('Notifications unavailable', 'Notification permissions or push registration could not be completed in this session.');
+      }
+      return null;
     }
   }
 
@@ -624,6 +775,9 @@ export default function App() {
   function handleLoadEnd() {
     finishWebLoader();
     webViewRef.current?.injectJavaScript(MOBILE_WEBVIEW_CLEANUP_SCRIPT);
+    if (expoPushToken) {
+      syncPushTokenWithWebSession(expoPushToken, 'register');
+    }
   }
 
   function handleNavigationStateChange(navigationState: {

@@ -8,6 +8,8 @@ from django.utils import timezone
 
 from landingpage.emailing import send_templated_email
 
+from .push_notifications import notify_project_client, truncate_push_body
+
 
 User = get_user_model()
 
@@ -211,28 +213,48 @@ class ProjectMessage(models.Model):
 
 	def send_notification(self):
 		recipient = (self.recipient_email or "").strip()
-		if not recipient:
-			return 0
 		portal_url = f"{getattr(settings, 'SITE_URL', 'http://localhost:8000').rstrip('/')}{reverse('dashboard')}"
-		return send_templated_email(
-			subject=f"New project message for {self.project.name}",
-			to=[recipient],
-			template_prefix="project_message_notification",
-			context={
-				"email_title": "Project Message Notification",
-				"heading": f"New message for {self.project.name}",
-				"subheading": f"{self.sender_label} sent a new project update.",
-				"project_name": self.project.name,
-				"client_name": self.project.client.contact_name,
-				"sender_name": self.sender_label,
-				"message_body": self.body,
-				"attachment_file_name": self.attachment_file_name,
-				"attachment_file_url": self.attachment_file_url,
-				"attachment_link": self.attachment_link,
-				"portal_url": portal_url,
-			},
-			from_email=settings.DEFAULT_FROM_EMAIL,
-		)
+		email_count = 0
+		if recipient:
+			email_count = send_templated_email(
+				subject=f"New project message for {self.project.name}",
+				to=[recipient],
+				template_prefix="project_message_notification",
+				context={
+					"email_title": "Project Message Notification",
+					"heading": f"New message for {self.project.name}",
+					"subheading": f"{self.sender_label} sent a new project update.",
+					"project_name": self.project.name,
+					"client_name": self.project.client.contact_name,
+					"sender_name": self.sender_label,
+					"message_body": self.body,
+					"attachment_file_name": self.attachment_file_name,
+					"attachment_file_url": self.attachment_file_url,
+					"attachment_link": self.attachment_link,
+					"portal_url": portal_url,
+				},
+				from_email=settings.DEFAULT_FROM_EMAIL,
+			)
+
+		push_count = 0
+		if self.is_staff_message:
+			message_body = truncate_push_body(
+				self.body,
+				fallback=(
+					f"{self.sender_label} shared a new file or update in {self.project.name}."
+					if self.has_attachment
+					else f"Open {self.project.name} to review the latest consultant reply."
+				),
+			)
+			push_count = notify_project_client(
+				self.project,
+				title=f"New message from {self.sender_label}",
+				body=message_body,
+				kind="project_message",
+				extra_data={"messageId": self.pk},
+			)
+
+		return email_count + push_count
 
 
 @receiver(post_delete, sender=ProjectMessage)

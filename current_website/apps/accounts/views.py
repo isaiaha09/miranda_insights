@@ -25,6 +25,8 @@ from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSub
 from landingpage.emailing import send_templated_email
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
+from .push_notifications import register_mobile_push_device, unregister_mobile_push_device
+
 from .forms import DeleteAccountForm, LoginForm, NewsletterPreferenceForm, SignupForm, StyledPasswordResetForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
 from .models import AccountDeletionRequest, purge_expired_account_deletions
 from .two_factor import build_totp_uri, generate_totp_secret, verify_totp
@@ -231,6 +233,45 @@ class MobilePasswordResetApiView(View):
 			{
 				"ok": True,
 				"message": f"If an account exists for {email}, a password reset link has been sent.",
+			}
+		)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MobilePushDeviceApiView(View):
+	def post(self, request, *args, **kwargs):
+		if not request.user.is_authenticated:
+			return _json_error("Authentication required.", status=401)
+
+		try:
+			payload = json.loads(request.body.decode("utf-8") or "{}")
+		except json.JSONDecodeError:
+			return _json_error("Invalid request payload.")
+
+		action = str(payload.get("action", "register") or "register").strip().lower()
+		token = str(payload.get("token", "")).strip()
+		platform = str(payload.get("platform", "")).strip().lower()
+		device_name = str(payload.get("deviceName", "")).strip()
+
+		if not token:
+			return _json_error("Push token is required.")
+
+		if action == "unregister":
+			updated_count = unregister_mobile_push_device(request.user, token=token)
+			return JsonResponse({"ok": True, "updated": updated_count, "action": "unregister"})
+
+		device = register_mobile_push_device(
+			request.user,
+			token=token,
+			platform=platform,
+			device_name=device_name,
+		)
+		return JsonResponse(
+			{
+				"ok": True,
+				"action": "register",
+				"platform": device.platform,
+				"deviceName": device.device_name,
 			}
 		)
 
