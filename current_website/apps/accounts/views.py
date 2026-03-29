@@ -23,7 +23,7 @@ from apps.clients.chat import render_project_chat_widget
 from apps.clients.forms import ClientPortalProfileForm, ProjectMessageForm
 from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 from landingpage.emailing import send_templated_email
-from landingpage.turnstile import is_turnstile_enabled_for_request, verify_turnstile_for_request
+from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
 from .forms import DeleteAccountForm, LoginForm, NewsletterPreferenceForm, SignupForm, StyledPasswordResetForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
 from .models import AccountDeletionRequest, purge_expired_account_deletions
@@ -600,6 +600,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 		pending_secret = self.request.session.get("pending_2fa_secret", "")
 		profile = self._get_account_profile()
 		client = self._get_client_record()
+		context["is_native_mobile_app"] = is_mobile_app_request(self.request)
 		context["newsletter_form"] = kwargs.get("newsletter_form") or NewsletterPreferenceForm(initial=self._get_newsletter_initial())
 		context["client_profile_form"] = kwargs.get("client_profile_form") or ClientPortalProfileForm(instance=client, profile=profile)
 		context["two_factor_setup_form"] = kwargs.get("two_factor_setup_form") or TwoFactorSetupForm()

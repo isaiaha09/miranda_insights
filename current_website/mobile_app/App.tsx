@@ -76,7 +76,7 @@ const MOBILE_WEBVIEW_CLEANUP_SCRIPT = `
       if (!style) {
         style = document.createElement('style');
         style.id = 'insights-mobile-webview-style';
-        style.textContent = '.site-header, .nav-overlay, .site-footer, footer.site-footer, .pwa-install-banner, .turnstile-wrap, .cf-turnstile, iframe[src*="challenges.cloudflare.com"]{display:none !important;visibility:hidden !important;height:0 !important;min-height:0 !important;overflow:hidden !important;} html, body{padding-top:0 !important;overscroll-behavior:none !important;background:#0c111b !important;} .site-main{padding-top:0 !important;}';
+        style.textContent = '.site-header, .nav-overlay, .site-footer, footer.site-footer, .pwa-install-banner, .turnstile-wrap, .cf-turnstile, iframe[src*="challenges.cloudflare.com"]{display:none !important;visibility:hidden !important;height:0 !important;min-height:0 !important;overflow:hidden !important;} html, body{padding-top:0 !important;overscroll-behavior:none !important;background:#0c111b !important;} .site-main{padding-top:0 !important;} .container{width:95% !important;max-width:none !important;margin-left:auto !important;margin-right:auto !important;padding-left:0 !important;padding-right:0 !important;}';
         (document.head || document.documentElement).appendChild(style);
       }
 
@@ -251,6 +251,73 @@ export default function App() {
     setWebError(null);
     closeDrawer();
     closeSearchSheet();
+  }
+
+  function completeMobileLogout() {
+    resetAuthFeedback();
+    setUsername('');
+    setPassword('');
+    setOtpCode('');
+    setRecoveryEmail('');
+    setPasswordResetEmail('');
+    setCurrentUrl(buildRouteUrl('/'));
+    setCurrentTitle('Insights');
+    setWebError(null);
+    setPageReady(false);
+    setShowWebLoader(false);
+    closeDrawer();
+    closeSearchSheet();
+    setNativeScreen('landing');
+  }
+
+  function performLogoutFromMobileApp() {
+    closeDrawer();
+    closeSearchSheet();
+    webViewRef.current?.injectJavaScript(`
+      (function () {
+        var logoutForm = document.querySelector('form[action*="/logout/"]');
+        if (!logoutForm) {
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-missing-form' }));
+          return true;
+        }
+
+        fetch(logoutForm.action, {
+          method: (logoutForm.method || 'POST').toUpperCase(),
+          body: new FormData(logoutForm),
+          credentials: 'same-origin'
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error('logout-failed');
+            }
+            window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-success' }));
+          })
+          .catch(function () {
+            window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'logout-error' }));
+          });
+
+        return true;
+      })();
+      true;
+    `);
+  }
+
+  function confirmLogoutFromMobileApp() {
+    Alert.alert(
+      'Log out?',
+      'Do you want to log out of your Miranda Insights account on this device?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: performLogoutFromMobileApp,
+        },
+      ]
+    );
   }
 
   function resetAuthFeedback() {
@@ -745,6 +812,10 @@ export default function App() {
     return <Ionicons color="#f8fafc" name="menu" size={22} />;
   }
 
+  function renderLogoutIcon() {
+    return <Ionicons color="#f8fafc" name="log-out-outline" size={20} />;
+  }
+
   function renderSearchIcon() {
     return <Ionicons color="#f8fafc" name={searchSheetOpen ? 'search' : 'search-outline'} size={20} />;
   }
@@ -1077,7 +1148,9 @@ export default function App() {
                 <Text numberOfLines={1} style={styles.headerTitle}>{headerLabel}</Text>
               </View>
 
-              <View style={styles.headerSpacer} />
+              <Pressable onPress={confirmLogoutFromMobileApp} style={styles.headerButton}>
+                {renderLogoutIcon()}
+              </Pressable>
             </View>
 
             <View style={styles.webViewContainer}>
@@ -1098,6 +1171,21 @@ export default function App() {
                   clearWebLoaderTimeout();
                   setShowWebLoader(false);
                   setWebError(event.nativeEvent.description);
+                }}
+                onMessage={(event) => {
+                  try {
+                    const payload = JSON.parse(event.nativeEvent.data);
+                    if (payload?.type === 'logout-success') {
+                      completeMobileLogout();
+                      return;
+                    }
+
+                    if (payload?.type === 'logout-missing-form' || payload?.type === 'logout-error') {
+                      Alert.alert('Logout unavailable', 'The logout action could not be completed from this screen.');
+                    }
+                  } catch {
+                    // Ignore unrelated WebView messages.
+                  }
                 }}
                 sharedCookiesEnabled
                 setSupportMultipleWindows={false}
@@ -1137,7 +1225,7 @@ export default function App() {
             <ScrollView contentContainerStyle={styles.drawerContent}>
               <View style={styles.drawerHeader}>
                 <Text style={styles.drawerEyebrow}>Miranda Insights Mobile</Text>
-                <Text style={styles.drawerTitle}>SIDE MENU</Text>
+                <Text style={styles.drawerTitle}>Menu</Text>
               </View>
 
               <View style={styles.drawerSection}>
@@ -1165,6 +1253,13 @@ export default function App() {
                   <Image source={{ uri: capturedImageUri }} style={styles.capturePreview} />
                 </View>
               ) : null}
+
+              <View style={styles.drawerFooter}>
+                <Pressable onPress={confirmLogoutFromMobileApp} style={styles.drawerLogoutButton}>
+                  <Ionicons color="#f8fafc" name="log-out-outline" size={18} />
+                  <Text style={styles.drawerLogoutText}>Log Out</Text>
+                </Pressable>
+              </View>
             </ScrollView>
           </Animated.View>
         </>
@@ -1450,14 +1545,16 @@ const styles = StyleSheet.create({
   },
   webViewContainer: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0c111b',
   },
   webView: {
     flex: 1,
+    backgroundColor: '#0c111b',
   },
   webViewHidden: {
     flex: 1,
     opacity: 0,
+    backgroundColor: '#0c111b',
   },
   loadingScreenOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1685,6 +1782,7 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   drawerContent: {
+    flexGrow: 1,
     paddingTop: 68,
     paddingHorizontal: 18,
     paddingBottom: 28,
@@ -1739,5 +1837,26 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 18,
     backgroundColor: '#0c111b',
+  },
+  drawerFooter: {
+    marginTop: 'auto',
+    paddingTop: 10,
+  },
+  drawerLogoutButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 180, 220, 0.2)',
+    backgroundColor: 'rgba(17, 35, 58, 0.9)',
+  },
+  drawerLogoutText: {
+    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

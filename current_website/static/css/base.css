@@ -618,6 +618,14 @@ input:focus-visible {
 
 /* Responsive: stack the columns on narrow screens */
 @media (max-width: 800px) {
+    .container,
+    .site-footer .container {
+        width: 95%;
+        max-width: none;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
     /* Mobile nav: right-side drawer */
     .nav {
         display: flex;
