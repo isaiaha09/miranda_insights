@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import requests
 from django.apps import apps
 from django.utils import timezone
+
+if TYPE_CHECKING:
+	from .models import MobilePushDevice
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +17,7 @@ EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send"
 EXPO_MAX_BATCH_SIZE = 100
 
 
-def get_mobile_push_device_model():
+def get_mobile_push_device_model() -> type[MobilePushDevice]:
 	return apps.get_model("accounts", "MobilePushDevice")
 
 
