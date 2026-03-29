@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from landingpage.emailing import send_templated_email
-from landingpage.turnstile import is_turnstile_enabled, verify_turnstile
+from landingpage.turnstile import is_turnstile_enabled_for_request, verify_turnstile_for_request
 
 from .forms import NewsletterSubscribeForm, SupportContactForm
 from .models import NewsletterSubscriber
@@ -142,10 +142,10 @@ def contact_support(request):
 	if request.method == "POST":
 		form = SupportContactForm(request.POST)
 		if form.is_valid():
-			turnstile_ok, _ = verify_turnstile((request.POST.get("cf-turnstile-response") or "").strip(), _client_ip(request))
+			turnstile_ok, _ = verify_turnstile_for_request(request, (request.POST.get("cf-turnstile-response") or "").strip(), _client_ip(request))
 			if not turnstile_ok:
 				form.add_error(None, "Security verification failed. Please try again.")
-				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled(), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
+				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled_for_request(request), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
 
 			name = form.cleaned_data["name"].strip()
 			organization = form.cleaned_data["organization"].strip()
@@ -237,11 +237,11 @@ def contact_support(request):
 				if settings.DEBUG:
 					error_message = f"{error_message} (Reason: {exc})"
 				messages.error(request, error_message)
-				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled(), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
+				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled_for_request(request), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
 
 			messages.success(request, "Thanks, your support request has been received. A confirmation message has been sent to your email.")
 			return redirect("contact_support")
 	else:
 		form = SupportContactForm()
 
-	return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled(), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
+	return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled_for_request(request), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})

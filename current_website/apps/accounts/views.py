@@ -1,24 +1,31 @@
 import base64
+import json
 from io import BytesIO
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import RedirectURLMixin
+from django.core import signing
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import FormView, TemplateView
+from django.views.decorators.csrf import csrf_exempt
 
 from apps.news.models import NewsletterSubscriber
 from apps.clients.chat import render_project_chat_widget
 from apps.clients.forms import ClientPortalProfileForm, ProjectMessageForm
 from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 from landingpage.emailing import send_templated_email
-from landingpage.turnstile import is_turnstile_enabled, verify_turnstile
+from landingpage.turnstile import is_turnstile_enabled_for_request, verify_turnstile_for_request
 
-from .forms import DeleteAccountForm, LoginForm, NewsletterPreferenceForm, SignupForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
+from .forms import DeleteAccountForm, LoginForm, NewsletterPreferenceForm, SignupForm, StyledPasswordResetForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
 from .models import AccountDeletionRequest, purge_expired_account_deletions
 from .two_factor import build_totp_uri, generate_totp_secret, verify_totp
 
@@ -48,7 +55,7 @@ def _client_ip(request):
 
 def _verify_turnstile_request(request):
 	token = (request.POST.get("cf-turnstile-response") or "").strip()
-	return verify_turnstile(token, _client_ip(request))
+	return verify_turnstile_for_request(request, token, _client_ip(request))
 
 
 def _recover_scheduled_deletion(request, user):
@@ -69,6 +76,191 @@ def _build_login_success_url(request, user, *, redirect_url=""):
 	if user.is_staff:
 		return reverse("admin:index")
 	return settings.LOGIN_REDIRECT_URL
+
+
+def _serialize_last_login(user):
+	if not user.last_login:
+		return ""
+	return timezone.localtime(user.last_login).isoformat()
+
+
+def _build_mobile_session_token(user, redirect_url):
+	return signing.dumps(
+		{
+			"user_id": user.pk,
+			"password": user.password,
+			"last_login": _serialize_last_login(user),
+			"redirect_url": redirect_url,
+		},
+		salt="insights.mobile-session-login",
+	)
+
+
+def _build_mobile_session_url(request, user, redirect_url):
+	token = _build_mobile_session_token(user, redirect_url)
+	return request.build_absolute_uri(f"{reverse('mobile_session_login')}?{urlencode({'token': token})}")
+
+
+def _json_error(message, *, field_errors=None, status=400, **extra):
+	payload = {"ok": False, "message": message}
+	if field_errors:
+		payload["fieldErrors"] = field_errors
+	payload.update(extra)
+	return JsonResponse(payload, status=status)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MobileSignInApiView(View):
+	def post(self, request, *args, **kwargs):
+		try:
+			payload = json.loads(request.body.decode("utf-8") or "{}")
+		except json.JSONDecodeError:
+			return _json_error("Invalid request payload.")
+
+		username = str(payload.get("username", "")).strip()
+		password = str(payload.get("password", ""))
+		otp_code = str(payload.get("otpCode", "")).strip()
+		redirect_url = str(payload.get("redirectUrl", "")).strip()
+
+		form = LoginForm(request=request, data={"username": username, "password": password})
+		if not form.is_valid():
+			field_errors = {key: [str(error) for error in errors] for key, errors in form.errors.items()}
+			message = form.non_field_errors()[0] if form.non_field_errors() else "Unable to sign in."
+			return _json_error(message, field_errors=field_errors)
+
+		user = form.get_user()
+		success_url = _build_login_success_url(request, user, redirect_url=redirect_url)
+		profile = getattr(user, "account_profile", None)
+		if profile and profile.two_factor_enabled and profile.two_factor_secret:
+			if not otp_code:
+				return JsonResponse(
+					{
+						"ok": False,
+						"requiresTwoFactor": True,
+						"message": "Enter your authentication code to continue.",
+					},
+					status=200,
+				)
+
+			if not verify_totp(profile.two_factor_secret, otp_code):
+				return _json_error(
+					"Enter a valid authentication code.",
+					field_errors={"otpCode": ["Enter a valid authentication code."]},
+				)
+
+		session_url = _build_mobile_session_url(request, user, success_url)
+		return JsonResponse(
+			{
+				"ok": True,
+				"sessionUrl": session_url,
+				"redirectUrl": success_url,
+				"requiresTwoFactor": False,
+				"displayName": user.get_full_name().strip() or user.username,
+			}
+		)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MobileUsernameRecoveryApiView(View):
+	def post(self, request, *args, **kwargs):
+		try:
+			payload = json.loads(request.body.decode("utf-8") or "{}")
+		except json.JSONDecodeError:
+			return _json_error("Invalid request payload.")
+
+		form = UsernameRecoveryForm(data={"email": str(payload.get("email", "")).strip()})
+		if not form.is_valid():
+			field_errors = {key: [str(error) for error in errors] for key, errors in form.errors.items()}
+			return _json_error("Enter a valid email address.", field_errors=field_errors)
+
+		email = form.cleaned_data["email"].strip().lower()
+		users = User.objects.filter(email__iexact=email).order_by("username")
+
+		if users.exists():
+			send_templated_email(
+				subject="Your Insights username",
+				to=[email],
+				template_prefix="username_recovery",
+				context={
+					"email_title": "Username Recovery",
+					"heading": "Username Recovery",
+					"subheading": "Here are the usernames connected to your email address.",
+					"usernames": [user.username for user in users],
+				},
+				from_email=settings.DEFAULT_FROM_EMAIL,
+			)
+
+		return JsonResponse(
+			{
+				"ok": True,
+				"message": f"If an account exists for {email}, a username reminder has been sent.",
+			}
+		)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MobilePasswordResetApiView(View):
+	def post(self, request, *args, **kwargs):
+		try:
+			payload = json.loads(request.body.decode("utf-8") or "{}")
+		except json.JSONDecodeError:
+			return _json_error("Invalid request payload.")
+
+		form = StyledPasswordResetForm(data={"email": str(payload.get("email", "")).strip()})
+		if not form.is_valid():
+			field_errors = {key: [str(error) for error in errors] for key, errors in form.errors.items()}
+			return _json_error("Enter a valid email address.", field_errors=field_errors)
+
+		form.save(
+			request=request,
+			use_https=request.is_secure(),
+			from_email=settings.DEFAULT_FROM_EMAIL,
+			email_template_name="registration/password_reset_email.txt",
+			html_email_template_name="registration/password_reset_email.html",
+			subject_template_name="registration/password_reset_subject.txt",
+			extra_email_context={
+				"brand_name": "Insights",
+				"company_name": "Miranda Insights",
+				"heading": "Reset Your Password",
+				"support_email": settings.SUPPORT_EMAIL,
+			},
+		)
+
+		email = form.cleaned_data["email"].strip().lower()
+		return JsonResponse(
+			{
+				"ok": True,
+				"message": f"If an account exists for {email}, a password reset link has been sent.",
+			}
+		)
+
+
+class MobileSessionLoginView(View):
+	def get(self, request, *args, **kwargs):
+		token = (request.GET.get("token") or "").strip()
+		if not token:
+			messages.error(request, "Your mobile sign-in link is missing.")
+			return redirect("login")
+
+		try:
+			payload = signing.loads(token, salt="insights.mobile-session-login", max_age=300)
+		except signing.BadSignature:
+			messages.error(request, "Your mobile sign-in link is invalid or expired.")
+			return redirect("login")
+
+		user = User.objects.filter(pk=payload.get("user_id")).first()
+		if not user or user.password != payload.get("password"):
+			messages.error(request, "Your mobile sign-in link is invalid or expired.")
+			return redirect("login")
+
+		if _serialize_last_login(user) != payload.get("last_login", ""):
+			messages.error(request, "This mobile sign-in link has already been used. Please sign in again.")
+			return redirect("login")
+
+		user.backend = "django.contrib.auth.backends.ModelBackend"
+		login(request, user)
+		_recover_scheduled_deletion(request, user)
+		return redirect(payload.get("redirect_url") or settings.LOGIN_REDIRECT_URL)
 
 
 class PortalContextMixin:
@@ -420,7 +612,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 		)
 		context.update(
 			{
-				"turnstile_enabled": is_turnstile_enabled(),
+				"turnstile_enabled": is_turnstile_enabled_for_request(self.request),
 				"turnstile_site_key": settings.TURNSTILE_SITE_KEY,
 				"two_factor_enabled": bool(profile and profile.two_factor_enabled),
 				"two_factor_pending": bool(pending_secret),
@@ -486,7 +678,7 @@ class SignupView(FormView):
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
-		context["turnstile_enabled"] = is_turnstile_enabled()
+		context["turnstile_enabled"] = is_turnstile_enabled_for_request(self.request)
 		context["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY
 		return context
 

@@ -155,6 +155,89 @@ class LoginViewTests(TestCase):
 		self.assertRedirects(response, reverse("admin:index"), fetch_redirect_response=False)
 
 
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class MobileAuthApiTests(TestCase):
+	def test_mobile_login_api_returns_session_bridge_url(self):
+		user = User.objects.create_user(username="mobileuser", email="mobile@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1200")
+
+		response = self.client.post(
+			reverse("mobile_login_api"),
+			data="{\"username\": \"mobileuser\", \"password\": \"correct-pass-123\"}",
+			content_type="application/json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		payload = response.json()
+		self.assertTrue(payload["ok"])
+		self.assertIn(reverse("mobile_session_login"), payload["sessionUrl"])
+
+	def test_mobile_session_login_logs_user_in(self):
+		user = User.objects.create_user(username="bridgeuser", email="bridge@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1201")
+
+		api_response = self.client.post(
+			reverse("mobile_login_api"),
+			data="{\"username\": \"bridgeuser\", \"password\": \"correct-pass-123\"}",
+			content_type="application/json",
+		)
+		payload = api_response.json()
+		session_response = self.client.get(payload["sessionUrl"], follow=False)
+
+		self.assertEqual(session_response.status_code, 302)
+		self.assertEqual(int(self.client.session.get("_auth_user_id")), user.pk)
+
+	@patch("apps.accounts.views.verify_totp", return_value=False)
+	def test_mobile_login_api_requires_valid_2fa_code(self, mocked_verify_totp):
+		user = User.objects.create_user(username="mobile2fa", email="mobile2fa@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(
+			user=user,
+			industry_type=AccountProfile.INDUSTRY_OTHER,
+			phone_number="555-1202",
+			two_factor_enabled=True,
+			two_factor_secret="BASE32SECRET",
+		)
+
+		response = self.client.post(
+			reverse("mobile_login_api"),
+			data="{\"username\": \"mobile2fa\", \"password\": \"correct-pass-123\"}",
+			content_type="application/json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTrue(response.json()["requiresTwoFactor"])
+		self.assertFalse(mocked_verify_totp.called)
+
+	def test_mobile_recover_username_api_sends_matching_email(self):
+		User.objects.create_user(username="recovermobile", email="recovermobile@example.com", password="correct-pass-123")
+
+		response = self.client.post(
+			reverse("mobile_recover_username_api"),
+			data="{\"email\": \"recovermobile@example.com\"}",
+			content_type="application/json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTrue(response.json()["ok"])
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["recovermobile@example.com"])
+
+	def test_mobile_password_reset_api_sends_reset_email(self):
+		user = User.objects.create_user(username="resetmobile", email="resetmobile@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1203")
+
+		response = self.client.post(
+			reverse("mobile_password_reset_api"),
+			data="{\"email\": \"resetmobile@example.com\"}",
+			content_type="application/json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTrue(response.json()["ok"])
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["resetmobile@example.com"])
+
+
 class StaffUserAdminTests(TestCase):
 	def test_users_admin_only_lists_staff_accounts(self):
 		staff_user = User.objects.create_user(

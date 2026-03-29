@@ -1,7 +1,20 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from .views import DashboardView, DeleteAccountView, LoginView, PrivacyView, SignupView, TermsView, TwoFactorChallengeView, UsernameRecoveryView
+from .views import (
+    DashboardView,
+    DeleteAccountView,
+    LoginView,
+    MobilePasswordResetApiView,
+    MobileSessionLoginView,
+    MobileSignInApiView,
+    MobileUsernameRecoveryApiView,
+    PrivacyView,
+    SignupView,
+    TermsView,
+    TwoFactorChallengeView,
+    UsernameRecoveryView,
+)
 from .forms import StyledPasswordResetForm
 
 
@@ -11,6 +24,10 @@ urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),
     path("login/2fa/", TwoFactorChallengeView.as_view(), name="login_2fa"),
+    path("mobile-api/login/", MobileSignInApiView.as_view(), name="mobile_login_api"),
+    path("mobile-api/recover-username/", MobileUsernameRecoveryApiView.as_view(), name="mobile_recover_username_api"),
+    path("mobile-api/password-reset/", MobilePasswordResetApiView.as_view(), name="mobile_password_reset_api"),
+    path("mobile/session-login/", MobileSessionLoginView.as_view(), name="mobile_session_login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("recover-username/", UsernameRecoveryView.as_view(), name="recover_username"),
     path(

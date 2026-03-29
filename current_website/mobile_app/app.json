@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Insights Mobile",
+    "slug": "insights-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "insightsmobile",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0c111b"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mirandainsights.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0c111b",
+        "foregroundImage": "./assets/icon.png",
+        "monochromeImage": "./assets/icon.png"
+      },
+      "package": "com.mirandainsights.mobile",
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "projectType": "django-webview-shell"
+    }
+  }
+}
