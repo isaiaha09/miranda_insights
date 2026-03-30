@@ -156,6 +156,18 @@
     return cookieValue;
   }
 
+  function getFormCsrfToken(container) {
+    var csrfField = container ? container.querySelector('input[name="csrfmiddlewaretoken"]') : null;
+    if (csrfField && csrfField.value) {
+      return csrfField.value;
+    }
+    var pageCsrfField = document.querySelector('form input[name="csrfmiddlewaretoken"]');
+    if (pageCsrfField && pageCsrfField.value) {
+      return pageCsrfField.value;
+    }
+    return "";
+  }
+
   function buildUrl(baseUrl, projectId) {
     var url = new URL(baseUrl, window.location.origin);
     if (projectId) {
@@ -287,9 +299,18 @@
 
     function buildWorkspaceFormData(container) {
       var formData = new FormData();
+      var csrfToken = getFormCsrfToken(container);
+
+      if (csrfToken) {
+        formData.append("csrfmiddlewaretoken", csrfToken);
+      }
 
       container.querySelectorAll("input, select, textarea").forEach(function (field) {
         if (!field.name || field.disabled) {
+          return;
+        }
+
+        if (field.name === "csrfmiddlewaretoken") {
           return;
         }
 
@@ -329,24 +350,60 @@
         if (submitButton) {
           submitButton.disabled = true;
         }
-        var response = await fetch(container.dataset.formAction, {
-          method: "POST",
-          body: buildWorkspaceFormData(container),
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-            "X-CSRFToken": getCookie("csrftoken") || "",
-          },
-          credentials: "same-origin",
-        });
-        if (!response.ok) {
+        var requestHeaders = {
+          "X-Requested-With": "XMLHttpRequest",
+        };
+        try {
+          var response = await fetch(container.dataset.formAction, {
+            method: "POST",
+            body: buildWorkspaceFormData(container),
+            headers: requestHeaders,
+            credentials: "same-origin",
+          });
+          if (!response.ok) {
+            var errorSummary = "Unknown error";
+            var contentType = response.headers.get("content-type") || "";
+            if (contentType.indexOf("application/json") !== -1) {
+              var errorJson = await response.json();
+              if (errorJson && errorJson.details) {
+                errorSummary = errorJson.details.reason || errorJson.error || errorSummary;
+                if (typeof errorJson.details.has_csrf_cookie !== "undefined") {
+                  errorSummary += " | cookie=" + errorJson.details.has_csrf_cookie + "(" + errorJson.details.csrf_cookie_length + ")";
+                  errorSummary += " form=" + errorJson.details.form_token_length;
+                  errorSummary += " header=" + errorJson.details.header_token_length;
+                }
+              }
+            } else {
+              var errorText = await response.text();
+              var errorTitleMatch = errorText.match(/<title>([^<]+)<\/title>/i);
+              var errorHeadingMatch = errorText.match(/<h1>([^<]+)<\/h1>/i);
+              var errorReasonMatch = errorText.match(/<p>([^<]+)<\/p>/i);
+              errorSummary = errorReasonMatch ? errorReasonMatch[1] : (errorHeadingMatch ? errorHeadingMatch[1] : (errorTitleMatch ? errorTitleMatch[1] : errorSummary));
+            }
+            if (submitButton) {
+              submitButton.disabled = false;
+            }
+            window.alert("The project workspace request could not be completed. Status " + response.status + ": " + errorSummary);
+            return;
+          }
+          replaceWorkspace(workspace, await response.text());
+        } catch (error) {
           if (submitButton) {
             submitButton.disabled = false;
           }
+          window.console.error("Client workspace request failed", error);
+          window.alert("The project workspace request failed to send. Refresh the page and try again.");
           return;
         }
-        replaceWorkspace(workspace, await response.text());
       });
     });
+  }
+
+  function initializeProjectChatUi() {
+    document.querySelectorAll("[data-project-chat-widget]").forEach(initWidget);
+    document.querySelectorAll("[data-client-workspace]").forEach(initWorkspace);
+    getMobileCloseButton();
+    setKeyboardInset(0);
   }
 
   function initWidget(widget) {
@@ -446,12 +503,11 @@
     scheduleRefresh(widget);
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll("[data-project-chat-widget]").forEach(initWidget);
-    document.querySelectorAll("[data-client-workspace]").forEach(initWorkspace);
-    getMobileCloseButton();
-    setKeyboardInset(0);
-  });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeProjectChatUi);
+  } else {
+    initializeProjectChatUi();
+  }
 
   window.addEventListener("resize", function () {
     if (isMobileChatViewport()) {

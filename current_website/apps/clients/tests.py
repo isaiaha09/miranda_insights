@@ -7,12 +7,14 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 import os
+import re
 import tempfile
 
 from apps.accounts.models import AccountProfile
 from .admin import ClientAdmin, ProjectAdmin, ProjectMessageAdmin, ProjectNoteInline, ProjectSubtaskInline
 from .forms import AdminProjectCreateForm
 from .models import Client, Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
+from .workspace import render_client_workspace
 
 
 User = get_user_model()
@@ -349,6 +351,48 @@ class ClientProjectTests(TestCase):
 
 		self.assertEqual(client_record.pk, self.client_record.pk)
 		self.assertEqual(Client.objects.filter(user=self.client_user).count(), 1)
+
+	def test_client_admin_change_form_renders_valid_workspace_csrf_token(self):
+		request = RequestFactory().get(reverse("admin:clients_client_workspace", args=[self.client_record.pk]))
+		request.user = self.staff_user
+
+		workspace = render_client_workspace(request, self.client_record)
+
+		match = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', workspace)
+		self.assertIsNotNone(match)
+		token = match.group(1)
+		self.assertNotEqual(token, "NOTPROVIDED")
+		self.assertIn(len(token), (32, 64))
+
+	def test_client_admin_workspace_create_project_accepts_form_csrf_token_without_header(self):
+		csrf_client = self.client_class(enforce_csrf_checks=True)
+		csrf_client.force_login(self.staff_user)
+
+		workspace_url = reverse("admin:clients_client_workspace", args=[self.client_record.pk])
+		get_response = csrf_client.get(workspace_url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+
+		self.assertEqual(get_response.status_code, 200)
+		match = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', get_response.content.decode())
+		self.assertIsNotNone(match)
+
+		post_response = csrf_client.post(
+			workspace_url,
+			{
+				"csrfmiddlewaretoken": match.group(1),
+				"workspace_action": "create_project",
+				"name": "CSRF Form Project",
+				"status": Project.STATUS_PENDING,
+				"start_date": "2025-04-01",
+				"end_date": "2025-04-30",
+				"consultant_choice": self.staff_user.pk,
+				"consultant_custom_name": "",
+				"description": "Created through an AJAX form CSRF test.",
+			},
+			HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+		)
+
+		self.assertEqual(post_response.status_code, 200)
+		self.assertTrue(Project.objects.filter(client=self.client_record, name="CSRF Form Project").exists())
 
 	def test_client_admin_workspace_can_create_project(self):
 		self.client.force_login(self.staff_user)

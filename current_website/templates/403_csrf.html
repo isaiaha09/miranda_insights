@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>403 Forbidden</title>
+</head>
+<body>
+  <h1>403 Forbidden</h1>
+  <p>{{ details.reason }}</p>
+  {% if show_debug %}
+    <ul>
+      <li>Path: {{ details.path }}</li>
+      <li>Method: {{ details.method }}</li>
+      <li>Has csrftoken cookie: {{ details.has_csrf_cookie }}</li>
+      <li>Cookie token length: {{ details.csrf_cookie_length }}</li>
+      <li>Form token length: {{ details.form_token_length }}</li>
+      <li>Header token length: {{ details.header_token_length }}</li>
+    </ul>
+  {% endif %}
+</body>
+</html>

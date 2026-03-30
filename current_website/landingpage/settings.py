@@ -55,6 +55,7 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in configured_csrf_trusted_origins.split(',')
     if origin.strip()
 ]
+CSRF_FAILURE_VIEW = 'landingpage.csrf.csrf_failure'
 
 
 # Application definition

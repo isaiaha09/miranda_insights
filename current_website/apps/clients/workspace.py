@@ -1,3 +1,4 @@
+from django.middleware.csrf import get_token
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -23,6 +24,7 @@ def render_client_workspace(request, client, *, project_form=None, subtask_form=
 		"subtask_form": subtask_form,
 		"note_form": note_form,
 		"workspace_entries": workspace_entries,
+		"workspace_csrf_token": get_token(request) if request is not None else "",
 		"workspace_submit_url": reverse("admin:clients_client_workspace", args=[client.pk]),
 	}
 	return render_to_string("admin/clients/_client_workspace.html", context, request=request)

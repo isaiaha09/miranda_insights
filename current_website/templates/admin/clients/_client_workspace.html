@@ -28,7 +28,7 @@
     </div>
     <div class="client-workspace__card client-workspace__card-form">
     <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
-      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+      {% csrf_token %}
       <input type="hidden" name="workspace_action" value="create_project" />
       <div class="client-workspace__grid">
         {% for field in project_create_form %}
@@ -56,7 +56,7 @@
     </div>
     <div class="client-workspace__card client-workspace__card-form">
     <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
-      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+      {% csrf_token %}
       <input type="hidden" name="workspace_action" value="add_subtask" />
       <div class="client-workspace__grid">
         {% for field in subtask_form %}
@@ -93,7 +93,7 @@
     </div>
     <div class="client-workspace__card client-workspace__card-form">
     <div data-client-workspace-form data-form-action="{{ workspace_submit_url }}">
-      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+      {% csrf_token %}
       <input type="hidden" name="workspace_action" value="add_note" />
       <div class="client-workspace__grid">
         {% for field in note_form %}

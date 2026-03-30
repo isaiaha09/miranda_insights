@@ -1235,6 +1235,7 @@ export default function App() {
 
   function reloadPage() {
     setWebError(null);
+    beginWebLoader();
     webViewRef.current?.reload();
   }
 
@@ -1635,6 +1636,10 @@ export default function App() {
     return <Ionicons color="#f8fafc" name="log-out-outline" size={20} />;
   }
 
+  function renderRefreshIcon() {
+    return <Ionicons color="#f8fafc" name="refresh-outline" size={20} />;
+  }
+
   function renderSearchIcon() {
     return <Ionicons color="#f8fafc" name={searchSheetOpen ? 'search' : 'search-outline'} size={20} />;
   }
@@ -2002,9 +2007,15 @@ export default function App() {
                 <Text numberOfLines={1} style={styles.headerTitle}>{headerLabel}</Text>
               </View>
 
-              <Pressable onPress={confirmLogoutFromMobileApp} style={styles.headerButton}>
-                {renderLogoutIcon()}
-              </Pressable>
+              <View style={styles.headerActionGroup}>
+                <Pressable onPress={reloadPage} style={styles.headerButton}>
+                  {renderRefreshIcon()}
+                </Pressable>
+
+                <Pressable onPress={confirmLogoutFromMobileApp} style={styles.headerButton}>
+                  {renderLogoutIcon()}
+                </Pressable>
+              </View>
             </View>
 
             <View style={styles.webViewContainer}>
@@ -2409,6 +2420,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#11233a',
+  },
+  headerActionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerSpacer: {
     minWidth: 46,
