@@ -80,8 +80,8 @@
           <p>Use the contact form for questions, book through the client portal, or subscribe on the home page to receive product and insight updates through the newsletter flow.</p>
         </div>
         <div class="marketing-actions marketing-actions-stacked">
-          <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Through Portal</a>
-          <a class="btn btn-ghost" href="{% url 'home' %}#newsletter-signup">Subscribe to Updates</a>
+          <a class="btn btn-primary" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=booking{% else %}{% url 'dashboard' %}{% endif %}">Book Through Portal</a>
+          <a class="btn btn-ghost" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=newsletter{% else %}{% url 'home' %}#newsletter-signup{% endif %}">Subscribe to Updates</a>
         </div>
       </article>
     </section>

@@ -182,6 +182,7 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+MOBILE_APP_REMEMBER_ME_SESSION_AGE = int(os.getenv('MOBILE_APP_REMEMBER_ME_SESSION_AGE', str(60 * 60 * 24 * 90)))
 
 # Turnstile (for contact form and sign up pages)
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')

@@ -172,13 +172,27 @@ class MobileAuthApiTests(TestCase):
 		self.assertTrue(payload["ok"])
 		self.assertIn(reverse("mobile_session_login"), payload["sessionUrl"])
 
+	def test_mobile_login_api_includes_remember_me_flag(self):
+		user = User.objects.create_user(username="remembermobile", email="remember@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1209")
+
+		response = self.client.post(
+			reverse("mobile_login_api"),
+			data='{"username": "remembermobile", "password": "correct-pass-123", "rememberMe": true}',
+			content_type="application/json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTrue(response.json()["rememberMe"])
+
+	@override_settings(MOBILE_APP_REMEMBER_ME_SESSION_AGE=86400)
 	def test_mobile_session_login_logs_user_in(self):
 		user = User.objects.create_user(username="bridgeuser", email="bridge@example.com", password="correct-pass-123")
 		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1201")
 
 		api_response = self.client.post(
 			reverse("mobile_login_api"),
-			data="{\"username\": \"bridgeuser\", \"password\": \"correct-pass-123\"}",
+			data="{\"username\": \"bridgeuser\", \"password\": \"correct-pass-123\", \"rememberMe\": true}",
 			content_type="application/json",
 		)
 		payload = api_response.json()
@@ -186,6 +200,23 @@ class MobileAuthApiTests(TestCase):
 
 		self.assertEqual(session_response.status_code, 302)
 		self.assertEqual(int(self.client.session.get("_auth_user_id")), user.pk)
+		self.assertFalse(self.client.session.get_expire_at_browser_close())
+		self.assertGreaterEqual(self.client.session.get_expiry_age(), 86000)
+
+	def test_mobile_session_login_without_remember_me_expires_at_browser_close(self):
+		user = User.objects.create_user(username="sessionmobile", email="session@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1210")
+
+		api_response = self.client.post(
+			reverse("mobile_login_api"),
+			data="{\"username\": \"sessionmobile\", \"password\": \"correct-pass-123\", \"rememberMe\": false}",
+			content_type="application/json",
+		)
+		payload = api_response.json()
+		session_response = self.client.get(payload["sessionUrl"], follow=False)
+
+		self.assertEqual(session_response.status_code, 302)
+		self.assertTrue(self.client.session.get_expire_at_browser_close())
 
 	@patch("apps.accounts.views.verify_totp", return_value=False)
 	def test_mobile_login_api_requires_valid_2fa_code(self, mocked_verify_totp):

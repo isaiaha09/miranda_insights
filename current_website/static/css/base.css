@@ -88,6 +88,7 @@ body::before {
     background-position: 0 0, 0 0, 0 0, 0 0;
     animation: grid-pan 22s linear infinite;
     filter: saturate(1.1);
+    will-change: background-position;
 }
 
 body::after {
@@ -104,7 +105,7 @@ body::after {
     }
 
     to {
-        background-position: -136px -136px, -68px -68px, 0 0, 0 0;
+        background-position: -136px 0, -68px 0, 0 0, 0 0;
     }
 }
 
@@ -148,14 +149,9 @@ body.nav-open {
 }
 
 /* Reduce expensive effects while actively scrolling for smoother motion */
-body.is-scrolling::before,
 body.is-scrolling .nav,
 body.is-scrolling .site-footer {
     backdrop-filter: none;
-}
-
-body.is-scrolling::before {
-    animation-play-state: paused;
 }
 
 .nav-overlay {

@@ -16,7 +16,7 @@
       <h1>Structured data, survey, evaluation, and web services with a clear service catalog.</h1>
       <p class="marketing-lead">Miranda Insights works with school districts, agencies, nonprofits, and organizations that need defined service options, practical reporting support, and a client portal where they can stay aligned, communicate directly, and book time with the team.</p>
       <div class="marketing-actions">
-        <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Through Portal</a>
+        <a class="btn btn-primary" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=booking{% else %}{% url 'dashboard' %}{% endif %}">Book Through Portal</a>
         <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Us</a>
       </div>
     </header>
@@ -152,7 +152,7 @@
           <p>An agreement that guarantees Miranda Insights services for a client’s data needs over the contract duration while providing priority service and lower service rates.</p>
         </div>
         <div class="marketing-actions marketing-actions-stacked">
-          <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Retainer Consultation</a>
+          <a class="btn btn-primary" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=booking{% else %}{% url 'dashboard' %}{% endif %}">Book Retainer Consultation</a>
           <a class="btn btn-ghost" href="{% url 'contact_support' %}">Ask About R-001</a>
         </div>
       </article>

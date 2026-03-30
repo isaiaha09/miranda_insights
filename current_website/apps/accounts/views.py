@@ -93,13 +93,27 @@ def _build_mobile_session_token(user, redirect_url):
 			"password": user.password,
 			"last_login": _serialize_last_login(user),
 			"redirect_url": redirect_url,
+			"remember_me": False,
 		},
 		salt="insights.mobile-session-login",
 	)
 
 
-def _build_mobile_session_url(request, user, redirect_url):
-	token = _build_mobile_session_token(user, redirect_url)
+def _build_mobile_session_token_with_options(user, redirect_url, *, remember_me=False):
+	return signing.dumps(
+		{
+			"user_id": user.pk,
+			"password": user.password,
+			"last_login": _serialize_last_login(user),
+			"redirect_url": redirect_url,
+			"remember_me": bool(remember_me),
+		},
+		salt="insights.mobile-session-login",
+	)
+
+
+def _build_mobile_session_url(request, user, redirect_url, *, remember_me=False):
+	token = _build_mobile_session_token_with_options(user, redirect_url, remember_me=remember_me)
 	return request.build_absolute_uri(f"{reverse('mobile_session_login')}?{urlencode({'token': token})}")
 
 
@@ -123,6 +137,7 @@ class MobileSignInApiView(View):
 		password = str(payload.get("password", ""))
 		otp_code = str(payload.get("otpCode", "")).strip()
 		redirect_url = str(payload.get("redirectUrl", "")).strip()
+		remember_me = bool(payload.get("rememberMe"))
 
 		form = LoginForm(request=request, data={"username": username, "password": password})
 		if not form.is_valid():
@@ -150,13 +165,14 @@ class MobileSignInApiView(View):
 					field_errors={"otpCode": ["Enter a valid authentication code."]},
 				)
 
-		session_url = _build_mobile_session_url(request, user, success_url)
+		session_url = _build_mobile_session_url(request, user, success_url, remember_me=remember_me)
 		return JsonResponse(
 			{
 				"ok": True,
 				"sessionUrl": session_url,
 				"redirectUrl": success_url,
 				"requiresTwoFactor": False,
+				"rememberMe": remember_me,
 				"displayName": user.get_full_name().strip() or user.username,
 			}
 		)
@@ -300,6 +316,10 @@ class MobileSessionLoginView(View):
 
 		user.backend = "django.contrib.auth.backends.ModelBackend"
 		login(request, user)
+		if payload.get("remember_me"):
+			request.session.set_expiry(settings.MOBILE_APP_REMEMBER_ME_SESSION_AGE)
+		else:
+			request.session.set_expiry(0)
 		_recover_scheduled_deletion(request, user)
 		return redirect(payload.get("redirect_url") or settings.LOGIN_REDIRECT_URL)
 

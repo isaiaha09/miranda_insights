@@ -78,7 +78,7 @@
           <p>Use the contact form or the portal booking workflow to describe the project, team, or question you have in mind.</p>
         </div>
         <div class="marketing-actions marketing-actions-stacked">
-          <a class="btn btn-primary" href="{% url 'dashboard' %}">Book Through Portal</a>
+          <a class="btn btn-primary" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=booking{% else %}{% url 'dashboard' %}{% endif %}">Book Through Portal</a>
           <a class="btn btn-ghost" href="{% url 'services' %}">Review Services</a>
         </div>
       </article>

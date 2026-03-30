@@ -4,6 +4,7 @@ export type AppRoute = {
   key: string;
   label: string;
   path: string;
+  keywords: string[];
 };
 
 export const MOBILE_APP_QUERY_KEY = 'mobile_app';
@@ -51,24 +52,58 @@ export const BASE_URL = normalizeBaseUrl(configuredBaseUrl || DEFAULT_BASE_URL);
 export const BASE_URL_LABEL = BASE_URL.replace(/^https?:\/\//, '');
 
 export const PRIMARY_ROUTES: AppRoute[] = [
-  { key: 'dashboard', label: 'Dashboard', path: '/dashboard/' },
-  { key: 'services', label: 'Services', path: '/services/' },
-  { key: 'products', label: 'Products', path: '/products/' },
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    path: '/dashboard/',
+    keywords: ['portal', 'overview', 'account', 'projects', 'updates', 'activity'],
+  },
+  {
+    key: 'services',
+    label: 'Services',
+    path: '/services/',
+    keywords: ['offerings', 'consulting', 'strategy', 'analysis', 'support', 'solutions'],
+  },
+  {
+    key: 'products',
+    label: 'Products',
+    path: '/products/',
+    keywords: ['tools', 'platform', 'software', 'solutions', 'features', 'packages'],
+  },
 ];
 
 export const BOTTOM_NAV_ROUTES: AppRoute[] = [
-  { key: 'dashboard', label: 'Dashboard', path: '/dashboard/' },
-  { key: 'products', label: 'Products', path: '/products/' },
-  { key: 'services', label: 'Services', path: '/services/' },
-  { key: 'contact', label: 'Contact', path: '/contact/' },
+  PRIMARY_ROUTES[0],
+  PRIMARY_ROUTES[2],
+  PRIMARY_ROUTES[1],
+  {
+    key: 'contact',
+    label: 'Contact',
+    path: '/contact/',
+    keywords: ['email', 'phone', 'message', 'reach us', 'support', 'inquiry'],
+  },
 ];
 
 export const DRAWER_ROUTES: AppRoute[] = [
   ...PRIMARY_ROUTES,
-  { key: 'about', label: 'About', path: '/about/' },
-  { key: 'faq', label: 'FAQ', path: '/faq/' },
-  { key: 'contact', label: 'Contact', path: '/contact/' },
+  {
+    key: 'about',
+    label: 'About',
+    path: '/about/',
+    keywords: ['company', 'team', 'story', 'mission', 'background', 'insights'],
+  },
+  {
+    key: 'faq',
+    label: 'FAQ',
+    path: '/faq/',
+    keywords: ['questions', 'answers', 'help', 'support', 'common issues', 'guide'],
+  },
+  BOTTOM_NAV_ROUTES[3],
 ];
+
+export const SEARCH_ROUTES: AppRoute[] = Array.from(
+  new Map([...DRAWER_ROUTES, ...BOTTOM_NAV_ROUTES].map((route) => [route.path, route])).values()
+);
 
 export function markMobileAppUrl(url: string) {
   try {

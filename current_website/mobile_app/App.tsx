@@ -10,6 +10,7 @@ import {
   Dimensions,
   Easing,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -25,11 +26,13 @@ import {
 import { WebView } from 'react-native-webview';
 
 import {
+  type AppRoute,
   BASE_URL,
   BASE_URL_LABEL,
   BOTTOM_NAV_ROUTES,
   DEFAULT_BASE_URL,
   DRAWER_ROUTES,
+  SEARCH_ROUTES,
   buildRouteUrl,
   getRouteForUrl,
   markMobileAppUrl,
@@ -37,6 +40,7 @@ import {
 
 const DRAWER_WIDTH = 320;
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const AUTH_ACCENT_COLOR = '#6797ea';
 const WEB_LOADER_MIN_DURATION_MS = 2500;
 const MOBILE_LOGIN_PATH = '/mobile-api/login/';
@@ -57,6 +61,250 @@ type MobileApiResponse = {
   displayName?: string;
   fieldErrors?: Record<string, string[]>;
 };
+
+type SearchMatch = {
+  text: string;
+  targetText: string;
+  score: number;
+};
+
+type SearchCandidateMatch = {
+  candidate: string;
+  score: number;
+  displayText: string;
+};
+
+type SearchContentIndex = Record<string, string[]>;
+type MobileDashboardFocusTarget = 'booking' | 'newsletter';
+
+const SEARCH_RESULT_PHRASE_LIMIT = 6;
+const SEARCH_ROUTE_PHRASE_LIMIT = 36;
+const SEARCH_SHEET_ANIMATION_DURATION_MS = 220;
+
+function normalizeSearchValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>');
+}
+
+function stripHtmlTags(value: string) {
+  return value.replace(/<[^>]+>/g, ' ');
+}
+
+function cleanSearchText(value: string) {
+  return decodeHtmlEntities(stripHtmlTags(value)).replace(/\s+/g, ' ').trim();
+}
+
+function extractMainContentHtml(html: string) {
+  const mainMatch = html.match(/<main\b[^>]*class=["'][^"']*site-main[^"']*["'][^>]*>([\s\S]*?)<\/main>/i);
+  return mainMatch?.[1] || html;
+}
+
+function splitSearchPhrases(text: string) {
+  const cleanedText = cleanSearchText(text);
+  if (!cleanedText) {
+    return [];
+  }
+
+  const sentenceParts = cleanedText
+    .split(/[.!?]+/)
+    .map(function (part) {
+      return part.trim();
+    })
+    .filter(Boolean);
+
+  return sentenceParts.flatMap(function (part) {
+    const clauses = part
+      .split(/;|:|, (?=[A-Z0-9])/)
+      .map(function (clause) {
+        return clause.trim();
+      })
+      .filter(function (clause) {
+        return clause.length >= 3 && clause.length <= 140;
+      });
+
+    return clauses.length > 0 ? clauses : [part];
+  });
+}
+
+function extractSearchPhrasesFromHtml(html: string) {
+  const mainHtml = extractMainContentHtml(html);
+  const textTagPattern = /<(h1|h2|h3|p|li|a)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  const phrases: string[] = [];
+  let match: RegExpExecArray | null = null;
+
+  while ((match = textTagPattern.exec(mainHtml)) !== null) {
+    phrases.push(...splitSearchPhrases(match[2]));
+  }
+
+  return Array.from(new Set(phrases)).slice(0, SEARCH_ROUTE_PHRASE_LIMIT);
+}
+
+function getMatchingStartIndex(queryTerms: string[], candidateTerms: string[]) {
+  for (let startIndex = 0; startIndex <= candidateTerms.length - queryTerms.length; startIndex += 1) {
+    const matches = queryTerms.every(function (term, offset) {
+      return candidateTerms[startIndex + offset].startsWith(term);
+    });
+
+    if (matches) {
+      return startIndex;
+    }
+  }
+
+  return -1;
+}
+
+function buildSearchDisplayText(candidate: string, query: string) {
+  const originalTerms = candidate.trim().split(/\s+/).filter(Boolean);
+  const normalizedTerms = originalTerms.map(function (term) {
+    return normalizeSearchValue(term);
+  });
+  const queryTerms = normalizeSearchValue(query).split(/\s+/).filter(Boolean);
+  const startIndex = getMatchingStartIndex(queryTerms, normalizedTerms);
+
+  if (startIndex === -1) {
+    return candidate;
+  }
+
+  const displayTerms = originalTerms.slice(startIndex, startIndex + 7);
+  const prefix = startIndex > 0 ? '... ' : '';
+  const suffix = startIndex + 7 < originalTerms.length ? ' ...' : '';
+  return `${prefix}${displayTerms.join(' ')}${suffix}`;
+}
+
+function getPrefixPhraseScore(query: string, candidate: string) {
+  const normalizedQuery = normalizeSearchValue(query);
+  const normalizedCandidate = normalizeSearchValue(candidate);
+
+  if (!normalizedQuery || !normalizedCandidate) {
+    return 0;
+  }
+
+  const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
+  const candidateTerms = normalizedCandidate.split(/\s+/).filter(Boolean);
+
+  if (queryTerms.length === 0 || candidateTerms.length === 0) {
+    return 0;
+  }
+
+  let bestScore = 0;
+
+  for (let startIndex = 0; startIndex <= candidateTerms.length - queryTerms.length; startIndex += 1) {
+    const matches = queryTerms.every(function (term, offset) {
+      return candidateTerms[startIndex + offset].startsWith(term);
+    });
+
+    if (!matches) {
+      continue;
+    }
+
+    let score = 140;
+    score -= startIndex * 18;
+    score -= (candidateTerms.length - queryTerms.length) * 4;
+
+    if (startIndex === 0) {
+      score += 18;
+    }
+
+    if (queryTerms.length === candidateTerms.length) {
+      score += 10;
+    }
+
+    if (candidateTerms[startIndex] === queryTerms[0]) {
+      score += 8;
+    }
+
+    bestScore = Math.max(bestScore, score);
+  }
+
+  return bestScore;
+}
+
+function buildSearchMatch(query: string, candidate: string): SearchCandidateMatch | null {
+  const normalizedQuery = normalizeSearchValue(query);
+  const score = getPrefixPhraseScore(normalizedQuery, candidate);
+
+  if (!normalizedQuery || score <= 0) {
+    return null;
+  }
+
+  return {
+    candidate,
+    score,
+    displayText: buildSearchDisplayText(candidate, normalizedQuery),
+  };
+}
+
+function getRouteSearchMatches(route: AppRoute, query: string, pagePhrases: string[]) {
+  const queryValue = normalizeSearchValue(query);
+  const defaultMatches = route.keywords.slice(0, 4).map(function (keyword) {
+    return { text: keyword, targetText: keyword, score: 0 };
+  });
+
+  if (!queryValue) {
+    return {
+      matchesQuery: true,
+      matchedTerms: defaultMatches,
+      score: 0,
+    };
+  }
+
+  const candidates = Array.from(
+    new Set([
+      route.label,
+      ...pagePhrases,
+      ...(pagePhrases.length === 0 ? route.keywords : []),
+    ])
+  );
+
+  const matchedTerms = candidates
+    .map(function (candidate) {
+      return buildSearchMatch(queryValue, candidate);
+    })
+    .filter(function (match) {
+      return Boolean(match);
+    })
+    .map(function (match) {
+      return match as SearchCandidateMatch;
+    })
+    .sort(function (left, right) {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+
+      return left.displayText.localeCompare(right.displayText);
+    });
+
+  if (matchedTerms.length === 0) {
+    return {
+      matchesQuery: false,
+      matchedTerms: [],
+      score: 0,
+    };
+  }
+
+  return {
+    matchesQuery: true,
+    matchedTerms: matchedTerms.slice(0, SEARCH_RESULT_PHRASE_LIMIT).map(function (match) {
+      return {
+        text: match.displayText,
+        targetText: match.candidate,
+        score: match.score,
+      };
+    }),
+    score: matchedTerms.reduce(function (total, match, index) {
+      return total + match.score - index;
+    }, 0),
+  };
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -114,18 +362,252 @@ const MOBILE_WEBVIEW_CLEANUP_SCRIPT = `
   true;
 `;
 
+function buildSearchHighlightScript(phrase: string) {
+  return `
+    (function () {
+      var phrase = ${JSON.stringify(phrase)};
+      if (!phrase) {
+        return true;
+      }
+
+      function clearHighlights() {
+        document.querySelectorAll('span[data-insights-search-highlight="1"]').forEach(function (node) {
+          var parent = node.parentNode;
+          if (!parent) {
+            return;
+          }
+
+          parent.replaceChild(document.createTextNode(node.textContent || ''), node);
+          parent.normalize();
+        });
+      }
+
+      function highlightPhrase() {
+        clearHighlights();
+
+        var root = document.querySelector('.site-main') || document.body;
+        if (!root) {
+          return false;
+        }
+
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+          acceptNode: function (node) {
+            if (!node || !node.textContent || !node.textContent.trim()) {
+              return NodeFilter.FILTER_REJECT;
+            }
+
+            var parentName = node.parentElement && node.parentElement.tagName;
+            if (parentName === 'SCRIPT' || parentName === 'STYLE') {
+              return NodeFilter.FILTER_REJECT;
+            }
+
+            return NodeFilter.FILTER_ACCEPT;
+          },
+        });
+
+        var loweredPhrase = phrase.toLowerCase();
+        var currentNode = walker.nextNode();
+        while (currentNode) {
+          var text = currentNode.textContent || '';
+          var startIndex = text.toLowerCase().indexOf(loweredPhrase);
+
+          if (startIndex !== -1) {
+            var range = document.createRange();
+            range.setStart(currentNode, startIndex);
+            range.setEnd(currentNode, startIndex + phrase.length);
+
+            var highlight = document.createElement('span');
+            highlight.setAttribute('data-insights-search-highlight', '1');
+            highlight.style.background = 'rgba(103, 151, 234, 0.38)';
+            highlight.style.boxShadow = '0 0 0 6px rgba(103, 151, 234, 0.18)';
+            highlight.style.borderRadius = '6px';
+            highlight.style.transition = 'background 700ms ease, box-shadow 700ms ease';
+            highlight.style.padding = '0 2px';
+
+            try {
+              range.surroundContents(highlight);
+              highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+              window.setTimeout(function () {
+                highlight.style.background = 'rgba(103, 151, 234, 0.12)';
+                highlight.style.boxShadow = '0 0 0 0 rgba(103, 151, 234, 0)';
+              }, 1400);
+
+              window.setTimeout(function () {
+                var parent = highlight.parentNode;
+                if (!parent) {
+                  return;
+                }
+
+                parent.replaceChild(document.createTextNode(highlight.textContent || ''), highlight);
+                parent.normalize();
+              }, 2600);
+              return true;
+            } catch (error) {
+              return false;
+            }
+          }
+
+          currentNode = walker.nextNode();
+        }
+
+        return false;
+      }
+
+      window.setTimeout(highlightPhrase, 120);
+      return true;
+    })();
+    true;
+  `;
+}
+
+function buildDashboardFocusScript(target: MobileDashboardFocusTarget) {
+  return `
+    (function () {
+      var target = ${JSON.stringify(target)};
+      var maxAttempts = 18;
+      var attemptCount = 0;
+
+      function getHeaderOffset() {
+        var header = document.querySelector('.site-header');
+        if (!header) {
+          return 24;
+        }
+
+        return Math.max(16, Math.round(header.getBoundingClientRect().height || 0) + 12);
+      }
+
+      function scrollToNode(node) {
+        if (!node) {
+          return;
+        }
+
+        var top = node.getBoundingClientRect().top + window.scrollY - getHeaderOffset();
+        window.scrollTo({
+          top: Math.max(0, top),
+          behavior: 'smooth',
+        });
+      }
+
+      function clearFocusHighlights() {
+        document.querySelectorAll('[data-insights-focus-highlight="1"]').forEach(function (node) {
+          node.style.transition = '';
+          node.style.boxShadow = '';
+          node.style.outline = '';
+          node.style.outlineOffset = '';
+          node.style.backgroundColor = '';
+        });
+      }
+
+      function applyFocusHighlight(node) {
+        if (!node) {
+          return;
+        }
+
+        node.setAttribute('data-insights-focus-highlight', '1');
+        node.style.transition = 'background-color 700ms ease, box-shadow 700ms ease, outline-color 700ms ease';
+        node.style.backgroundColor = 'rgba(103, 151, 234, 0.12)';
+        node.style.boxShadow = '0 0 0 6px rgba(103, 151, 234, 0.18)';
+        node.style.outline = '2px solid rgba(103, 151, 234, 0.55)';
+        node.style.outlineOffset = '4px';
+      }
+
+      function fadeFocusHighlight(node) {
+        if (!node) {
+          return;
+        }
+
+        node.style.backgroundColor = 'transparent';
+        node.style.boxShadow = '0 0 0 0 rgba(103, 151, 234, 0)';
+        node.style.outline = '2px solid rgba(103, 151, 234, 0)';
+      }
+
+      function focusBookingSection() {
+        var bookingSection = document.getElementById('dashboard-booking-section');
+        if (!bookingSection) {
+          return false;
+        }
+
+        clearFocusHighlights();
+        applyFocusHighlight(bookingSection);
+        scrollToNode(bookingSection);
+        window.setTimeout(function () {
+          fadeFocusHighlight(bookingSection);
+        }, 1400);
+        return true;
+      }
+
+      function focusNewsletterSection() {
+        var newsletterSection = document.getElementById('dashboard-newsletter-section');
+        var checkboxRow = document.getElementById('dashboard-newsletter-checkbox-row');
+        var checkbox = document.getElementById('id_subscribe_to_newsletter');
+        if (!newsletterSection) {
+          return false;
+        }
+
+        clearFocusHighlights();
+        applyFocusHighlight(newsletterSection);
+        applyFocusHighlight(checkboxRow);
+        applyFocusHighlight(checkbox);
+        scrollToNode(newsletterSection);
+
+        if (checkbox && checkbox.checked) {
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'already-subscribed' }));
+        }
+
+        window.setTimeout(function () {
+          fadeFocusHighlight(newsletterSection);
+          fadeFocusHighlight(checkboxRow);
+          fadeFocusHighlight(checkbox);
+        }, 1400);
+        return true;
+      }
+
+      function tryFocusTarget() {
+        attemptCount += 1;
+
+        var wasApplied = false;
+        if (target === 'booking') {
+          wasApplied = focusBookingSection();
+        }
+
+        if (target === 'newsletter') {
+          wasApplied = focusNewsletterSection();
+        }
+
+        if (wasApplied || attemptCount >= maxAttempts) {
+          return true;
+        }
+
+        window.setTimeout(tryFocusTarget, 180);
+        return false;
+      }
+
+      window.setTimeout(tryFocusTarget, 180);
+
+      return true;
+    })();
+    true;
+  `;
+}
+
 export default function App() {
   const webViewRef = useRef<WebView>(null);
   const webLoaderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const webLoaderStartedAtRef = useRef<number>(0);
   const pushRegistrationAttemptedRef = useRef(false);
+  const pendingSearchHighlightRef = useRef<string | null>(null);
+  const pendingDashboardFocusRef = useRef<MobileDashboardFocusTarget | null>(null);
   const drawerOffset = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const searchSheetOpacity = useRef(new Animated.Value(0)).current;
+  const searchSheetTranslate = useRef(new Animated.Value(18)).current;
   const nativeScreenTranslate = useRef(new Animated.Value(0)).current;
   const previousNativeScreenTranslate = useRef(new Animated.Value(0)).current;
   const previousNativeScreenOpacity = useRef(new Animated.Value(1)).current;
   const nativeScreenTransitionRef = useRef<Animated.CompositeAnimation | null>(null);
   const landingDataMotion = useRef(new Animated.Value(0)).current;
   const landingAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const searchIndexRequestedRef = useRef(false);
   const [nativeScreen, setNativeScreen] = useState<NativeScreen>('landing');
   const [transitioningFromScreen, setTransitioningFromScreen] = useState<NativeAppScreen | null>(null);
   const [transitioningToScreen, setTransitioningToScreen] = useState<NativeAppScreen | null>(null);
@@ -137,7 +619,9 @@ export default function App() {
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [webError, setWebError] = useState<string | null>(null);
   const [searchSheetOpen, setSearchSheetOpen] = useState(false);
+  const [searchSheetMounted, setSearchSheetMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
@@ -148,17 +632,35 @@ export default function App() {
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [searchContentIndex, setSearchContentIndex] = useState<SearchContentIndex>({});
   const shouldAnimateBrandIcon = nativeScreen === 'landing' || (nativeScreen === 'web' && !pageReady && !webError);
   const activeRoute = getRouteForUrl(currentUrl);
-  const searchResults = DRAWER_ROUTES.filter(function (route) {
-    const query = searchQuery.trim().toLowerCase();
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const searchResults = SEARCH_ROUTES.map(function (route) {
+    const pagePhrases = searchContentIndex[route.path] || [];
+    const matchState = getRouteSearchMatches(route, normalizedSearchQuery, pagePhrases);
 
-    if (!query) {
-      return true;
-    }
+    return {
+      route,
+      matchesQuery: matchState.matchesQuery,
+      matchedTerms: matchState.matchedTerms,
+      score: matchState.score,
+    };
+  })
+    .filter(function (result) {
+      return result.matchesQuery;
+    })
+    .sort(function (left, right) {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
 
-    return route.label.toLowerCase().includes(query) || route.path.toLowerCase().includes(query);
-  });
+      return left.route.label.localeCompare(right.route.label);
+    });
+
+  const searchSheetBottom = keyboardHeight > 0 ? keyboardHeight + 16 : 108;
+  const searchSheetMaxHeight = keyboardHeight > 0 ? Math.max(220, SCREEN_HEIGHT - keyboardHeight - 120) : SCREEN_HEIGHT * 0.56;
 
   useEffect(() => {
     Animated.timing(drawerOffset, {
@@ -207,6 +709,69 @@ export default function App() {
       if (webLoaderTimeoutRef.current) {
         clearTimeout(webLoaderTimeoutRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    async function buildSearchContentIndex() {
+      if (searchIndexRequestedRef.current) {
+        return;
+      }
+
+      searchIndexRequestedRef.current = true;
+
+      const entries = await Promise.all(
+        SEARCH_ROUTES.map(async function (route) {
+          try {
+            const response = await fetch(buildRouteUrl(route.path), {
+              method: 'GET',
+              headers: {
+                Accept: 'text/html,application/xhtml+xml',
+              },
+            });
+
+            const responseUrl = response.url || buildRouteUrl(route.path);
+            const responsePath = new URL(responseUrl, BASE_URL).pathname;
+            if (!response.ok || responsePath.startsWith('/login/')) {
+              return [route.path, []] as const;
+            }
+
+            const html = await response.text();
+            return [route.path, extractSearchPhrasesFromHtml(html)] as const;
+          } catch {
+            return [route.path, []] as const;
+          }
+        })
+      );
+
+      setSearchContentIndex(
+        entries.reduce<SearchContentIndex>(function (accumulator, [path, phrases]) {
+          if (phrases.length > 0) {
+            accumulator[path] = [...phrases];
+          }
+          return accumulator;
+        }, {})
+      );
+    }
+
+    void buildSearchContentIndex();
+  }, []);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, function (event) {
+      setKeyboardHeight(event.endCoordinates?.height || 0);
+    });
+
+    const hideSubscription = Keyboard.addListener(hideEvent, function () {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
     };
   }, []);
 
@@ -289,22 +854,101 @@ export default function App() {
 
   function openSearchSheet() {
     closeDrawer();
+    setSearchSheetMounted(true);
     setSearchSheetOpen(true);
+    searchSheetOpacity.stopAnimation();
+    searchSheetTranslate.stopAnimation();
+    searchSheetOpacity.setValue(0);
+    searchSheetTranslate.setValue(18);
+    Animated.parallel([
+      Animated.timing(searchSheetOpacity, {
+        toValue: 1,
+        duration: SEARCH_SHEET_ANIMATION_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(searchSheetTranslate, {
+        toValue: 0,
+        duration: SEARCH_SHEET_ANIMATION_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
   }
 
   function closeSearchSheet() {
+    if (!searchSheetMounted) {
+      setSearchSheetOpen(false);
+      setSearchQuery('');
+      return;
+    }
+
     setSearchSheetOpen(false);
-    setSearchQuery('');
+    searchSheetOpacity.stopAnimation();
+    searchSheetTranslate.stopAnimation();
+    Animated.parallel([
+      Animated.timing(searchSheetOpacity, {
+        toValue: 0,
+        duration: SEARCH_SHEET_ANIMATION_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(searchSheetTranslate, {
+        toValue: 18,
+        duration: SEARCH_SHEET_ANIMATION_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(function () {
+      setSearchSheetMounted(false);
+      setSearchQuery('');
+    });
   }
 
-  function openRoute(path: string) {
+  function injectHighlightedSearchPhrase(phrase: string) {
+    if (!phrase.trim()) {
+      return;
+    }
+
+    webViewRef.current?.injectJavaScript(buildSearchHighlightScript(phrase.trim()));
+  }
+
+  function injectDashboardFocusTarget(target: MobileDashboardFocusTarget) {
+    webViewRef.current?.injectJavaScript(buildDashboardFocusScript(target));
+  }
+
+  function openRouteWithDashboardFocus(path: string, target: MobileDashboardFocusTarget) {
+    const currentPath = getRouteForUrl(currentUrl)?.path;
+    pendingDashboardFocusRef.current = target;
+    openRoute(path);
+
+    if (nativeScreen === 'web' && currentPath === path && pageReady) {
+      setTimeout(function () {
+        injectDashboardFocusTarget(target);
+        pendingDashboardFocusRef.current = null;
+      }, SEARCH_SHEET_ANIMATION_DURATION_MS + 40);
+    }
+  }
+
+  function openRoute(path: string, highlightPhrase?: string) {
     const nextUrl = buildRouteUrl(path);
     const nextRoute = [...BOTTOM_NAV_ROUTES, ...DRAWER_ROUTES].find((route) => route.path === path);
+    const currentPath = getRouteForUrl(currentUrl)?.path;
+    const normalizedHighlightPhrase = highlightPhrase?.trim() || '';
+
+    pendingSearchHighlightRef.current = normalizedHighlightPhrase || null;
     setCurrentUrl(nextUrl);
     setCurrentTitle(nextRoute?.label || getRouteForUrl(nextUrl)?.label || 'Insights');
     setWebError(null);
     closeDrawer();
     closeSearchSheet();
+
+    if (normalizedHighlightPhrase && nativeScreen === 'web' && currentPath === path && pageReady) {
+      setTimeout(function () {
+        injectHighlightedSearchPhrase(normalizedHighlightPhrase);
+        pendingSearchHighlightRef.current = null;
+      }, SEARCH_SHEET_ANIMATION_DURATION_MS + 40);
+    }
   }
 
   function syncPushTokenWithWebSession(token: string, action: 'register' | 'unregister' = 'register') {
@@ -653,6 +1297,7 @@ export default function App() {
       const { data } = await postMobileAuth(MOBILE_LOGIN_PATH, {
         username,
         password,
+        rememberMe: keepSignedIn ? 'true' : '',
       });
 
       if (data.requiresTwoFactor) {
@@ -694,6 +1339,7 @@ export default function App() {
         username,
         password,
         otpCode,
+        rememberMe: keepSignedIn ? 'true' : '',
       });
 
       if (!data.ok || !data.sessionUrl) {
@@ -778,6 +1424,14 @@ export default function App() {
     if (expoPushToken) {
       syncPushTokenWithWebSession(expoPushToken, 'register');
     }
+    if (pendingSearchHighlightRef.current) {
+      injectHighlightedSearchPhrase(pendingSearchHighlightRef.current);
+      pendingSearchHighlightRef.current = null;
+    }
+    if (pendingDashboardFocusRef.current && getRouteForUrl(currentUrl)?.path === '/dashboard/') {
+      injectDashboardFocusTarget(pendingDashboardFocusRef.current);
+      pendingDashboardFocusRef.current = null;
+    }
   }
 
   function handleNavigationStateChange(navigationState: {
@@ -829,6 +1483,17 @@ export default function App() {
     }
 
     if (request.url.startsWith(BASE_URL)) {
+      try {
+        const requestUrl = new URL(request.url);
+        const mobileFocus = requestUrl.searchParams.get('mobile_focus');
+        if (requestUrl.pathname === '/dashboard/' && (mobileFocus === 'booking' || mobileFocus === 'newsletter')) {
+          openRouteWithDashboardFocus('/dashboard/', mobileFocus);
+          return false;
+        }
+      } catch {
+        // Fall through to default in-app routing.
+      }
+
       const mobileUrl = markMobileAppUrl(request.url);
 
       if (mobileUrl !== request.url) {
@@ -1037,20 +1702,46 @@ export default function App() {
     );
   }
 
+  function renderSearchKeywords(route: AppRoute, matches: SearchMatch[]) {
+    return (
+      <View style={styles.searchSheetKeywordsWrap}>
+        {matches.map(function (match, index) {
+          return (
+            <Pressable key={`${route.key}-${match.targetText}-${index}`} onPress={() => openRoute(route.path, match.targetText)} style={styles.searchSheetKeywordChip}>
+              <Text style={styles.searchSheetKeywordText}>{match.text}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    );
+  }
+
   function renderSearchSheet() {
-    if (!searchSheetOpen) {
+    if (!searchSheetMounted) {
       return null;
     }
 
     return (
       <>
-        <Pressable onPress={closeSearchSheet} style={styles.searchSheetBackdrop} />
-        <View style={styles.searchSheet}>
+        <Animated.View pointerEvents={searchSheetOpen ? 'auto' : 'none'} style={[styles.searchSheetBackdrop, { opacity: searchSheetOpacity }]}> 
+          <Pressable onPress={closeSearchSheet} style={styles.searchSheetBackdropPressable} />
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.searchSheet,
+            {
+              bottom: searchSheetBottom,
+              maxHeight: searchSheetMaxHeight,
+              opacity: searchSheetOpacity,
+              transform: [{ translateY: searchSheetTranslate }],
+            },
+          ]}
+        >
           <Text style={styles.searchSheetTitle}>Search Navigation</Text>
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search pages"
+            placeholder="Search by keyword"
             placeholderTextColor="#90a3b9"
             style={styles.searchSheetInput}
             autoCapitalize="none"
@@ -1058,16 +1749,18 @@ export default function App() {
           />
 
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.searchSheetResults}>
-            {searchResults.map((route) => (
-              <Pressable key={route.key} onPress={() => openRoute(route.path)} style={styles.searchSheetLink}>
-                <Text style={styles.searchSheetLinkText}>{route.label}</Text>
-                <Text style={styles.searchSheetLinkMeta}>{route.path}</Text>
-              </Pressable>
+            {searchResults.map(({ route, matchedTerms }) => (
+              <View key={route.key} style={styles.searchSheetLink}>
+                <Pressable onPress={() => openRoute(route.path, matchedTerms[0]?.targetText)} style={styles.searchSheetRouteButton}>
+                  <Text style={styles.searchSheetLinkText}>{route.label}</Text>
+                </Pressable>
+                {renderSearchKeywords(route, matchedTerms)}
+              </View>
             ))}
 
             {searchResults.length === 0 ? <Text style={styles.searchSheetEmpty}>No matching pages.</Text> : null}
           </ScrollView>
-        </View>
+        </Animated.View>
       </>
     );
   }
@@ -1123,6 +1816,13 @@ export default function App() {
             autoComplete: 'password',
             errorKey: 'password',
           })}
+          <Pressable onPress={() => setKeepSignedIn((currentValue) => !currentValue)} style={styles.authCheckboxRow}>
+            <Ionicons color={keepSignedIn ? AUTH_ACCENT_COLOR : '#8ba2b9'} name={keepSignedIn ? 'checkbox' : 'square-outline'} size={20} />
+            <View style={styles.authCheckboxTextWrap}>
+              <Text style={styles.authCheckboxLabel}>Keep me signed in</Text>
+              <Text style={styles.authCheckboxCopy}>Stay logged in on this device until you log out. Recommended to receive push notifications.</Text>
+            </View>
+          </Pressable>
         </>
       ),
       footer: (
@@ -1336,6 +2036,11 @@ export default function App() {
 
                     if (payload?.type === 'logout-missing-form' || payload?.type === 'logout-error') {
                       Alert.alert('Logout unavailable', 'The logout action could not be completed from this screen.');
+                      return;
+                    }
+
+                    if (payload?.type === 'already-subscribed') {
+                      Alert.alert('Already subscribed', 'You are already subscribed to updates on this account.');
                     }
                   } catch {
                     // Ignore unrelated WebView messages.
@@ -1391,13 +2096,13 @@ export default function App() {
                 ))}
               </View>
 
-              <View style={styles.drawerSection}>
+              <View style={[styles.drawerSection, styles.drawerSectionSeparated]}>
                 <Text style={styles.drawerSectionTitle}>Other Actions</Text>
                 <Pressable onPress={openCurrentPageExternally} style={styles.drawerLinkRow}>
-                  <Text style={styles.drawerActionText}>Open in default browser</Text>
+                  <Text style={styles.drawerActionText}>Open in Default Browser</Text>
                 </Pressable>
                 <Pressable onPress={requestNotifications} style={styles.drawerLinkRow}>
-                  <Text style={styles.drawerActionText}>Enable notifications</Text>
+                  <Text style={styles.drawerActionText}>Enable Notifications</Text>
                 </Pressable>
               </View>
 
@@ -1617,6 +2322,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
+  authCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingTop: 4,
+  },
+  authCheckboxTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  authCheckboxLabel: {
+    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  authCheckboxCopy: {
+    color: '#8ba2b9',
+    fontSize: 12,
+    lineHeight: 18,
+  },
   authActionsColumn: {
     gap: 12,
   },
@@ -1824,6 +2549,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(1, 8, 18, 0.5)',
     zIndex: 39,
   },
+  searchSheetBackdropPressable: {
+    ...StyleSheet.absoluteFillObject,
+  },
   searchSheet: {
     position: 'absolute',
     left: 16,
@@ -1867,14 +2595,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#10253d',
     gap: 4,
   },
+  searchSheetRouteButton: {
+    alignSelf: 'flex-start',
+  },
   searchSheetLinkText: {
     color: '#f8fafc',
     fontSize: 15,
     fontWeight: '700',
   },
-  searchSheetLinkMeta: {
-    color: '#90a3b9',
+  searchSheetKeywordsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  searchSheetKeywordChip: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(103, 151, 234, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(103, 151, 234, 0.26)',
+  },
+  searchSheetKeywordText: {
+    color: '#d9e7fb',
     fontSize: 12,
+    fontWeight: '600',
   },
   searchSheetEmpty: {
     color: '#90a3b9',
@@ -1962,6 +2708,9 @@ const styles = StyleSheet.create({
   },
   drawerSection: {
     gap: 10,
+  },
+  drawerSectionSeparated: {
+    marginTop: 14,
   },
   drawerSectionTitle: {
     color: '#f8fafc',
