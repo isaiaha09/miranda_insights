@@ -160,8 +160,8 @@
             <h3>{{ example.title }}</h3>
             <p>{{ example.description }}</p>
             <div class="marketing-actions">
-              <a class="btn btn-primary" href="{% static example.static_path %}" target="_blank" rel="noopener">{{ example.cta_label }}</a>
-              <a class="btn btn-ghost" href="{% static example.static_path %}" download>Download</a>
+              <a class="btn btn-primary" href="{% static example.preview_static_path %}" target="_blank" rel="noopener">{{ example.cta_label }}</a>
+              <a class="btn btn-ghost" href="{% static example.download_static_path %}" download>Download</a>
             </div>
           </article>
         {% endfor %}

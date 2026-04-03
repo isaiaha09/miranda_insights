@@ -29,6 +29,7 @@ class PublicPageTests(TestCase):
 		self.assertContains(response, "Deliverable Examples")
 		self.assertContains(response, "Student Dashboard")
 		self.assertContains(response, static("deliverables/student-dashboard.html"))
+		self.assertContains(response, static("deliverables/student-data-analysis.png"))
 		self.assertContains(response, static("deliverables/student-data-analysis.xlsx"))
 		self.assertContains(response, static("deliverables/student-dashboard-presentation.pdf"))
 		self.assertContains(response, static("deliverables/deliverable-documentation.pdf"))
