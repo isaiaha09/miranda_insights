@@ -19,6 +19,36 @@ from .services import get_unsubscribe_email
 
 logger = logging.getLogger(__name__)
 NEWSLETTER_SECTION_ID = "newsletter-signup"
+DELIVERABLE_EXAMPLES = [
+	{
+		"title": "Student Dashboard",
+		"description": "Interactive HTML dashboard example showing how processed student data can be delivered in a browser-ready format.",
+		"file_type": "HTML",
+		"cta_label": "Preview Example",
+		"static_path": "deliverables/student-dashboard.html",
+	},
+	{
+		"title": "Student Data Analysis Workbook",
+		"description": "Excel workbook example for structured analysis outputs, tabular review, and client handoff workflows.",
+		"file_type": "XLSX",
+		"cta_label": "Open Workbook",
+		"static_path": "deliverables/student-data-analysis.xlsx",
+	},
+	{
+		"title": "Student Dashboard Presentation",
+		"description": "Presentation-ready PDF example for sharing findings, charts, and narrative summaries with stakeholders.",
+		"file_type": "PDF",
+		"cta_label": "Open Presentation",
+		"static_path": "deliverables/student-dashboard-presentation.pdf",
+	},
+	{
+		"title": "Project Documentation",
+		"description": "Reference PDF example covering documentation that can accompany dashboards, surveys, or evaluation deliverables.",
+		"file_type": "PDF",
+		"cta_label": "Open Documentation",
+		"static_path": "deliverables/deliverable-documentation.pdf",
+	},
+]
 
 
 def _newsletter_anchor_url(params=None):
@@ -73,7 +103,13 @@ def home(request):
 
 
 def services(request):
-	return render(request, "services.html")
+	return render(
+		request,
+		"services.html",
+		{
+			"deliverable_examples": DELIVERABLE_EXAMPLES,
+		},
+	)
 
 
 def about(request):

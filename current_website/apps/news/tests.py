@@ -9,6 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.templatetags.static import static
 
 from .admin import HasAccountListFilter, NewsletterSubscriberAdmin
 from .newsletter_blocks import normalize_blocks
@@ -18,6 +19,19 @@ from .services import send_campaign
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
 User = get_user_model()
+
+
+class PublicPageTests(TestCase):
+	def test_services_page_lists_deliverable_examples(self):
+		response = self.client.get(reverse("services"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Deliverable Examples")
+		self.assertContains(response, "Student Dashboard")
+		self.assertContains(response, static("deliverables/student-dashboard.html"))
+		self.assertContains(response, static("deliverables/student-data-analysis.xlsx"))
+		self.assertContains(response, static("deliverables/student-dashboard-presentation.pdf"))
+		self.assertContains(response, static("deliverables/deliverable-documentation.pdf"))
 
 
 @override_settings(

@@ -144,6 +144,30 @@
       </div>
     </section>
 
+    <section class="marketing-section" aria-labelledby="services-deliverables-heading">
+      <div class="marketing-section-head">
+        <p class="marketing-kicker">Deliverable Examples</p>
+        <h2 id="services-deliverables-heading">Sample files from client-ready work</h2>
+        <p>These examples show the kinds of dashboard, workbook, presentation, and documentation files Miranda Insights can prepare as part of a project.</p>
+      </div>
+      <div class="card-grid card-grid-two-up">
+        {% for example in deliverable_examples %}
+          <article class="marketing-card">
+            <div class="marketing-card-meta">
+              <span class="marketing-card-tag">Example {{ forloop.counter }}</span>
+              <span class="marketing-badge">{{ example.file_type }}</span>
+            </div>
+            <h3>{{ example.title }}</h3>
+            <p>{{ example.description }}</p>
+            <div class="marketing-actions">
+              <a class="btn btn-primary" href="{% static example.static_path %}" target="_blank" rel="noopener">{{ example.cta_label }}</a>
+              <a class="btn btn-ghost" href="{% static example.static_path %}" download>Download</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
     <section class="marketing-section" aria-labelledby="services-support-heading">
       <article class="marketing-banner">
         <div>
