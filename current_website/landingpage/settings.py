@@ -13,6 +13,14 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from urllib.parse import unquote, urlparse
+
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+except ImportError:  # pragma: no cover - handled by dependency installation
+    sentry_sdk = None
+    DjangoIntegration = None
 
 
 def env_bool(name, default=False):
@@ -21,11 +29,73 @@ def env_bool(name, default=False):
         return default
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
+
+def env_int(name, default=0):
+    value = os.getenv(name)
+    if value is None or not str(value).strip():
+        return default
+    return int(str(value).strip())
+
+
+def env_list(name, default=None):
+    value = os.getenv(name)
+    if value is None:
+        return list(default or [])
+    return [item.strip() for item in value.split(',') if item.strip()]
+
+
+def env_pairs(name):
+    pairs = []
+    for item in env_list(name):
+        if ':' in item:
+            label, value = item.split(':', 1)
+            pairs.append((label.strip(), value.strip()))
+        else:
+            pairs.append((item, item))
+    return pairs
+
+
+def database_config_from_url(url):
+    parsed = urlparse(url)
+    scheme = (parsed.scheme or '').lower()
+    engine_map = {
+        'postgres': 'django.db.backends.postgresql',
+        'postgresql': 'django.db.backends.postgresql',
+        'pgsql': 'django.db.backends.postgresql',
+        'sqlite': 'django.db.backends.sqlite3',
+        'sqlite3': 'django.db.backends.sqlite3',
+    }
+    engine = engine_map.get(scheme)
+    if not engine:
+        raise ValueError(f'Unsupported DATABASE_URL scheme: {scheme or "<empty>"}')
+
+    if engine == 'django.db.backends.sqlite3':
+        db_name = unquote(parsed.path or '')
+        if db_name in {'', '/', '/:memory:'}:
+            db_name = ':memory:'
+        else:
+            db_name = db_name.lstrip('/')
+            if not os.path.isabs(db_name):
+                db_name = str(BASE_DIR / db_name)
+        return {
+            'ENGINE': engine,
+            'NAME': db_name,
+        }
+
+    config = {
+        'ENGINE': engine,
+        'NAME': unquote((parsed.path or '').lstrip('/')),
+        'USER': unquote(parsed.username or ''),
+        'PASSWORD': unquote(parsed.password or ''),
+        'HOST': parsed.hostname or '',
+        'PORT': str(parsed.port or ''),
+    }
+    if env_bool('DATABASE_SSL_REQUIRE', True):
+        config['OPTIONS'] = {'sslmode': 'require'}
+    return config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# load environment variables from .env at project root
-load_dotenv(str(BASE_DIR / '.env'))
 
 # load environment variables from .env at project root
 load_dotenv(str(BASE_DIR / '.env'))
@@ -41,20 +111,15 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DEBUG', True)
 
-configured_allowed_hosts = os.getenv('ALLOWED_HOSTS')
+configured_allowed_hosts = env_list('ALLOWED_HOSTS')
 if configured_allowed_hosts:
-    ALLOWED_HOSTS = [host.strip() for host in configured_allowed_hosts.split(',') if host.strip()]
+    ALLOWED_HOSTS = configured_allowed_hosts
 elif DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
-configured_csrf_trusted_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip().rstrip('/')
-    for origin in configured_csrf_trusted_origins.split(',')
-    if origin.strip()
-]
+CSRF_TRUSTED_ORIGINS = [origin.rstrip('/') for origin in env_list('CSRF_TRUSTED_ORIGINS')]
 CSRF_FAILURE_VIEW = 'landingpage.csrf.csrf_failure'
 
 
@@ -111,10 +176,20 @@ WSGI_APPLICATION = 'landingpage.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+database_url = (os.getenv('DATABASE_URL') or '').strip()
 DATABASES = {
-    'default': {
+    'default': database_config_from_url(database_url) if database_url else {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+DATABASES['default']['CONN_MAX_AGE'] = env_int('DATABASE_CONN_MAX_AGE', 60)
+DATABASES['default']['CONN_HEALTH_CHECKS'] = env_bool('DATABASE_CONN_HEALTH_CHECKS', not DEBUG)
+CACHES = {
+    'default': {
+        'BACKEND': os.getenv('CACHE_BACKEND', 'django.core.cache.backends.locmem.LocMemCache'),
+        'LOCATION': os.getenv('CACHE_LOCATION', 'insights-website-cache'),
+        'TIMEOUT': env_int('CACHE_DEFAULT_TIMEOUT', 300),
     }
 }
 
@@ -166,6 +241,10 @@ STATICFILES_DIRS = [
 # Optional STATIC_ROOT for collectstatic (useful for deployments)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_ROOT = BASE_DIR / 'media'
+FILE_UPLOAD_PERMISSIONS = 0o640
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o750
+FILE_UPLOAD_MAX_MEMORY_SIZE = env_int('FILE_UPLOAD_MAX_MEMORY_SIZE', 2 * 1024 * 1024)
+DATA_UPLOAD_MAX_MEMORY_SIZE = env_int('DATA_UPLOAD_MAX_MEMORY_SIZE', 10 * 1024 * 1024)
 
 
 # Email (newsletter)
@@ -197,12 +276,39 @@ NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
 CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')
 SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', CONTACT_RECIPIENT)
 COMPANY_NOTIFICATION_EMAIL = os.getenv('COMPANY_NOTIFICATION_EMAIL', 'company@mirandainsights.com')
+SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL or 'server@localhost')
+EMAIL_SUBJECT_PREFIX = os.getenv('EMAIL_SUBJECT_PREFIX', '[Miranda Insights] ')
+ADMINS = env_pairs('ADMINS')
+MANAGERS = env_pairs('MANAGERS') if env_list('MANAGERS') else ADMINS
+SENTRY_DSN = os.getenv('SENTRY_DSN', '').strip()
+SENTRY_ENVIRONMENT = os.getenv('SENTRY_ENVIRONMENT', 'production').strip() or 'production'
+SENTRY_RELEASE = os.getenv('SENTRY_RELEASE', '').strip() or None
+SENTRY_SEND_DEFAULT_PII = env_bool('SENTRY_SEND_DEFAULT_PII', False)
+SENTRY_TRACES_SAMPLE_RATE = float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0'))
+SENTRY_PROFILES_SAMPLE_RATE = float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0'))
+
+THROTTLE_ENABLED = env_bool('THROTTLE_ENABLED', True)
+THROTTLE_CACHE_ALIAS = os.getenv('THROTTLE_CACHE_ALIAS', 'default')
+LOGIN_RATE_LIMIT = os.getenv('LOGIN_RATE_LIMIT', '10/10m')
+LOGIN_2FA_RATE_LIMIT = os.getenv('LOGIN_2FA_RATE_LIMIT', '10/10m')
+SIGNUP_RATE_LIMIT = os.getenv('SIGNUP_RATE_LIMIT', '5/1h')
+USERNAME_RECOVERY_RATE_LIMIT = os.getenv('USERNAME_RECOVERY_RATE_LIMIT', '5/1h')
+PASSWORD_RESET_RATE_LIMIT = os.getenv('PASSWORD_RESET_RATE_LIMIT', '5/1h')
+CONTACT_RATE_LIMIT = os.getenv('CONTACT_RATE_LIMIT', '5/30m')
+NEWSLETTER_SUBSCRIBE_RATE_LIMIT = os.getenv('NEWSLETTER_SUBSCRIBE_RATE_LIMIT', '10/1h')
+MOBILE_PUSH_DEVICE_RATE_LIMIT = os.getenv('MOBILE_PUSH_DEVICE_RATE_LIMIT', '30/10m')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = env_bool('USE_X_FORWARDED_HOST', not DEBUG)
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = os.getenv('SECURE_CROSS_ORIGIN_OPENER_POLICY', 'same-origin')
+SECURE_CROSS_ORIGIN_RESOURCE_POLICY = os.getenv('SECURE_CROSS_ORIGIN_RESOURCE_POLICY', 'same-origin')
+X_FRAME_OPTIONS = os.getenv('X_FRAME_OPTIONS', 'DENY')
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
@@ -244,3 +350,63 @@ UNFOLD = {
 
 # custom admin url from env, default to "admin"
 DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin").strip("/")
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': os.getenv('ROOT_LOG_LEVEL', 'INFO'),
+    },
+    'loggers': {
+        'django.security': {
+            'handlers': ['console', 'mail_admins'],
+            'level': os.getenv('DJANGO_SECURITY_LOG_LEVEL', 'WARNING'),
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'apps': {
+            'handlers': ['console', 'mail_admins'],
+            'level': os.getenv('APP_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'landingpage': {
+            'handlers': ['console', 'mail_admins'],
+            'level': os.getenv('APP_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+    },
+}
+
+
+if SENTRY_DSN and sentry_sdk and DjangoIntegration:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=SENTRY_ENVIRONMENT,
+        release=SENTRY_RELEASE,
+        send_default_pii=SENTRY_SEND_DEFAULT_PII,
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
+    )

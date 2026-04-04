@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from pathlib import Path
 
 from apps.accounts.models import AccountProfile
 from .models import Client, Project, ProjectMessage
@@ -15,6 +16,28 @@ BLOCKED_PROJECT_ATTACHMENT_EXTENSIONS = {
 	".js", ".jse", ".lnk", ".msi", ".msp", ".msix", ".msh", ".ps1", ".psm1",
 	".reg", ".scr", ".sh", ".svg", ".url", ".vb", ".vbe", ".vbs", ".wsf",
 	".xhtml",
+}
+ALLOWED_PROJECT_ATTACHMENT_EXTENSIONS = {
+	".csv", ".doc", ".docx", ".gif", ".jpeg", ".jpg", ".pdf", ".png", ".ppt",
+	".pptx", ".rtf", ".txt", ".webp", ".xls", ".xlsx", ".zip",
+}
+ALLOWED_PROJECT_ATTACHMENT_CONTENT_TYPES = {
+	"application/msword",
+	"application/pdf",
+	"application/rtf",
+	"application/vnd.ms-excel",
+	"application/vnd.ms-powerpoint",
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	"application/x-zip-compressed",
+	"application/zip",
+	"image/gif",
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+	"text/csv",
+	"text/plain",
 }
 
 
@@ -40,7 +63,10 @@ class ProjectMessageForm(forms.ModelForm):
 		self.fields["body"].required = False
 		self.fields["attachment_file"].required = False
 		self.fields["attachment_link"].required = False
-		self.fields["attachment_file"].widget.attrs.update({"class": "project-chat-widget__file-input", "accept": "*/*"})
+		self.fields["attachment_file"].widget.attrs.update({
+			"class": "project-chat-widget__file-input",
+			"accept": ",".join(sorted(ALLOWED_PROJECT_ATTACHMENT_EXTENSIONS)),
+		})
 		self.fields["attachment_link"].widget.attrs.update({"class": "project-chat-widget__link-input", "data-link-input": "true"})
 		if client is not None:
 			self.fields["project"].queryset = client.projects.exclude(status=Project.STATUS_CANCELLED).order_by("name")
@@ -59,9 +85,15 @@ class ProjectMessageForm(forms.ModelForm):
 		attachment_link = (cleaned_data.get("attachment_link") or "").strip()
 		if attachment_file:
 			lower_name = attachment_file.name.lower()
+			extension = Path(lower_name).suffix
 			blocked_extension = next((ext for ext in BLOCKED_PROJECT_ATTACHMENT_EXTENSIONS if lower_name.endswith(ext)), None)
 			if blocked_extension:
 				raise ValidationError(f"Files ending in {blocked_extension} are not allowed for project attachments.")
+			if extension not in ALLOWED_PROJECT_ATTACHMENT_EXTENSIONS:
+				raise ValidationError("Upload a PDF, Office document, text file, ZIP archive, CSV, or common image format.")
+			content_type = str(getattr(attachment_file, "content_type", "") or "").split(";", 1)[0].strip().lower()
+			if content_type and content_type not in ALLOWED_PROJECT_ATTACHMENT_CONTENT_TYPES:
+				raise ValidationError("That file type is not allowed for project attachments.")
 			if attachment_file.size > MAX_PROJECT_ATTACHMENT_BYTES:
 				raise ValidationError("Project attachments must be 10 MB or smaller.")
 		if not body and not attachment_file and not attachment_link:

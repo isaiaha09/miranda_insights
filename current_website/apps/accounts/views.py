@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import RedirectURLMixin
+from django.contrib.auth.views import PasswordResetView, RedirectURLMixin
 from django.core import signing
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -23,6 +23,7 @@ from apps.clients.chat import render_project_chat_widget
 from apps.clients.forms import ClientPortalProfileForm, ProjectMessageForm
 from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 from landingpage.emailing import send_templated_email
+from landingpage.throttling import apply_retry_after, check_request_throttle
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
 from .push_notifications import register_mobile_push_device, unregister_mobile_push_device
@@ -125,6 +126,18 @@ def _json_error(message, *, field_errors=None, status=400, **extra):
 	return JsonResponse(payload, status=status)
 
 
+def _rate_limit_json_response(message, throttle_result):
+	response = _json_error(message, status=429, retryAfter=throttle_result.retry_after)
+	return apply_retry_after(response, throttle_result.retry_after)
+
+
+def _rate_limit_form_response(view, form, message, throttle_result):
+	form.add_error(None, message)
+	response = view.form_invalid(form)
+	response.status_code = 429
+	return apply_retry_after(response, throttle_result.retry_after)
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class MobileSignInApiView(View):
 	def post(self, request, *args, **kwargs):
@@ -134,6 +147,10 @@ class MobileSignInApiView(View):
 			return _json_error("Invalid request payload.")
 
 		username = str(payload.get("username", "")).strip()
+		throttle_result = check_request_throttle(request, "mobile-login", settings.LOGIN_RATE_LIMIT, username)
+		if throttle_result.limited:
+			return _rate_limit_json_response("Too many sign-in attempts. Please wait and try again.", throttle_result)
+
 		password = str(payload.get("password", ""))
 		otp_code = str(payload.get("otpCode", "")).strip()
 		redirect_url = str(payload.get("redirectUrl", "")).strip()
@@ -186,7 +203,12 @@ class MobileUsernameRecoveryApiView(View):
 		except json.JSONDecodeError:
 			return _json_error("Invalid request payload.")
 
-		form = UsernameRecoveryForm(data={"email": str(payload.get("email", "")).strip()})
+		email = str(payload.get("email", "")).strip().lower()
+		throttle_result = check_request_throttle(request, "mobile-username-recovery", settings.USERNAME_RECOVERY_RATE_LIMIT, email)
+		if throttle_result.limited:
+			return _rate_limit_json_response("Too many recovery attempts. Please wait and try again.", throttle_result)
+
+		form = UsernameRecoveryForm(data={"email": email})
 		if not form.is_valid():
 			field_errors = {key: [str(error) for error in errors] for key, errors in form.errors.items()}
 			return _json_error("Enter a valid email address.", field_errors=field_errors)
@@ -224,7 +246,12 @@ class MobilePasswordResetApiView(View):
 		except json.JSONDecodeError:
 			return _json_error("Invalid request payload.")
 
-		form = StyledPasswordResetForm(data={"email": str(payload.get("email", "")).strip()})
+		email = str(payload.get("email", "")).strip().lower()
+		throttle_result = check_request_throttle(request, "mobile-password-reset", settings.PASSWORD_RESET_RATE_LIMIT, email)
+		if throttle_result.limited:
+			return _rate_limit_json_response("Too many password reset requests. Please wait and try again.", throttle_result)
+
+		form = StyledPasswordResetForm(data={"email": email})
 		if not form.is_valid():
 			field_errors = {key: [str(error) for error in errors] for key, errors in form.errors.items()}
 			return _json_error("Enter a valid email address.", field_errors=field_errors)
@@ -258,6 +285,15 @@ class MobilePushDeviceApiView(View):
 	def post(self, request, *args, **kwargs):
 		if not request.user.is_authenticated:
 			return _json_error("Authentication required.", status=401)
+
+		throttle_result = check_request_throttle(
+			request,
+			"mobile-push-device",
+			settings.MOBILE_PUSH_DEVICE_RATE_LIMIT,
+			request.user.pk,
+		)
+		if throttle_result.limited:
+			return _rate_limit_json_response("Too many device registration requests. Please wait and try again.", throttle_result)
 
 		try:
 			payload = json.loads(request.body.decode("utf-8") or "{}")
@@ -499,6 +535,13 @@ class LoginView(RedirectURLMixin, FormView):
 			return self.get_redirect_url() or settings.LOGIN_REDIRECT_URL
 		return _build_login_success_url(self.request, self.request.user, redirect_url=self.get_redirect_url())
 
+	def post(self, request, *args, **kwargs):
+		throttle_result = check_request_throttle(request, "login", settings.LOGIN_RATE_LIMIT, request.POST.get("username", ""))
+		if throttle_result.limited:
+			form = self.get_form()
+			return _rate_limit_form_response(self, form, "Too many sign-in attempts. Please wait and try again.", throttle_result)
+		return super().post(request, *args, **kwargs)
+
 	def form_valid(self, form):
 		user = form.get_user()
 		success_url = _build_login_success_url(self.request, user, redirect_url=self.get_redirect_url())
@@ -526,6 +569,18 @@ class TwoFactorChallengeView(FormView):
 		if not request.session.get("pending_2fa_user_id"):
 			return redirect("login")
 		return super().dispatch(request, *args, **kwargs)
+
+	def post(self, request, *args, **kwargs):
+		throttle_result = check_request_throttle(
+			request,
+			"login-2fa",
+			settings.LOGIN_2FA_RATE_LIMIT,
+			request.session.get("pending_2fa_user_id", ""),
+		)
+		if throttle_result.limited:
+			form = self.get_form()
+			return _rate_limit_form_response(self, form, "Too many authentication code attempts. Please wait and try again.", throttle_result)
+		return super().post(request, *args, **kwargs)
 
 	def form_valid(self, form):
 		user_id = self.request.session.get("pending_2fa_user_id")
@@ -744,6 +799,13 @@ class SignupView(FormView):
 		context["turnstile_site_key"] = settings.TURNSTILE_SITE_KEY
 		return context
 
+	def post(self, request, *args, **kwargs):
+		throttle_result = check_request_throttle(request, "signup", settings.SIGNUP_RATE_LIMIT, request.POST.get("email", ""))
+		if throttle_result.limited:
+			form = self.get_form()
+			return _rate_limit_form_response(self, form, "Too many signup attempts. Please wait and try again.", throttle_result)
+		return super().post(request, *args, **kwargs)
+
 	def form_valid(self, form):
 		turnstile_ok, _ = _verify_turnstile_request(self.request)
 		if not turnstile_ok:
@@ -766,6 +828,18 @@ class UsernameRecoveryView(FormView):
 	template_name = "accounts/recover_username.html"
 	form_class = UsernameRecoveryForm
 
+	def post(self, request, *args, **kwargs):
+		throttle_result = check_request_throttle(
+			request,
+			"username-recovery",
+			settings.USERNAME_RECOVERY_RATE_LIMIT,
+			request.POST.get("email", ""),
+		)
+		if throttle_result.limited:
+			form = self.get_form()
+			return _rate_limit_form_response(self, form, "Too many recovery attempts. Please wait and try again.", throttle_result)
+		return super().post(request, *args, **kwargs)
+
 	def form_valid(self, form):
 		email = form.cleaned_data["email"].strip().lower()
 		users = User.objects.filter(email__iexact=email).order_by("username")
@@ -785,6 +859,20 @@ class UsernameRecoveryView(FormView):
 			)
 
 		return render(self.request, "accounts/recover_username_done.html", {"email": email})
+
+
+class ThrottledPasswordResetView(PasswordResetView):
+	def post(self, request, *args, **kwargs):
+		throttle_result = check_request_throttle(
+			request,
+			"password-reset",
+			settings.PASSWORD_RESET_RATE_LIMIT,
+			request.POST.get("email", ""),
+		)
+		if throttle_result.limited:
+			form = self.get_form()
+			return _rate_limit_form_response(self, form, "Too many password reset requests. Please wait and try again.", throttle_result)
+		return super().post(request, *args, **kwargs)
 
 
 class TermsView(TemplateView):

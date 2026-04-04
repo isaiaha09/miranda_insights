@@ -322,3 +322,46 @@ class NewsletterSubscriberAdminTests(TestCase):
 		filtered = filter_instance.queryset(request, self.admin.get_queryset(request))
 
 		self.assertEqual(list(filtered.values_list("email", flat=True)), ["with-account@example.com"])
+
+
+@override_settings(
+	EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+	CONTACT_RATE_LIMIT="1/1h",
+	CONTACT_RECIPIENT="support@example.com",
+	DEFAULT_FROM_EMAIL="no-reply@example.com",
+	SITE_URL="https://mirandainsights.com",
+	TURNSTILE_SITE_KEY="",
+	TURNSTILE_SECRET_KEY="",
+)
+class ContactSupportThrottleTests(TestCase):
+	def test_contact_support_rate_limit_returns_429_after_limit(self):
+		payload = {
+			"name": "Taylor Client",
+			"organization": "Northwind",
+			"email": "taylor@example.com",
+			"phone": "",
+			"business_location": "",
+			"subject_choice": "support",
+			"message": "Need help with the portal.",
+		}
+
+		first_response = self.client.post(reverse("contact_support"), payload)
+		second_response = self.client.post(reverse("contact_support"), payload)
+
+		self.assertEqual(first_response.status_code, 302)
+		self.assertEqual(second_response.status_code, 429)
+		self.assertContains(second_response, "Too many contact requests were submitted. Please wait and try again.", status_code=429)
+		self.assertGreater(int(second_response["Retry-After"]), 0)
+		self.assertLessEqual(int(second_response["Retry-After"]), 3600)
+
+
+@override_settings(NEWSLETTER_SUBSCRIBE_RATE_LIMIT="1/1h")
+class NewsletterSubscribeThrottleTests(TestCase):
+	def test_subscribe_rate_limit_returns_429_after_limit(self):
+		first_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"})
+		second_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"})
+
+		self.assertEqual(first_response.status_code, 302)
+		self.assertEqual(second_response.status_code, 429)
+		self.assertGreater(int(second_response["Retry-After"]), 0)
+		self.assertLessEqual(int(second_response["Retry-After"]), 3600)

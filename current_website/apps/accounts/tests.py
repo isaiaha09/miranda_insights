@@ -582,3 +582,42 @@ class DashboardNewsletterPreferenceTests(TestCase):
 		self.assertEqual(len(mail.outbox), 1)
 		self.assertEqual(mail.outbox[0].to, ["expired@example.com"])
 		self.assertIn("successfully deleted", mail.outbox[0].body)
+
+
+@override_settings(LOGIN_RATE_LIMIT="1/1h")
+class LoginThrottleTests(TestCase):
+	def test_login_rate_limit_returns_429_after_limit(self):
+		User.objects.create_user(username="ratelimited", email="ratelimited@example.com", password="correct-pass-123")
+
+		first_response = self.client.post(reverse("login"), {"username": "ratelimited", "password": "wrong-pass"})
+		second_response = self.client.post(reverse("login"), {"username": "ratelimited", "password": "wrong-pass"})
+
+		self.assertEqual(first_response.status_code, 200)
+		self.assertEqual(second_response.status_code, 429)
+		self.assertContains(second_response, "Too many sign-in attempts. Please wait and try again.", status_code=429)
+		self.assertGreater(int(second_response["Retry-After"]), 0)
+		self.assertLessEqual(int(second_response["Retry-After"]), 3600)
+
+
+@override_settings(LOGIN_RATE_LIMIT="1/1h")
+class MobileLoginThrottleTests(TestCase):
+	def test_mobile_login_api_rate_limit_returns_429_after_limit(self):
+		user = User.objects.create_user(username="mobilelimit", email="mobilelimit@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1300")
+
+		first_response = self.client.post(
+			reverse("mobile_login_api"),
+			data='{"username": "mobilelimit", "password": "wrong-pass"}',
+			content_type="application/json",
+		)
+		second_response = self.client.post(
+			reverse("mobile_login_api"),
+			data='{"username": "mobilelimit", "password": "wrong-pass"}',
+			content_type="application/json",
+		)
+
+		self.assertEqual(first_response.status_code, 400)
+		self.assertEqual(second_response.status_code, 429)
+		self.assertEqual(second_response.json()["message"], "Too many sign-in attempts. Please wait and try again.")
+		self.assertGreater(int(second_response["Retry-After"]), 0)
+		self.assertLessEqual(int(second_response["Retry-After"]), 3600)

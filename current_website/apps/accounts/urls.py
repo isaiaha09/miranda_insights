@@ -12,6 +12,7 @@ from .views import (
     MobileUsernameRecoveryApiView,
     PrivacyView,
     SignupView,
+    ThrottledPasswordResetView,
     TermsView,
     TwoFactorChallengeView,
     UsernameRecoveryView,
@@ -34,7 +35,7 @@ urlpatterns = [
     path("recover-username/", UsernameRecoveryView.as_view(), name="recover_username"),
     path(
         "password-reset/",
-        auth_views.PasswordResetView.as_view(
+        ThrottledPasswordResetView.as_view(
             template_name="registration/password_reset_form.html",
             form_class=StyledPasswordResetForm,
             email_template_name="registration/password_reset_email.txt",

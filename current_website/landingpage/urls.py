@@ -15,12 +15,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from landingpage import pwa
+from landingpage import health, pwa
 
 admin.site.login_template = "admin/login_portal.html"
 admin.site.site_header = "Miranda Insights Admin"
@@ -32,6 +31,7 @@ urlpatterns = [
     path("manifest.webmanifest", pwa.manifest, name="webmanifest"),
     path("service-worker.js", pwa.service_worker, name="service_worker"),
     path("offline/", pwa.offline, name="offline"),
+    path("health/", health.health_check, name="health_check"),
     path('', include('apps.accounts.urls')),
     path('', include('apps.clients.urls')),
     path('', include('apps.news.urls')),

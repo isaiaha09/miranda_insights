@@ -61,4 +61,7 @@ class ProjectMessageAttachmentDownloadView(LoginRequiredMixin, View):
 			raise Http404("Attachment not found.")
 
 		message.attachment_file.open("rb")
-		return FileResponse(message.attachment_file, as_attachment=True, filename=message.attachment_file_name or None)
+		response = FileResponse(message.attachment_file, as_attachment=True, filename=message.attachment_file_name or None)
+		response["X-Content-Type-Options"] = "nosniff"
+		response["Content-Security-Policy"] = "sandbox"
+		return response

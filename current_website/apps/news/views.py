@@ -10,6 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from landingpage.emailing import send_templated_email
+from landingpage.throttling import apply_retry_after, check_request_throttle
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
 from .forms import NewsletterSubscribeForm, SupportContactForm
@@ -132,6 +133,36 @@ def subscribe(request):
 	if request.method != "POST":
 		return redirect(_newsletter_anchor_url())
 
+	throttle_result = check_request_throttle(
+		request,
+		"newsletter-subscribe",
+		settings.NEWSLETTER_SUBSCRIBE_RATE_LIMIT,
+		request.POST.get("email", ""),
+	)
+	if throttle_result.limited:
+		message_text = "Too many newsletter signup attempts. Please wait and try again."
+		messages.error(request, message_text)
+		if _is_ajax_request(request):
+			response = JsonResponse(
+				{
+					"message": message_text,
+					"level": "error",
+					"sectionId": NEWSLETTER_SECTION_ID,
+				},
+				status=429,
+			)
+		else:
+			response = render(
+				request,
+				"index.html",
+				{
+					"subscribe_form": NewsletterSubscribeForm(request.POST),
+					"newsletter_section_id": NEWSLETTER_SECTION_ID,
+				},
+				status=429,
+			)
+		return apply_retry_after(response, throttle_result.retry_after)
+
 	form = NewsletterSubscribeForm(request.POST)
 	if not form.is_valid():
 		return _newsletter_response(request, "Please enter a valid email address.", level="error", status_code=400)
@@ -180,6 +211,27 @@ def unsubscribe(request):
 
 def contact_support(request):
 	if request.method == "POST":
+		throttle_result = check_request_throttle(
+			request,
+			"contact-support",
+			settings.CONTACT_RATE_LIMIT,
+			request.POST.get("email", ""),
+		)
+		if throttle_result.limited:
+			form = SupportContactForm(request.POST)
+			messages.error(request, "Too many contact requests were submitted. Please wait and try again.")
+			response = render(
+				request,
+				"contact.html",
+				{
+					"form": form,
+					"turnstile_enabled": is_turnstile_enabled_for_request(request),
+					"turnstile_site_key": settings.TURNSTILE_SITE_KEY,
+				},
+				status=429,
+			)
+			return apply_retry_after(response, throttle_result.retry_after)
+
 		form = SupportContactForm(request.POST)
 		if form.is_valid():
 			turnstile_ok, _ = verify_turnstile_for_request(request, (request.POST.get("cf-turnstile-response") or "").strip(), _client_ip(request))
