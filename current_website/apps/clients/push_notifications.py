@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.urls import reverse
 
 from apps.accounts.push_notifications import send_mobile_push_notification_to_user
+from apps.operations.services import dispatch_push_notification_to_user
 
 
 def truncate_push_body(text: str, *, fallback: str = "Open the client portal to review the latest update.", limit: int = 140) -> str:
@@ -27,7 +28,7 @@ def notify_project_client(project, *, title: str, body: str, kind: str = "projec
 	if extra_data:
 		data.update(extra_data)
 
-	return send_mobile_push_notification_to_user(
+	return dispatch_push_notification_to_user(
 		client_user,
 		title=title,
 		body=truncate_push_body(body),

@@ -1,17 +1,89 @@
-name: "CI"
+name: CI
 
 on:
   push:
     branches:
       - main
+      - master
+  pull_request:
 
 jobs:
-  show:
+  django:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: current_website
+    env:
+      SECRET_KEY: ci-secret-key-change-me-please-1234567890-abcdefghijklmnopqrstuvwxyz
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      CSRF_TRUSTED_ORIGINS: https://example.com
+      SITE_URL: https://example.com
+      DEFAULT_FROM_EMAIL: no-reply@example.com
+      NEWSLETTER_FROM_EMAIL: news@example.com
+      CONTACT_RECIPIENT: support@example.com
+      SUPPORT_EMAIL: support@example.com
+      COMPANY_NOTIFICATION_EMAIL: company@example.com
+      EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+      SECURE_SSL_REDIRECT: "True"
+      SECURE_HSTS_SECONDS: "31536000"
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: "True"
+      SECURE_HSTS_PRELOAD: "True"
+      USE_X_FORWARDED_HOST: "True"
     steps:
       - uses: actions/checkout@v4
-      - name: Show commit and files
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: current_website/package-lock.json
+
+      - name: Install Python dependencies
         run: |
-          echo "Commit: $GITHUB_SHA"
-          echo "Actor: $GITHUB_ACTOR"
-          ls -la
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Django system checks
+        run: |
+          python manage.py check
+          python manage.py check --deploy --fail-level WARNING
+
+      - name: Build CSS
+        run: npm run build:css
+
+      - name: Run Django tests
+        run: python manage.py test
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: current_website/mobile_app
+    env:
+      EXPO_PUBLIC_INSIGHTS_SITE_URL: https://example.com
+      EXPO_PUBLIC_EXPO_PROJECT_ID: ci-project-id
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: current_website/mobile_app/package-lock.json
+
+      - name: Install mobile dependencies
+        run: npm ci
+
+      - name: Run mobile typecheck
+        run: npm run typecheck

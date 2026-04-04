@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.urls import path, reverse
 from django.utils.html import format_html
 
+from apps.operations.services import dispatch_newsletter_campaign, should_queue_outbound_delivery
 from .forms import NewsletterBlockTemplateAdminForm, NewsletterCampaignAdminForm
 from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
 from .services import send_campaign
@@ -183,27 +184,32 @@ class NewsletterCampaignAdmin(admin.ModelAdmin):
 			self.message_user(request, "Campaign not found.", level=messages.ERROR)
 			return HttpResponseRedirect(reverse("admin:news_newslettercampaign_changelist"))
 
-		sent, failed = send_campaign(campaign)
-		self.message_user(
-			request,
-			f"Campaign send complete. Sent: {sent}, Failed: {failed}",
+		queued, sent, failed = dispatch_newsletter_campaign(campaign)
+		message = (
+			"Campaign queued for background delivery."
+			if queued
+			else f"Campaign send complete. Sent: {sent}, Failed: {failed}"
 		)
+		self.message_user(request, message)
 		return HttpResponseRedirect(
 			reverse("admin:news_newslettercampaign_change", args=[campaign.pk])
 		)
 
 	@admin.action(description="Send selected campaigns now")
 	def send_selected_campaigns_now(self, request, queryset):
+		queued_count = 0
 		total_sent = 0
 		total_failed = 0
 		for campaign in queryset:
-			sent, failed = send_campaign(campaign)
+			queued, sent, failed = dispatch_newsletter_campaign(campaign)
+			if queued:
+				queued_count += 1
 			total_sent += sent
 			total_failed += failed
-		self.message_user(
-			request,
-			f"Campaign send complete. Sent: {total_sent}, Failed: {total_failed}",
-		)
+		if queued_count:
+			self.message_user(request, f"Queued {queued_count} campaign(s) for background delivery.")
+		else:
+			self.message_user(request, f"Campaign send complete. Sent: {total_sent}, Failed: {total_failed}")
 
 	def save_model(self, request, obj, form, change):
 		if not obj.created_by_id:

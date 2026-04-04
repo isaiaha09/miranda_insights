@@ -19,6 +19,35 @@ def build_email_context(context: dict[str, Any] | None = None) -> dict[str, Any]
     return base_context
 
 
+def normalize_email_subject(subject: str) -> str:
+    return " ".join(str(subject or "").splitlines()).strip()
+
+
+def send_email_message(
+    *,
+    subject: str,
+    text_body: str,
+    to: list[str],
+    from_email: str | None = None,
+    reply_to: list[str] | None = None,
+    headers: dict[str, str] | None = None,
+    html_body: str | None = None,
+    connection=None,
+) -> int:
+    message = EmailMultiAlternatives(
+        subject=normalize_email_subject(subject),
+        body=text_body,
+        from_email=from_email or settings.DEFAULT_FROM_EMAIL,
+        to=to,
+        reply_to=reply_to,
+        headers=headers,
+        connection=connection,
+    )
+    if html_body:
+        message.attach_alternative(html_body, "text/html")
+    return message.send(fail_silently=False)
+
+
 def send_templated_email(
     *,
     subject: str,
@@ -34,14 +63,26 @@ def send_templated_email(
     text_body = render_to_string(f"emails/{template_prefix}.txt", full_context)
     html_body = render_to_string(f"emails/{template_prefix}.html", full_context)
 
-    message = EmailMultiAlternatives(
+    if getattr(settings, "OUTBOUND_DELIVERY_MODE", "sync") == "queue":
+        from apps.operations.services import dispatch_raw_email
+
+        return dispatch_raw_email(
+            subject=normalize_email_subject(subject),
+            text_body=text_body,
+            html_body=html_body,
+            to=to,
+            from_email=from_email or settings.DEFAULT_FROM_EMAIL,
+            reply_to=reply_to,
+            headers=headers,
+        )
+
+    return send_email_message(
         subject=subject,
-        body=text_body,
-        from_email=from_email or settings.DEFAULT_FROM_EMAIL,
+        text_body=text_body,
+        html_body=html_body,
+        from_email=from_email,
         to=to,
         reply_to=reply_to,
         headers=headers,
         connection=connection,
     )
-    message.attach_alternative(html_body, "text/html")
-    return message.send(fail_silently=False)

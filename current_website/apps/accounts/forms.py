@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
+from django.template.loader import render_to_string
 
+from apps.operations.services import dispatch_raw_email
 from .models import AccountProfile
 
 
@@ -120,3 +122,23 @@ class UsernameRecoveryForm(forms.Form):
 
 class StyledPasswordResetForm(PasswordResetForm):
     email = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={"placeholder": "you@example.com", "autocomplete": "email"}))
+
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        subject = "".join(render_to_string(subject_template_name, context).splitlines())
+        text_body = render_to_string(email_template_name, context)
+        html_body = render_to_string(html_email_template_name, context) if html_email_template_name else None
+        dispatch_raw_email(
+            subject=subject,
+            text_body=text_body,
+            html_body=html_body,
+            to=[to_email],
+            from_email=from_email,
+        )

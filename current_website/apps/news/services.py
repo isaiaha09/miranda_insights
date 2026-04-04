@@ -209,6 +209,8 @@ def send_campaign(campaign: NewsletterCampaign, subscribers=None):
 
 def process_due_automated_campaigns():
     """Process all automated campaigns due to be sent now."""
+    from apps.operations.services import dispatch_newsletter_campaign
+
     now = timezone.now()
     campaigns = NewsletterCampaign.objects.filter(
         mode=NewsletterCampaign.MODE_AUTOMATED,
@@ -222,7 +224,7 @@ def process_due_automated_campaigns():
             campaign.save(update_fields=["next_send_at", "updated_at"])
 
         if campaign.next_send_at and campaign.next_send_at <= now:
-            send_campaign(campaign)
+            dispatch_newsletter_campaign(campaign)
             processed += 1
 
     return processed

@@ -138,6 +138,7 @@ INSTALLED_APPS = [
     'apps.chat',
     'apps.clients',
     'apps.news',
+    'apps.operations',
    
 
 ]
@@ -289,6 +290,8 @@ SENTRY_PROFILES_SAMPLE_RATE = float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0'
 
 THROTTLE_ENABLED = env_bool('THROTTLE_ENABLED', True)
 THROTTLE_CACHE_ALIAS = os.getenv('THROTTLE_CACHE_ALIAS', 'default')
+OUTBOUND_DELIVERY_MODE = os.getenv('OUTBOUND_DELIVERY_MODE', 'sync' if DEBUG else 'queue').strip().lower()
+OUTBOUND_WORKER_SLEEP_SECONDS = float(os.getenv('OUTBOUND_WORKER_SLEEP_SECONDS', '5'))
 LOGIN_RATE_LIMIT = os.getenv('LOGIN_RATE_LIMIT', '10/10m')
 LOGIN_2FA_RATE_LIMIT = os.getenv('LOGIN_2FA_RATE_LIMIT', '10/10m')
 SIGNUP_RATE_LIMIT = os.getenv('SIGNUP_RATE_LIMIT', '5/1h')
