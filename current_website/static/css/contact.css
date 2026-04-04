@@ -123,8 +123,51 @@
 }
 
 .support-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
     border-radius: var(--radius-md);
     padding: 0.72rem 1.1rem;
+    min-width: 10.5rem;
+}
+
+.support-submit__loading {
+    display: none;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.support-submit__spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid color-mix(in srgb, white 28%, transparent);
+    border-top-color: white;
+    border-radius: 999px;
+    animation: contact-submit-spin 700ms linear infinite;
+}
+
+.support-submit.is-loading {
+    cursor: wait;
+    opacity: 0.92;
+}
+
+.support-submit.is-loading .support-submit__label {
+    display: none;
+}
+
+.support-submit.is-loading .support-submit__loading {
+    display: inline-flex;
+}
+
+.support-submit:disabled {
+    cursor: wait;
+}
+
+@keyframes contact-submit-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 800px) {
