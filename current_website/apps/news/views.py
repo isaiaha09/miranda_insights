@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from landingpage.emailing import send_templated_email
-from landingpage.turnstile import is_turnstile_enabled_for_request, verify_turnstile_for_request
+from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
 from .forms import NewsletterSubscribeForm, SupportContactForm
 from .models import NewsletterSubscriber
@@ -280,6 +280,8 @@ def contact_support(request):
 				return render(request, "contact.html", {"form": form, "turnstile_enabled": is_turnstile_enabled_for_request(request), "turnstile_site_key": settings.TURNSTILE_SITE_KEY})
 
 			messages.success(request, "Thanks, your support request has been received. A confirmation message has been sent to your email.")
+			if is_mobile_app_request(request):
+				return redirect("dashboard")
 			return redirect("contact_support")
 	else:
 		form = SupportContactForm()

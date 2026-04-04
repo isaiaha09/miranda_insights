@@ -11,6 +11,7 @@ export const MOBILE_APP_QUERY_KEY = 'mobile_app';
 export const MOBILE_APP_QUERY_VALUE = '1';
 
 const configuredBaseUrl = (process.env.EXPO_PUBLIC_INSIGHTS_SITE_URL || '').trim();
+export const EXPO_PUSH_PROJECT_ID = (process.env.EXPO_PUBLIC_EXPO_PROJECT_ID || '').trim();
 
 function getMetroHostname() {
   const sourceCode = NativeModules.SourceCode as { scriptURL?: string } | undefined;

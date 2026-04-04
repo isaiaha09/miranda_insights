@@ -16,7 +16,10 @@ Expo Go TypeScript shell for the Django site in `current_website/`.
 
 ```env
 EXPO_PUBLIC_INSIGHTS_SITE_URL=http://YOUR-LAN-IP:8000
+EXPO_PUBLIC_EXPO_PROJECT_ID=your-expo-project-id
 ```
+
+`EXPO_PUBLIC_EXPO_PROJECT_ID` is required for Expo push token registration in current Expo SDKs. Without it, the app can request permission but the `Enable Notifications` action cannot finish push setup.
 
 3. If you are using the Android emulator, the app defaults to `http://10.0.2.2:8000`.
 4. Install dependencies with `npm install`.

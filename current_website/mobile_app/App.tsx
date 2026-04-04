@@ -32,6 +32,7 @@ import {
   BOTTOM_NAV_ROUTES,
   DEFAULT_BASE_URL,
   DRAWER_ROUTES,
+  EXPO_PUSH_PROJECT_ID,
   SEARCH_ROUTES,
   buildRouteUrl,
   getRouteForUrl,
@@ -241,6 +242,22 @@ function buildSearchMatch(query: string, candidate: string): SearchCandidateMatc
     score,
     displayText: buildSearchDisplayText(candidate, normalizedQuery),
   };
+}
+
+function getNativeAuthScreenForPath(pathname: string): NativeAppScreen | null {
+  if (pathname.startsWith('/login/')) {
+    return 'login';
+  }
+
+  if (pathname.startsWith('/recover-username/')) {
+    return 'forgotUsername';
+  }
+
+  if (pathname.startsWith('/password-reset/')) {
+    return 'forgotPassword';
+  }
+
+  return null;
 }
 
 function getRouteSearchMatches(route: AppRoute, query: string, pagePhrases: string[]) {
@@ -1191,7 +1208,25 @@ export default function App() {
         return null;
       }
 
-      const tokenResponse = await Notifications.getExpoPushTokenAsync();
+      let tokenResponse: Notifications.ExpoPushToken;
+      try {
+        tokenResponse = EXPO_PUSH_PROJECT_ID
+          ? await Notifications.getExpoPushTokenAsync({ projectId: EXPO_PUSH_PROJECT_ID })
+          : await Notifications.getExpoPushTokenAsync();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '';
+        const isMissingProjectId = !EXPO_PUSH_PROJECT_ID && /project.?id/i.test(errorMessage);
+        if (options?.showResultAlert) {
+          Alert.alert(
+            'Notifications unavailable',
+            isMissingProjectId
+              ? 'Set EXPO_PUBLIC_EXPO_PROJECT_ID in mobile_app/.env, then restart Expo and try again.'
+              : 'Notification permissions were granted, but Expo push registration could not be completed.'
+          );
+        }
+        return null;
+      }
+
       const nextToken = tokenResponse.data;
       setExpoPushToken(nextToken);
       if (nativeScreen === 'web') {
@@ -1440,11 +1475,17 @@ export default function App() {
     title?: string | null;
     canGoBack: boolean;
   }) {
-    if (navigationState.url.startsWith(buildRouteUrl('/login/'))) {
+    const authScreen = getNativeAuthScreenForPath(new URL(navigationState.url, BASE_URL).pathname);
+    if (authScreen) {
       resetAuthFeedback();
       setOtpCode('');
-      setNativeScreen('landing');
+      closeDrawer();
+      closeSearchSheet();
+      setNativeScreen(authScreen);
       setCurrentTitle('Insights');
+      setWebError(null);
+      setPageReady(false);
+      setShowWebLoader(false);
       return;
     }
 
@@ -1486,6 +1527,20 @@ export default function App() {
     if (request.url.startsWith(BASE_URL)) {
       try {
         const requestUrl = new URL(request.url);
+        const authScreen = getNativeAuthScreenForPath(requestUrl.pathname);
+        if (authScreen) {
+          resetAuthFeedback();
+          setOtpCode('');
+          closeDrawer();
+          closeSearchSheet();
+          setCurrentTitle('Insights');
+          setWebError(null);
+          setPageReady(false);
+          setShowWebLoader(false);
+          setNativeScreen(authScreen);
+          return false;
+        }
+
         const mobileFocus = requestUrl.searchParams.get('mobile_focus');
         if (requestUrl.pathname === '/dashboard/' && (mobileFocus === 'booking' || mobileFocus === 'newsletter')) {
           openRouteWithDashboardFocus('/dashboard/', mobileFocus);

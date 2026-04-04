@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -33,6 +34,58 @@ class PublicPageTests(TestCase):
 		self.assertContains(response, static("deliverables/student-data-analysis.xlsx"))
 		self.assertContains(response, static("deliverables/student-dashboard-presentation.pdf"))
 		self.assertContains(response, static("deliverables/deliverable-documentation.pdf"))
+
+
+@override_settings(
+	EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+	CONTACT_RECIPIENT="support@example.com",
+	DEFAULT_FROM_EMAIL="no-reply@example.com",
+	SITE_URL="https://mirandainsights.com",
+	TURNSTILE_SITE_KEY="",
+	TURNSTILE_SECRET_KEY="",
+)
+class ContactSupportFlowTests(TestCase):
+	def setUp(self):
+		self.payload = {
+			"name": "Taylor Client",
+			"organization": "Northwind",
+			"email": "taylor@example.com",
+			"phone": "",
+			"business_location": "",
+			"subject_choice": "support",
+			"message": "Need help with the portal.",
+		}
+
+	def test_contact_support_redirects_back_to_contact_for_website(self):
+		response = self.client.post(reverse("contact_support"), self.payload)
+
+		self.assertRedirects(response, reverse("contact_support"))
+		self.assertEqual(len(mail.outbox), 2)
+		messages = list(get_messages(response.wsgi_request))
+		self.assertEqual(len(messages), 1)
+		self.assertEqual(
+			str(messages[0]),
+			"Thanks, your support request has been received. A confirmation message has been sent to your email.",
+		)
+
+	def test_mobile_app_contact_support_redirects_to_dashboard_with_success_message(self):
+		user = User.objects.create_user(
+			username="mobileclient",
+			email="taylor@example.com",
+			password="test-pass-123",
+			first_name="Taylor",
+		)
+		self.client.force_login(user)
+
+		response = self.client.post(reverse("contact_support"), {**self.payload, "mobile_app": "1"}, follow=True)
+
+		self.assertRedirects(response, reverse("dashboard"))
+		self.assertEqual(len(mail.outbox), 2)
+		self.assertContains(
+			response,
+			"Thanks, your support request has been received. A confirmation message has been sent to your email.",
+		)
+		self.assertContains(response, "Welcome back, Taylor")
 
 
 @override_settings(
