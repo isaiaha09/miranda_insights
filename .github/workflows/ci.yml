@@ -61,7 +61,17 @@ jobs:
       - name: Build CSS
         run: npm run build:css
 
-      - name: Run Django tests
+      - name: Run Django smoke tests
+        run: >-
+          python manage.py test
+          landingpage.tests
+          apps.operations.tests
+          apps.accounts.tests.LoginThrottleTests
+          apps.accounts.tests.MobileLoginThrottleTests
+          apps.news.tests.ContactSupportThrottleTests
+          apps.news.tests.NewsletterSubscribeThrottleTests
+
+      - name: Run full Django test suite
         run: python manage.py test
 
   mobile:
