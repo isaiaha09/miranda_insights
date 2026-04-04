@@ -345,8 +345,8 @@ class ContactSupportThrottleTests(TestCase):
 			"message": "Need help with the portal.",
 		}
 
-		first_response = self.client.post(reverse("contact_support"), payload)
-		second_response = self.client.post(reverse("contact_support"), payload)
+		first_response = self.client.post(reverse("contact_support"), payload, secure=True)
+		second_response = self.client.post(reverse("contact_support"), payload, secure=True)
 
 		self.assertEqual(first_response.status_code, 302)
 		self.assertEqual(second_response.status_code, 429)
@@ -358,8 +358,8 @@ class ContactSupportThrottleTests(TestCase):
 @override_settings(NEWSLETTER_SUBSCRIBE_RATE_LIMIT="1/1h")
 class NewsletterSubscribeThrottleTests(TestCase):
 	def test_subscribe_rate_limit_returns_429_after_limit(self):
-		first_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"})
-		second_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"})
+		first_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"}, secure=True)
+		second_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"}, secure=True)
 
 		self.assertEqual(first_response.status_code, 302)
 		self.assertEqual(second_response.status_code, 429)

@@ -589,8 +589,16 @@ class LoginThrottleTests(TestCase):
 	def test_login_rate_limit_returns_429_after_limit(self):
 		User.objects.create_user(username="ratelimited", email="ratelimited@example.com", password="correct-pass-123")
 
-		first_response = self.client.post(reverse("login"), {"username": "ratelimited", "password": "wrong-pass"})
-		second_response = self.client.post(reverse("login"), {"username": "ratelimited", "password": "wrong-pass"})
+		first_response = self.client.post(
+			reverse("login"),
+			{"username": "ratelimited", "password": "wrong-pass"},
+			secure=True,
+		)
+		second_response = self.client.post(
+			reverse("login"),
+			{"username": "ratelimited", "password": "wrong-pass"},
+			secure=True,
+		)
 
 		self.assertEqual(first_response.status_code, 200)
 		self.assertEqual(second_response.status_code, 429)
@@ -609,11 +617,13 @@ class MobileLoginThrottleTests(TestCase):
 			reverse("mobile_login_api"),
 			data='{"username": "mobilelimit", "password": "wrong-pass"}',
 			content_type="application/json",
+			secure=True,
 		)
 		second_response = self.client.post(
 			reverse("mobile_login_api"),
 			data='{"username": "mobilelimit", "password": "wrong-pass"}',
 			content_type="application/json",
+			secure=True,
 		)
 
 		self.assertEqual(first_response.status_code, 400)
