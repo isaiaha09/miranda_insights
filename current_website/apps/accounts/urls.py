@@ -4,6 +4,7 @@ from django.urls import path
 from .views import (
     DashboardView,
     DeleteAccountView,
+    EmailDiagnosticsView,
     LoginView,
     MobilePasswordResetApiView,
     MobilePushDeviceApiView,
@@ -22,6 +23,7 @@ from .forms import StyledPasswordResetForm
 
 urlpatterns = [
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
+    path("dashboard/email-diagnostics/", EmailDiagnosticsView.as_view(), name="email_diagnostics"),
     path("dashboard/delete-account/", DeleteAccountView.as_view(), name="delete_account"),
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),

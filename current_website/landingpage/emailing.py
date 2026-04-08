@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import socket
+import smtplib
+import time
 from typing import Any
 
 from django.conf import settings
@@ -46,6 +49,96 @@ def send_email_message(
     if html_body:
         message.attach_alternative(html_body, "text/html")
     return message.send(fail_silently=False)
+
+
+def smtp_diagnostics() -> dict[str, Any]:
+    host = getattr(settings, "EMAIL_HOST", "")
+    port = int(getattr(settings, "EMAIL_PORT", 0) or 0)
+    username = getattr(settings, "EMAIL_HOST_USER", "")
+    password = getattr(settings, "EMAIL_HOST_PASSWORD", "")
+    use_tls = bool(getattr(settings, "EMAIL_USE_TLS", False))
+    use_ssl = bool(getattr(settings, "EMAIL_USE_SSL", False))
+    timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10)
+
+    result: dict[str, Any] = {
+        "host": host,
+        "port": port,
+        "use_tls": use_tls,
+        "use_ssl": use_ssl,
+        "timeout": timeout,
+        "has_username": bool(username),
+        "has_password": bool(password),
+    }
+
+    if not host or not port:
+        result.update(
+            {
+                "ok": False,
+                "stage": "configuration",
+                "error": "EMAIL_HOST or EMAIL_PORT is not configured.",
+            }
+        )
+        return result
+
+    try:
+        dns_start = time.perf_counter()
+        addrinfo = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+        result["dns_ms"] = round((time.perf_counter() - dns_start) * 1000, 2)
+        result["resolved_addresses"] = sorted({item[4][0] for item in addrinfo})
+    except Exception as exc:
+        result.update(
+            {
+                "ok": False,
+                "stage": "dns",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            }
+        )
+        return result
+
+    server = None
+    try:
+        connect_start = time.perf_counter()
+        if use_ssl:
+            server = smtplib.SMTP_SSL(host=host, port=port, timeout=timeout)
+        else:
+            server = smtplib.SMTP(host=host, port=port, timeout=timeout)
+        result["connect_ms"] = round((time.perf_counter() - connect_start) * 1000, 2)
+
+        ehlo_code, ehlo_message = server.ehlo()
+        result["ehlo_code"] = ehlo_code
+        result["ehlo_message"] = ehlo_message.decode("utf-8", errors="replace") if isinstance(ehlo_message, bytes) else str(ehlo_message)
+
+        if use_tls and not use_ssl:
+            tls_start = time.perf_counter()
+            server.starttls()
+            result["starttls_ms"] = round((time.perf_counter() - tls_start) * 1000, 2)
+            post_tls_ehlo_code, _ = server.ehlo()
+            result["post_starttls_ehlo_code"] = post_tls_ehlo_code
+
+        if username:
+            login_start = time.perf_counter()
+            server.login(username, password)
+            result["login_ms"] = round((time.perf_counter() - login_start) * 1000, 2)
+
+        result.update({"ok": True, "stage": "complete"})
+        return result
+    except Exception as exc:
+        result.update(
+            {
+                "ok": False,
+                "stage": "smtp",
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+            }
+        )
+        return result
+    finally:
+        if server is not None:
+            try:
+                server.quit()
+            except Exception:
+                pass
 
 
 def send_templated_email(

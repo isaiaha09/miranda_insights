@@ -22,7 +22,7 @@ from apps.news.models import NewsletterSubscriber
 from apps.clients.chat import render_project_chat_widget
 from apps.clients.forms import ClientPortalProfileForm, ProjectMessageForm
 from apps.clients.models import Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
-from landingpage.emailing import send_templated_email
+from landingpage.emailing import send_templated_email, smtp_diagnostics
 from landingpage.throttling import apply_retry_after, check_request_throttle
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
@@ -740,6 +740,13 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 		)
 		context.update(self._build_portal_snapshot())
 		return context
+
+
+class EmailDiagnosticsView(LoginRequiredMixin, View):
+	def get(self, request, *args, **kwargs):
+		if not request.user.is_staff:
+			return JsonResponse({"ok": False, "message": "Forbidden"}, status=403)
+		return JsonResponse(smtp_diagnostics())
 
 
 class DeleteAccountView(LoginRequiredMixin, PortalContextMixin, FormView):
