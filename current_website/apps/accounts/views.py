@@ -746,7 +746,30 @@ class EmailDiagnosticsView(LoginRequiredMixin, View):
 	def get(self, request, *args, **kwargs):
 		if not request.user.is_staff:
 			return JsonResponse({"ok": False, "message": "Forbidden"}, status=403)
-		return JsonResponse(smtp_diagnostics())
+
+		port = request.GET.get("port")
+		host = (request.GET.get("host") or "").strip() or None
+		tls = request.GET.get("tls")
+		ssl = request.GET.get("ssl")
+
+		try:
+			port_override = int(port) if port else None
+		except (TypeError, ValueError):
+			return JsonResponse({"ok": False, "message": "Invalid port"}, status=400)
+
+		def _parse_bool(value):
+			if value is None:
+				return None
+			return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+		return JsonResponse(
+			smtp_diagnostics(
+				host_override=host,
+				port_override=port_override,
+				use_tls_override=_parse_bool(tls),
+				use_ssl_override=_parse_bool(ssl),
+			)
+		)
 
 
 class DeleteAccountView(LoginRequiredMixin, PortalContextMixin, FormView):

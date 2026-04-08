@@ -51,24 +51,73 @@ def send_email_message(
     return message.send(fail_silently=False)
 
 
-def smtp_diagnostics() -> dict[str, Any]:
-    host = getattr(settings, "EMAIL_HOST", "")
+def smtp_runtime_summary(*, resolve_dns: bool = False) -> dict[str, Any]:
+    host = getattr(settings, "EMAIL_HOST", "").strip()
     port = int(getattr(settings, "EMAIL_PORT", 0) or 0)
-    username = getattr(settings, "EMAIL_HOST_USER", "")
-    password = getattr(settings, "EMAIL_HOST_PASSWORD", "")
-    use_tls = bool(getattr(settings, "EMAIL_USE_TLS", False))
-    use_ssl = bool(getattr(settings, "EMAIL_USE_SSL", False))
-    timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10)
-
-    result: dict[str, Any] = {
+    summary: dict[str, Any] = {
+        "backend": getattr(settings, "EMAIL_BACKEND", ""),
         "host": host,
         "port": port,
-        "use_tls": use_tls,
-        "use_ssl": use_ssl,
-        "timeout": timeout,
-        "has_username": bool(username),
-        "has_password": bool(password),
+        "use_tls": bool(getattr(settings, "EMAIL_USE_TLS", False)),
+        "use_ssl": bool(getattr(settings, "EMAIL_USE_SSL", False)),
+        "timeout": int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10),
+        "delivery_mode": getattr(settings, "OUTBOUND_DELIVERY_MODE", "sync"),
+        "default_from_email": getattr(settings, "DEFAULT_FROM_EMAIL", ""),
+        "contact_recipient": getattr(settings, "CONTACT_RECIPIENT", ""),
+        "has_username": bool(getattr(settings, "EMAIL_HOST_USER", "")),
+        "has_password": bool(getattr(settings, "EMAIL_HOST_PASSWORD", "")),
     }
+
+    if resolve_dns and host and port:
+        try:
+            dns_start = time.perf_counter()
+            addrinfo = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+            summary["dns_ms"] = round((time.perf_counter() - dns_start) * 1000, 2)
+            summary["resolved_addresses"] = sorted({item[4][0] for item in addrinfo})
+        except Exception as exc:
+            summary["dns_error_type"] = type(exc).__name__
+            summary["dns_error"] = str(exc)
+
+    return summary
+
+
+def smtp_diagnostics(
+    *,
+    host_override: str | None = None,
+    port_override: int | None = None,
+    use_tls_override: bool | None = None,
+    use_ssl_override: bool | None = None,
+) -> dict[str, Any]:
+    host = (host_override or getattr(settings, "EMAIL_HOST", "")).strip()
+    port = int(port_override if port_override is not None else (getattr(settings, "EMAIL_PORT", 0) or 0))
+    username = getattr(settings, "EMAIL_HOST_USER", "")
+    password = getattr(settings, "EMAIL_HOST_PASSWORD", "")
+    use_tls = bool(getattr(settings, "EMAIL_USE_TLS", False) if use_tls_override is None else use_tls_override)
+    use_ssl = bool(getattr(settings, "EMAIL_USE_SSL", False) if use_ssl_override is None else use_ssl_override)
+    timeout = int(getattr(settings, "EMAIL_TIMEOUT", 10) or 10)
+
+    result: dict[str, Any] = smtp_runtime_summary(resolve_dns=False)
+    result.update(
+        {
+            "host": host,
+            "port": port,
+            "use_tls": use_tls,
+            "use_ssl": use_ssl,
+            "timeout": timeout,
+            "has_username": bool(username),
+            "has_password": bool(password),
+        }
+    )
+
+    if use_tls and use_ssl:
+        result.update(
+            {
+                "ok": False,
+                "stage": "configuration",
+                "error": "EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled.",
+            }
+        )
+        return result
 
     if not host or not port:
         result.update(

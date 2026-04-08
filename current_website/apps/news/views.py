@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from landingpage.emailing import send_templated_email
+from landingpage.emailing import send_templated_email, smtp_runtime_summary
 from landingpage.throttling import apply_retry_after, check_request_throttle
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
@@ -277,12 +277,16 @@ def contact_support(request):
 				"If you need to add details, reply to this email."
 			)
 
+			stage = "prepare_connection"
 			try:
 				connection = get_connection(
 					fail_silently=False,
 					timeout=getattr(settings, "EMAIL_TIMEOUT", 10),
 				)
+				stage = "smtp_open"
+				connection.open()
 
+				stage = "send_support_email"
 				support_sent = send_templated_email(
 					subject=email_subject,
 					to=[settings.CONTACT_RECIPIENT],
@@ -303,6 +307,7 @@ def contact_support(request):
 					reply_to=[email],
 					connection=connection,
 				)
+				stage = "send_confirmation_email"
 				confirmation_sent = send_templated_email(
 					subject=confirmation_subject,
 					to=[email],
@@ -327,7 +332,13 @@ def contact_support(request):
 						f"Unexpected send result (support={support_sent}, confirmation={confirmation_sent})"
 					)
 			except Exception as exc:
-				logger.exception("Failed to send contact support email")
+				smtp_context = smtp_runtime_summary(resolve_dns=True)
+				logger.exception(
+					"Contact support email failed stage=%s error_type=%s smtp=%s",
+					stage,
+					type(exc).__name__,
+					smtp_context,
+				)
 				error_message = "Your message could not be sent right now. Please try again shortly."
 				if settings.DEBUG:
 					error_message = f"{error_message} (Reason: {exc})"
