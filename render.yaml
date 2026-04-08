@@ -17,6 +17,7 @@ services:
       && python manage.py collectstatic --noinput
     startCommand: >-
       python manage.py migrate
+      && python manage.py ensure_superuser
       && gunicorn landingpage.wsgi:application
       --worker-class gthread
       --workers 1
