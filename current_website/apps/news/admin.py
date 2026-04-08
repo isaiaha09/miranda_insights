@@ -15,6 +15,13 @@ from .services import send_campaign
 User = get_user_model()
 
 
+class StaffCreatedByAdminMixin:
+	def formfield_for_foreignkey(self, db_field, request, **kwargs):
+		if db_field.name == "created_by":
+			kwargs["queryset"] = User.objects.filter(is_staff=True).order_by("username")
+		return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
 class HasAccountListFilter(admin.SimpleListFilter):
 	title = "has account"
 	parameter_name = "has_account"
@@ -51,7 +58,7 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
 
 
 @admin.register(NewsletterImageAsset)
-class NewsletterImageAssetAdmin(admin.ModelAdmin):
+class NewsletterImageAssetAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 	list_display = ("name", "image_preview", "is_active", "created_at")
 	list_filter = ("is_active", "created_at")
 	search_fields = ("name", "alt_text", "default_caption")
@@ -72,7 +79,7 @@ class NewsletterImageAssetAdmin(admin.ModelAdmin):
 
 
 @admin.register(NewsletterBlockTemplate)
-class NewsletterBlockTemplateAdmin(admin.ModelAdmin):
+class NewsletterBlockTemplateAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 	form = NewsletterBlockTemplateAdminForm
 	list_display = ("name", "category", "is_builtin", "is_active", "updated_at")
 	list_filter = ("category", "is_builtin", "is_active")
@@ -87,7 +94,7 @@ class NewsletterBlockTemplateAdmin(admin.ModelAdmin):
 
 
 @admin.register(NewsletterCampaign)
-class NewsletterCampaignAdmin(admin.ModelAdmin):
+class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 	form = NewsletterCampaignAdminForm
 	list_display = (
 		"name",
