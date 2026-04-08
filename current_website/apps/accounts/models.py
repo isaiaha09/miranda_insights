@@ -1,14 +1,17 @@
+import logging
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db import models
+from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 
 from .services import delete_account_for_user
 
 
 ACCOUNT_DELETION_GRACE_PERIOD = timedelta(days=7)
+logger = logging.getLogger(__name__)
 
 
 class AccountProfile(models.Model):
@@ -111,7 +114,11 @@ class MobilePushDevice(models.Model):
 
 def purge_expired_account_deletions(reference_time=None):
 	now = reference_time or timezone.now()
-	deletion_requests = list(AccountDeletionRequest.objects.filter(scheduled_for__lte=now).select_related("user"))
+	try:
+		deletion_requests = list(AccountDeletionRequest.objects.filter(scheduled_for__lte=now).select_related("user"))
+	except (OperationalError, ProgrammingError):
+		logger.warning("Account deletion cleanup skipped because the account deletion table is not available yet.")
+		return 0
 	if not deletion_requests:
 		return 0
 	deleted_count = 0
