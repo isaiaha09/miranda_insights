@@ -3,6 +3,9 @@ services:
     name: miranda-insights
     runtime: python
     rootDir: current_website
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.9
     buildCommand: >-
       pip install -r requirements.txt
       && npm ci
@@ -14,6 +17,9 @@ services:
     name: miranda-insights-outbound-worker
     runtime: python
     rootDir: current_website
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.9
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py process_outbound_jobs --loop --sleep 5
   - type: cron
@@ -21,5 +27,8 @@ services:
     runtime: python
     rootDir: current_website
     schedule: "*/5 * * * *"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.9
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py send_newsletters
