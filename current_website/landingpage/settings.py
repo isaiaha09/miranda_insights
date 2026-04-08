@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 from urllib.parse import unquote, urlparse
 
 try:
@@ -179,6 +180,8 @@ WSGI_APPLICATION = 'landingpage.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 database_url = (os.getenv('DATABASE_URL') or '').strip()
+if not DEBUG and not database_url:
+    raise ImproperlyConfigured('DATABASE_URL must be set when DEBUG=False.')
 DATABASES = {
     'default': database_config_from_url(database_url) if database_url else {
         'ENGINE': 'django.db.backends.sqlite3',
