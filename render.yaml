@@ -15,9 +15,9 @@ services:
       && npm ci
       && npm run build:css
       && python manage.py collectstatic --noinput
-    preDeployCommand: python manage.py migrate
     startCommand: >-
-      gunicorn landingpage.wsgi:application
+      python manage.py migrate
+      && gunicorn landingpage.wsgi:application
       --worker-class gthread
       --workers 1
       --threads 2
