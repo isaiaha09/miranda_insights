@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import unquote, urlparse
@@ -242,12 +243,20 @@ STATICFILES_DIRS = [
 
 # Optional STATIC_ROOT for collectstatic (useful for deployments)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+USE_STATIC_MANIFEST = env_bool(
+    'DJANGO_USE_STATIC_MANIFEST',
+    not DEBUG and 'test' not in sys.argv,
+)
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': (
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
+            if USE_STATIC_MANIFEST
+            else 'whitenoise.storage.CompressedStaticFilesStorage'
+        ),
     },
 }
 MEDIA_ROOT = BASE_DIR / 'media'
