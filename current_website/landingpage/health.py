@@ -5,13 +5,13 @@ import logging
 from django.core.cache import caches
 from django.db import connections
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_safe
 
 
 logger = logging.getLogger(__name__)
 
 
-@require_GET
+@require_safe
 def health_check(request):
     checks = {
         "database": False,

@@ -6,13 +6,22 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.9
+      - key: WEB_CONCURRENCY
+        value: 1
     buildCommand: >-
       pip install -r requirements.txt
       && npm ci
       && npm run build:css
       && python manage.py collectstatic --noinput
     preDeployCommand: python manage.py migrate
-    startCommand: gunicorn landingpage.wsgi:application
+    startCommand: >-
+      gunicorn landingpage.wsgi:application
+      --worker-class gthread
+      --workers 1
+      --threads 2
+      --timeout 120
+      --access-logfile -
+      --error-logfile -
   - type: worker
     name: miranda-insights-outbound-worker
     runtime: python
