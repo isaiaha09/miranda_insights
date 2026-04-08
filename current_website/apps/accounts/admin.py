@@ -17,8 +17,7 @@ except admin.sites.NotRegistered:
 
 @admin.register(User)
 class StaffUserAdmin(UserAdmin):
-	def get_queryset(self, request):
-		return super().get_queryset(request).filter(is_staff=True)
+	list_filter = UserAdmin.list_filter + ("is_staff", "is_superuser")
 
 
 @admin.register(AccountProfile)
