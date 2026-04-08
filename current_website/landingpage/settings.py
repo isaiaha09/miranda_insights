@@ -180,7 +180,7 @@ WSGI_APPLICATION = 'landingpage.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 database_url = (os.getenv('DATABASE_URL') or '').strip()
-if not DEBUG and not database_url:
+if env_bool('REQUIRE_DATABASE_URL', False) and not database_url:
     raise ImproperlyConfigured('DATABASE_URL must be set when DEBUG=False.')
 DATABASES = {
     'default': database_config_from_url(database_url) if database_url else {

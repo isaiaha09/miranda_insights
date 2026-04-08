@@ -6,6 +6,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.9
+      - key: REQUIRE_DATABASE_URL
+        value: "true"
       - key: WEB_CONCURRENCY
         value: 1
     buildCommand: >-
@@ -29,6 +31,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.9
+      - key: REQUIRE_DATABASE_URL
+        value: "true"
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py process_outbound_jobs --loop --sleep 5
   - type: cron
@@ -39,5 +43,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.9
+      - key: REQUIRE_DATABASE_URL
+        value: "true"
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py send_newsletters
