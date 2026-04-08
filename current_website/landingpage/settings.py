@@ -145,6 +145,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -229,7 +230,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
 DJANGO_ADMIN_URL=os.getenv('DJANGO_ADMIN_URL')
@@ -241,6 +242,14 @@ STATICFILES_DIRS = [
 
 # Optional STATIC_ROOT for collectstatic (useful for deployments)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 MEDIA_ROOT = BASE_DIR / 'media'
 FILE_UPLOAD_PERMISSIONS = 0o640
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o750
@@ -326,8 +335,8 @@ UNFOLD = {
     "SITE_HEADER": "Miranda Insights Admin",
     "SITE_SUBHEADER": "Management Workspace",
     "SITE_ICON": {
-        "light": f"/{STATIC_URL}pwa/icon-192.png",
-        "dark": f"/{STATIC_URL}pwa/icon-192.png",
+        "light": f"{STATIC_URL}pwa/icon-192.png",
+        "dark": f"{STATIC_URL}pwa/icon-192.png",
     },
     "SITE_SYMBOL": "monitoring",
     "STYLES": [
