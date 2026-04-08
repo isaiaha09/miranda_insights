@@ -278,7 +278,10 @@ def contact_support(request):
 			)
 
 			try:
-				connection = get_connection(fail_silently=False)
+				connection = get_connection(
+					fail_silently=False,
+					timeout=getattr(settings, "EMAIL_TIMEOUT", 10),
+				)
 
 				support_sent = send_templated_email(
 					subject=email_subject,

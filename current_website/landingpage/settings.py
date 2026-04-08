@@ -272,6 +272,7 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', os.getenv('BREVO_SMTP_USER', ''))
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', os.getenv('BREVO_SMTP_PASSWORD', ''))
 EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS')
 EMAIL_USE_SSL = env_bool('EMAIL_USE_SSL')
+EMAIL_TIMEOUT = env_int('EMAIL_TIMEOUT', 10)
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000').rstrip('/')
 LOGIN_REDIRECT_URL = '/dashboard/'
