@@ -312,13 +312,66 @@
     });
   }
 
+  function runCookieBannerBehavior() {
+    var banner = document.getElementById('cookie-banner');
+    var acceptButton = document.getElementById('cookie-banner-accept');
+    var dismissButton = document.getElementById('cookie-banner-dismiss');
+    if (!banner || !acceptButton || !dismissButton) return;
+
+    var consentKey = 'insights-home-cookie-banner-choice';
+
+    function getChoice() {
+      try {
+        return window.localStorage.getItem(consentKey);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function setChoice(value) {
+      try {
+        window.localStorage.setItem(consentKey, value);
+      } catch (error) {
+        return;
+      }
+    }
+
+    function hideBanner() {
+      banner.classList.remove('is-visible');
+      window.setTimeout(function () {
+        banner.hidden = true;
+      }, 220);
+    }
+
+    if (getChoice()) {
+      return;
+    }
+
+    banner.hidden = false;
+    window.requestAnimationFrame(function () {
+      banner.classList.add('is-visible');
+    });
+
+    acceptButton.addEventListener('click', function () {
+      setChoice('accepted');
+      hideBanner();
+    });
+
+    dismissButton.addEventListener('click', function () {
+      setChoice('dismissed');
+      hideBanner();
+    });
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
       runLandingBehavior();
       runNewsletterBehavior();
+      runCookieBannerBehavior();
     }, { once: true });
   } else {
     runLandingBehavior();
     runNewsletterBehavior();
+    runCookieBannerBehavior();
   }
 })();

@@ -249,6 +249,113 @@ body.landing .hero-left {
     animation-delay: 450ms;
 }
 
+.cookie-banner {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1150;
+    width: min(28rem, calc(100vw - 2rem));
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+    border-radius: var(--radius-lg);
+    background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 18%, transparent), transparent 42%),
+        linear-gradient(180deg, rgba(12, 17, 27, 0.98), rgba(7, 11, 18, 0.96));
+    box-shadow: 0 24px 72px rgba(0, 0, 0, 0.38);
+    backdrop-filter: blur(14px) saturate(1.04);
+    opacity: 0;
+    transform: translateY(-0.75rem);
+    transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.cookie-banner.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.cookie-banner__content {
+    min-width: 0;
+}
+
+.cookie-banner__eyebrow {
+    margin: 0 0 0.2rem;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.cookie-banner__title {
+    margin: 0;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.cookie-banner__copy {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    font-size: 0.94rem;
+    line-height: 1.55;
+}
+
+.cookie-banner__copy a {
+    color: var(--text);
+    text-underline-offset: 0.15em;
+}
+
+.cookie-banner__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.cookie-banner__dismiss {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+    padding: 0.15rem 0;
+}
+
+.cookie-banner__dismiss:hover {
+    color: var(--text);
+}
+
+@media (max-width: 800px) {
+    .cookie-banner {
+        top: 0.75rem;
+        right: 0.75rem;
+        left: 0.75rem;
+        width: auto;
+    }
+
+    .cookie-banner__actions {
+        justify-content: stretch;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cookie-banner__actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .cookie-banner__dismiss {
+        text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cookie-banner {
+        transition: none;
+    }
+}
+
 body.landing .hero-right {
     animation-delay: 950ms;
 }
