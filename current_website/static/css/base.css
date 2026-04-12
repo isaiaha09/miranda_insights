@@ -454,7 +454,7 @@ input:focus-visible {
     left: 1rem;
     right: 1rem;
     bottom: 1rem;
-    z-index: 1200;
+    z-index: 1400;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 0.9rem;
@@ -724,10 +724,6 @@ input:focus-visible {
         right: 0.75rem;
         bottom: 0.75rem;
         padding: 0.9rem;
-    }
-
-    body.landing .pwa-install-banner {
-        bottom: calc(var(--header-height) + 1rem);
     }
 
     .pwa-install-banner__media {
