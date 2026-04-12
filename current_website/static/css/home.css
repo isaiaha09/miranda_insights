@@ -253,8 +253,10 @@ body.landing .hero-left {
     position: fixed;
     top: 1rem;
     right: 1rem;
+    left: auto;
     z-index: 1150;
-    width: min(28rem, calc(100vw - 2rem));
+    width: min(28rem, calc(100vw - 1.5rem));
+    max-height: calc(100dvh - 1.5rem);
     display: grid;
     gap: 0.9rem;
     padding: 1rem;
@@ -265,6 +267,7 @@ body.landing .hero-left {
         linear-gradient(180deg, rgba(12, 17, 27, 0.98), rgba(7, 11, 18, 0.96));
     box-shadow: 0 24px 72px rgba(0, 0, 0, 0.38);
     backdrop-filter: blur(14px) saturate(1.04);
+    overflow: auto;
     opacity: 0;
     transform: translateY(-0.75rem);
     transition: opacity 220ms ease, transform 220ms ease;
@@ -329,9 +332,15 @@ body.landing .hero-left {
 @media (max-width: 800px) {
     .cookie-banner {
         top: 0.75rem;
-        right: 0.75rem;
-        left: 0.75rem;
-        width: auto;
+        right: auto;
+        left: 50%;
+        width: min(28rem, calc(100vw - 1.5rem));
+        max-height: calc(100dvh - 1.5rem);
+        transform: translate(-50%, -0.75rem);
+    }
+
+    .cookie-banner.is-visible {
+        transform: translate(-50%, 0);
     }
 
     .cookie-banner__actions {

@@ -166,10 +166,31 @@ body.is-scrolling .site-footer {
 }
 
 .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
     font-weight: 700;
     color: var(--accent);
     text-decoration: none;
-    font-size: 1.25rem
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.brand__text {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.brand__logo {
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+    user-select: none;
 }
 
 .nav a:hover {
@@ -627,6 +648,19 @@ input:focus-visible {
         display: flex;
         justify-content: space-between;
         flex-wrap: nowrap;
+    }
+
+    .brand {
+        gap: 0;
+    }
+
+    .brand__text {
+        display: none;
+    }
+
+    .brand__logo {
+        width: 2.25rem;
+        height: 2.25rem;
     }
 
     .nav-right .client-portal,

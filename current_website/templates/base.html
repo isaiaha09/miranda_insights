@@ -28,7 +28,10 @@
     <header class="site-header">
       <nav class="nav" id="site-nav">
         <div class="nav-left">
-          <a class="brand" href="{% url 'home' %}">Insights</a>
+          <a class="brand" href="{% url 'home' %}" aria-label="Miranda Insights home">
+            <span class="brand__text">Miranda Insights</span>
+            <span class="brand__logo" aria-hidden="true" style="background-image: url('{% static 'img/miranda-logo.png' %}');"></span>
+          </a>
         </div>
 
         <div class="nav-center" id="nav-menu">

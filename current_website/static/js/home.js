@@ -318,6 +318,10 @@
     var dismissButton = document.getElementById('cookie-banner-dismiss');
     if (!banner || !acceptButton || !dismissButton) return;
 
+    if (banner.parentNode !== document.body) {
+      document.body.appendChild(banner);
+    }
+
     var consentKey = 'insights-home-cookie-banner-choice';
 
     function getChoice() {
