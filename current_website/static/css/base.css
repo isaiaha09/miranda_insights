@@ -455,6 +455,7 @@ input:focus-visible {
     right: 1rem;
     bottom: 1rem;
     z-index: 1400;
+    pointer-events: none;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 0.9rem;
@@ -518,6 +519,12 @@ input:focus-visible {
     flex-direction: column;
     align-items: flex-end;
     gap: 0.45rem;
+    pointer-events: auto;
+}
+
+.pwa-install-banner button,
+.pwa-install-banner a {
+    pointer-events: auto;
 }
 
 .pwa-install-banner__dismiss {

@@ -255,6 +255,7 @@ body.landing .hero-left {
     right: 1rem;
     left: auto;
     z-index: 1400;
+    pointer-events: none;
     width: min(28rem, calc(100vw - 1.5rem));
     max-height: calc(100dvh - 1.5rem);
     display: grid;
@@ -314,6 +315,12 @@ body.landing .hero-left {
     align-items: center;
     justify-content: flex-end;
     gap: 0.75rem;
+    pointer-events: auto;
+}
+
+.cookie-banner button,
+.cookie-banner a {
+    pointer-events: auto;
 }
 
 .cookie-banner__dismiss {
