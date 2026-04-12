@@ -331,7 +331,7 @@ body.landing .hero-left {
 
 @media (max-width: 800px) {
     .cookie-banner {
-        top: 0.75rem;
+        top: calc(var(--header-height) + 0.75rem);
         right: auto;
         left: 50%;
         width: min(28rem, calc(100vw - 1.5rem));

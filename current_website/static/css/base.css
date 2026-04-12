@@ -129,7 +129,7 @@ body.nav-open {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 1100;
+    z-index: 1300;
     will-change: top;
 }
 
@@ -158,7 +158,7 @@ body.is-scrolling .site-footer {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
-    z-index: 1000;
+    z-index: 1250;
 }
 
 .nav-left {
@@ -724,6 +724,10 @@ input:focus-visible {
         right: 0.75rem;
         bottom: 0.75rem;
         padding: 0.9rem;
+    }
+
+    body.landing .pwa-install-banner {
+        bottom: calc(var(--header-height) + 1rem);
     }
 
     .pwa-install-banner__media {
