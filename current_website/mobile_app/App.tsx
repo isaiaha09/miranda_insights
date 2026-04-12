@@ -2180,10 +2180,13 @@ export default function App() {
               ) : null}
 
               <View style={styles.drawerFooter}>
-                <Pressable onPress={confirmLogoutFromMobileApp} style={styles.drawerLogoutButton}>
-                  <Ionicons color="#f8fafc" name="log-out-outline" size={18} />
-                  <Text style={styles.drawerLogoutText}>Log Out</Text>
-                </Pressable>
+                <View style={styles.drawerFooterRow}>
+                  <Pressable onPress={confirmLogoutFromMobileApp} style={styles.drawerLogoutButton}>
+                    <Ionicons color="#f8fafc" name="log-out-outline" size={18} />
+                    <Text style={styles.drawerLogoutText}>Log Out</Text>
+                  </Pressable>
+                  <Image source={require('./assets/drawer-logo.png')} style={styles.drawerFooterLogo} />
+                </View>
               </View>
             </ScrollView>
           </Animated.View>
@@ -2816,8 +2819,13 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     paddingTop: 10,
   },
+  drawerFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   drawerLogoutButton: {
-    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -2832,5 +2840,10 @@ const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 14,
     fontWeight: '700',
+  },
+  drawerFooterLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
 });

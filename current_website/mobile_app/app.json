@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mirandainsights.mobile"
+      "bundleIdentifier": "com.mirandainsights.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +32,10 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "projectType": "django-webview-shell"
+      "projectType": "django-webview-shell",
+      "eas": {
+        "projectId": "e2f02e33-7fa4-444e-9965-862748f0cc69"
+      }
     }
   }
 }

@@ -99,6 +99,18 @@ export const DRAWER_ROUTES: AppRoute[] = [
     path: '/faq/',
     keywords: ['questions', 'answers', 'help', 'support', 'common issues', 'guide'],
   },
+  {
+    key: 'privacy',
+    label: 'Privacy Policy',
+    path: '/privacy/',
+    keywords: ['privacy', 'policy', 'data', 'collection', 'security', 'information'],
+  },
+  {
+    key: 'terms',
+    label: 'Terms of Service',
+    path: '/terms/',
+    keywords: ['terms', 'service', 'agreement', 'legal', 'rules', 'conditions'],
+  },
   BOTTOM_NAV_ROUTES[3],
 ];
 
