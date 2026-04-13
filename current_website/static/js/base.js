@@ -243,6 +243,8 @@ function setupSiteAnalyticsBackground() {
   var frameId = 0;
   var lastTime = 0;
   var resizeTimer = 0;
+  var lastMeasuredWidth = 0;
+  var lastMeasuredHeight = 0;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -252,10 +254,65 @@ function setupSiteAnalyticsBackground() {
     return min + (Math.random() * (max - min));
   }
 
+  function getPointCount(viewWidth) {
+    return viewWidth < 700 ? 8 : 9;
+  }
+
+  function getRouteBounds(viewWidth) {
+    return {
+      startX: -Math.round(viewWidth * 0.16),
+      endX: Math.round(viewWidth * 1.08)
+    };
+  }
+
+  function recomputeRouteDistances() {
+    routeLength = 0;
+
+    for (var index = 0; index < route.length; index += 1) {
+      route[index].distance = routeLength;
+
+      if (index < route.length - 1) {
+        var dx = route[index + 1].x - route[index].x;
+        var dy = route[index + 1].y - route[index].y;
+        routeLength += Math.sqrt((dx * dx) + (dy * dy));
+      }
+    }
+  }
+
+  function updateAnimationMetrics() {
+    speed = clamp(width * 0.17, 150, 290);
+    barFadeDistance = clamp(width * 0.98, 620, 1280);
+    arrowClearance = clamp(width * 0.028, 20, 34);
+    tailLength = clamp(width * 0.39, 260, 620);
+    loopResetDistance = routeLength + Math.max(tailLength, barFadeDistance) + Math.max(72, width * 0.12);
+  }
+
+  function scaleExistingRoute(previousWidth, previousHeight) {
+    if (!route.length || previousWidth <= 0 || previousHeight <= 0) {
+      return false;
+    }
+
+    var previousBounds = getRouteBounds(previousWidth);
+    var nextBounds = getRouteBounds(width);
+    var previousSpan = Math.max(1, previousBounds.endX - previousBounds.startX);
+    var nextSpan = nextBounds.endX - nextBounds.startX;
+    var heightRatio = height / previousHeight;
+
+    for (var index = 0; index < route.length; index += 1) {
+      var normalizedX = (route[index].x - previousBounds.startX) / previousSpan;
+      route[index].x = nextBounds.startX + (nextSpan * normalizedX);
+      route[index].y = route[index].y * heightRatio;
+    }
+
+    recomputeRouteDistances();
+    return true;
+  }
+
   function buildRoutePoints() {
-    var pointCount = width < 700 ? 8 : 9;
-    var startX = -Math.round(width * 0.16);
-    var endX = Math.round(width * 1.08);
+    var pointCount = getPointCount(width);
+    var bounds = getRouteBounds(width);
+    var startX = bounds.startX;
+    var endX = bounds.endX;
     var spanX = endX - startX;
     var stepX = spanX / (pointCount - 1);
     var centerY = height * (width < 700 ? 0.54 : 0.48);
@@ -289,23 +346,17 @@ function setupSiteAnalyticsBackground() {
   function rebuildRoute() {
     var points = buildRoutePoints();
     route = [];
-    routeLength = 0;
 
     for (var index = 0; index < points.length; index += 1) {
       route.push({
         x: points[index].x,
         y: points[index].y,
-        distance: routeLength
+        distance: 0
       });
-
-      if (index < points.length - 1) {
-        var dx = points[index + 1].x - points[index].x;
-        var dy = points[index + 1].y - points[index].y;
-        routeLength += Math.sqrt((dx * dx) + (dy * dy));
-      }
     }
 
-    tailLength = clamp(width * 0.39, 260, 620);
+    recomputeRouteDistances();
+    updateAnimationMetrics();
     headDistance = 0;
   }
 
@@ -533,19 +584,36 @@ function setupSiteAnalyticsBackground() {
   function resizeCanvas() {
     var rect = layer.getBoundingClientRect();
     var devicePixelRatio = window.devicePixelRatio || 1;
+    var previousWidth = width;
+    var previousHeight = height;
+    var previousPointCount = getPointCount(previousWidth || rect.width || 0);
+    var previousLoopResetDistance = loopResetDistance;
+    var cycleProgress = previousLoopResetDistance > 0 ? (headDistance / previousLoopResetDistance) : 0;
 
     width = Math.max(1, rect.width);
     height = Math.max(1, rect.height);
-    speed = clamp(width * 0.17, 150, 290);
-    barFadeDistance = clamp(width * 0.98, 620, 1280);
-    arrowClearance = clamp(width * 0.028, 20, 34);
 
     canvas.width = Math.round(width * devicePixelRatio);
     canvas.height = Math.round(height * devicePixelRatio);
     context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 
-    rebuildRoute();
-    loopResetDistance = routeLength + Math.max(tailLength, barFadeDistance) + Math.max(72, width * 0.12);
+    if (!route.length) {
+      rebuildRoute();
+    } else if (getPointCount(width) !== previousPointCount) {
+      rebuildRoute();
+      if (previousLoopResetDistance > 0) {
+        headDistance = cycleProgress * loopResetDistance;
+      }
+    } else {
+      scaleExistingRoute(previousWidth, previousHeight);
+      updateAnimationMetrics();
+      if (previousLoopResetDistance > 0) {
+        headDistance = cycleProgress * loopResetDistance;
+      }
+    }
+
+    lastMeasuredWidth = width;
+    lastMeasuredHeight = height;
 
     if (frameId) {
       window.cancelAnimationFrame(frameId);
@@ -561,7 +629,20 @@ function setupSiteAnalyticsBackground() {
       window.clearTimeout(resizeTimer);
     }
 
-    resizeTimer = window.setTimeout(resizeCanvas, 90);
+    resizeTimer = window.setTimeout(function () {
+      var rect = layer.getBoundingClientRect();
+      var nextWidth = Math.max(1, rect.width);
+      var nextHeight = Math.max(1, rect.height);
+      var widthDelta = Math.abs(nextWidth - (lastMeasuredWidth || width || nextWidth));
+      var heightDelta = Math.abs(nextHeight - (lastMeasuredHeight || height || nextHeight));
+
+      // Mobile browser chrome often emits height-only resizes while scrolling.
+      if (widthDelta < 2 && heightDelta > 0 && heightDelta < 160) {
+        return;
+      }
+
+      resizeCanvas();
+    }, 90);
   }
 
   function handleMotionChange() {
