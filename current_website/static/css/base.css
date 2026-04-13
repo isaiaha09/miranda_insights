@@ -99,6 +99,42 @@ body::after {
     opacity: 0.9;
 }
 
+.site-analytics-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.site-analytics-bg::before,
+.site-analytics-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.site-analytics-bg::before {
+    background:
+        radial-gradient(560px circle at 20% 28%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 58%),
+        radial-gradient(480px circle at 82% 64%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 60%);
+    filter: blur(16px);
+    opacity: 0.95;
+}
+
+.site-analytics-bg::after {
+    background: linear-gradient(180deg, rgba(7, 11, 18, 0.08), rgba(7, 11, 18, 0.02) 24%, rgba(7, 11, 18, 0.14) 100%);
+}
+
+.site-analytics-bg__canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0.82;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.92) 18%, rgba(0, 0, 0, 0.95) 82%, rgba(0, 0, 0, 0.2));
+}
+
 @keyframes grid-pan {
     from {
         background-position: 0 0, 0 0, 0 0, 0 0;
@@ -123,6 +159,13 @@ body.nav-open .nav-overlay {
 
 .site-main {
     padding-top: var(--header-height);
+}
+
+.site-header,
+.site-main,
+.site-footer {
+    position: relative;
+    z-index: 1;
 }
 
 .container {
@@ -783,6 +826,10 @@ input:focus-visible {
 
     body::before {
         animation: none;
+    }
+
+    .site-analytics-bg__canvas {
+        mask-image: none;
     }
 
     .hamburger span {

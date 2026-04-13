@@ -213,12 +213,389 @@ function setupLoginSubmitLoading() {
   });
 }
 
+function setupSiteAnalyticsBackground() {
+  var layer = document.querySelector('.site-analytics-bg');
+  if (!layer) {
+    return;
+  }
+
+  var canvas = layer.querySelector('.site-analytics-bg__canvas');
+  if (!canvas || !canvas.getContext) {
+    return;
+  }
+
+  var context = canvas.getContext('2d');
+  if (!context) {
+    return;
+  }
+
+  var mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var width = 0;
+  var height = 0;
+  var route = [];
+  var routeLength = 0;
+  var headDistance = 0;
+  var speed = 220;
+  var tailLength = 420;
+  var barFadeDistance = 920;
+  var arrowClearance = 28;
+  var loopResetDistance = 0;
+  var frameId = 0;
+  var lastTime = 0;
+  var resizeTimer = 0;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function randomBetween(min, max) {
+    return min + (Math.random() * (max - min));
+  }
+
+  function buildRoutePoints() {
+    var pointCount = width < 700 ? 8 : 9;
+    var startX = -Math.round(width * 0.16);
+    var endX = Math.round(width * 1.08);
+    var spanX = endX - startX;
+    var centerY = height * (width < 700 ? 0.54 : 0.48);
+    var range = height * (width < 700 ? 0.18 : 0.23);
+    var currentY = centerY + randomBetween(-range * 0.2, range * 0.2);
+    var spacingWeights = [];
+    var totalWeight = 0;
+    var points = [{ x: startX, y: currentY }];
+
+    for (var spacingIndex = 0; spacingIndex < pointCount - 1; spacingIndex += 1) {
+      var weight = randomBetween(0.72, 1.34);
+      spacingWeights.push(weight);
+      totalWeight += weight;
+    }
+
+    var currentX = startX;
+
+    for (var index = 1; index < pointCount; index += 1) {
+      var slopeMode = Math.random();
+      var offset;
+
+      if (slopeMode < 0.18) {
+        offset = 0;
+      } else if (slopeMode < 0.5) {
+        offset = randomBetween(-range * 0.38, range * 0.38);
+      } else {
+        offset = randomBetween(-range * 0.82, range * 0.82);
+      }
+
+      currentY = clamp(currentY + offset, centerY - range, centerY + range);
+      currentX += spanX * (spacingWeights[index - 1] / totalWeight);
+
+      points.push({
+        x: index === pointCount - 1 ? endX : currentX,
+        y: currentY
+      });
+    }
+
+    return points;
+  }
+
+  function rebuildRoute() {
+    var points = buildRoutePoints();
+    route = [];
+    routeLength = 0;
+
+    for (var index = 0; index < points.length; index += 1) {
+      route.push({
+        x: points[index].x,
+        y: points[index].y,
+        distance: routeLength
+      });
+
+      if (index < points.length - 1) {
+        var dx = points[index + 1].x - points[index].x;
+        var dy = points[index + 1].y - points[index].y;
+        routeLength += Math.sqrt((dx * dx) + (dy * dy));
+      }
+    }
+
+    tailLength = clamp(width * 0.39, 260, 620);
+    headDistance = 0;
+  }
+
+  function pointAtDistance(distance) {
+    if (!route.length) {
+      return null;
+    }
+
+    if (distance <= 0) {
+      var firstSegment = route[1];
+      var firstSegmentLength = Math.max(1, firstSegment.distance - route[0].distance);
+      var firstProgress = distance / firstSegmentLength;
+      return {
+        x: route[0].x + ((firstSegment.x - route[0].x) * firstProgress),
+        y: route[0].y + ((firstSegment.y - route[0].y) * firstProgress),
+        angle: Math.atan2(firstSegment.y - route[0].y, firstSegment.x - route[0].x)
+      };
+    }
+
+    if (distance >= routeLength) {
+      var lastIndex = route.length - 1;
+      var lastStart = route[lastIndex - 1];
+      var lastEnd = route[lastIndex];
+      var lastSegmentLength = Math.max(1, lastEnd.distance - lastStart.distance);
+      var lastProgress = (distance - lastStart.distance) / lastSegmentLength;
+      return {
+        x: lastStart.x + ((lastEnd.x - lastStart.x) * lastProgress),
+        y: lastStart.y + ((lastEnd.y - lastStart.y) * lastProgress),
+        angle: Math.atan2(lastEnd.y - lastStart.y, lastEnd.x - lastStart.x)
+      };
+    }
+
+    for (var index = 0; index < route.length - 1; index += 1) {
+      var start = route[index];
+      var end = route[index + 1];
+      var segmentLength = end.distance - start.distance;
+
+      if (distance <= end.distance) {
+        var progress = segmentLength === 0 ? 0 : (distance - start.distance) / segmentLength;
+        return {
+          x: start.x + ((end.x - start.x) * progress),
+          y: start.y + ((end.y - start.y) * progress),
+          angle: Math.atan2(end.y - start.y, end.x - start.x)
+        };
+      }
+    }
+
+    return null;
+  }
+
+  function extractTrail(startDistance, endDistance) {
+    var trail = [];
+    var startPoint = pointAtDistance(startDistance);
+    var endPoint = pointAtDistance(endDistance);
+
+    if (!startPoint || !endPoint) {
+      return trail;
+    }
+
+    trail.push({ x: startPoint.x, y: startPoint.y, distance: startDistance });
+
+    for (var index = 1; index < route.length - 1; index += 1) {
+      if (route[index].distance > startDistance && route[index].distance < endDistance) {
+        trail.push({ x: route[index].x, y: route[index].y, distance: route[index].distance });
+      }
+    }
+
+    trail.push({ x: endPoint.x, y: endPoint.y, angle: endPoint.angle, distance: endDistance });
+    return trail;
+  }
+
+  function drawBars() {
+    var floorY = height * 0.9;
+
+    for (var index = 1; index < route.length - 1; index += 1) {
+      var point = route[index];
+      var elapsed = headDistance - point.distance;
+
+      if (elapsed < arrowClearance || elapsed > barFadeDistance) {
+        continue;
+      }
+
+      if (point.x < -24 || point.x > width + 24) {
+        continue;
+      }
+
+      var progress = 1 - clamp((elapsed - arrowClearance) / Math.max(1, barFadeDistance - arrowClearance), 0, 1);
+      var alpha = progress * progress * (3 - (2 * progress));
+      if (alpha <= 0.002) {
+        continue;
+      }
+
+      var barWidth = width < 700 ? 50 : 68;
+      var barTop = point.y + (width < 700 ? 8 : 10);
+      var barHeight = Math.max(12, floorY - barTop);
+      var barGradient = context.createLinearGradient(point.x, floorY, point.x, barTop);
+
+      barGradient.addColorStop(0, 'rgba(88, 166, 255, 0)');
+      barGradient.addColorStop(0.06, 'rgba(88, 166, 255, 0)');
+      barGradient.addColorStop(0.22, 'rgba(88, 166, 255, ' + (alpha * 0.06).toFixed(3) + ')');
+      barGradient.addColorStop(1, 'rgba(255, 255, 255, ' + (alpha * 0.48).toFixed(3) + ')');
+
+      context.fillStyle = barGradient;
+      context.shadowBlur = 12;
+      context.shadowColor = 'rgba(88, 166, 255, ' + (alpha * 0.16).toFixed(3) + ')';
+      context.fillRect(point.x - (barWidth / 2), barTop, barWidth, barHeight);
+    }
+  }
+
+  function drawArrow(point) {
+    if (!point) {
+      return;
+    }
+
+    var arrowLength = width < 700 ? 16 : 20;
+    var arrowWidth = width < 700 ? 7 : 9;
+    var tipX = point.x + (Math.cos(point.angle) * arrowLength);
+    var tipY = point.y + (Math.sin(point.angle) * arrowLength);
+    var leftX = point.x + (Math.cos(point.angle + (Math.PI * 0.64)) * arrowWidth);
+    var leftY = point.y + (Math.sin(point.angle + (Math.PI * 0.64)) * arrowWidth);
+    var rightX = point.x + (Math.cos(point.angle - (Math.PI * 0.64)) * arrowWidth);
+    var rightY = point.y + (Math.sin(point.angle - (Math.PI * 0.64)) * arrowWidth);
+
+    context.beginPath();
+    context.moveTo(tipX, tipY);
+    context.lineTo(leftX, leftY);
+    context.lineTo(rightX, rightY);
+    context.closePath();
+    context.fill();
+  }
+
+  function draw(now) {
+    if (!width || !height || !routeLength) {
+      return;
+    }
+
+    if (!lastTime) {
+      lastTime = now;
+    }
+
+    var deltaSeconds = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    if (!mediaQuery.matches) {
+      headDistance += speed * deltaSeconds;
+      if (headDistance > loopResetDistance) {
+        rebuildRoute();
+      }
+    } else if (headDistance === 0) {
+      headDistance = Math.min(routeLength * 0.72, tailLength + 120);
+    }
+
+    var visibleEnd = headDistance;
+    var visibleStart = Math.max(0, visibleEnd - tailLength);
+    var trail = extractTrail(visibleStart, visibleEnd);
+    var headPoint = pointAtDistance(visibleEnd);
+
+    context.clearRect(0, 0, width, height);
+
+    drawBars();
+
+    if (trail.length >= 2) {
+      var gradient = context.createLinearGradient(trail[0].x, trail[0].y, trail[trail.length - 1].x, trail[trail.length - 1].y);
+      var glowGradient = context.createLinearGradient(trail[0].x, trail[0].y, trail[trail.length - 1].x, trail[trail.length - 1].y);
+      gradient.addColorStop(0, 'rgba(88, 166, 255, 0)');
+      gradient.addColorStop(0.24, 'rgba(88, 166, 255, 0.004)');
+      gradient.addColorStop(0.4, 'rgba(88, 166, 255, 0.07)');
+      gradient.addColorStop(0.72, 'rgba(88, 166, 255, 0.72)');
+      gradient.addColorStop(1, 'rgba(255, 255, 255, 0.96)');
+
+      glowGradient.addColorStop(0, 'rgba(88, 166, 255, 0)');
+      glowGradient.addColorStop(0.28, 'rgba(88, 166, 255, 0.002)');
+      glowGradient.addColorStop(0.45, 'rgba(88, 166, 255, 0.035)');
+      glowGradient.addColorStop(0.78, 'rgba(88, 166, 255, 0.16)');
+      glowGradient.addColorStop(1, 'rgba(167, 139, 250, 0.22)');
+
+      context.beginPath();
+      context.moveTo(trail[0].x, trail[0].y);
+      for (var index = 1; index < trail.length; index += 1) {
+        context.lineTo(trail[index].x, trail[index].y);
+      }
+
+      context.lineWidth = width < 700 ? 10 : 12;
+      context.lineJoin = 'miter';
+      context.lineCap = 'butt';
+      context.strokeStyle = glowGradient;
+      context.shadowBlur = 10;
+      context.shadowColor = 'rgba(88, 166, 255, 0.08)';
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(trail[0].x, trail[0].y);
+      for (var index2 = 1; index2 < trail.length; index2 += 1) {
+        context.lineTo(trail[index2].x, trail[index2].y);
+      }
+
+      context.lineWidth = width < 700 ? 3 : 4;
+      context.strokeStyle = gradient;
+      context.shadowBlur = 14;
+      context.shadowColor = 'rgba(167, 139, 250, 0.34)';
+      context.stroke();
+
+      if (headPoint) {
+        var glow = context.createRadialGradient(headPoint.x, headPoint.y, 0, headPoint.x, headPoint.y, width < 700 ? 18 : 24);
+        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        glow.addColorStop(0.4, 'rgba(88, 166, 255, 0.34)');
+        glow.addColorStop(1, 'rgba(88, 166, 255, 0)');
+        context.fillStyle = glow;
+        context.beginPath();
+        context.arc(headPoint.x, headPoint.y, width < 700 ? 18 : 24, 0, Math.PI * 2);
+        context.fill();
+
+        context.fillStyle = 'rgba(255, 255, 255, 0.96)';
+        context.shadowBlur = 10;
+        context.shadowColor = 'rgba(88, 166, 255, 0.42)';
+        drawArrow(headPoint);
+      }
+    }
+
+    if (!mediaQuery.matches) {
+      frameId = window.requestAnimationFrame(draw);
+    }
+  }
+
+  function resizeCanvas() {
+    var rect = layer.getBoundingClientRect();
+    var devicePixelRatio = window.devicePixelRatio || 1;
+
+    width = Math.max(1, rect.width);
+    height = Math.max(1, rect.height);
+    speed = clamp(width * 0.17, 150, 290);
+    barFadeDistance = clamp(width * 0.98, 620, 1280);
+    arrowClearance = clamp(width * 0.028, 20, 34);
+
+    canvas.width = Math.round(width * devicePixelRatio);
+    canvas.height = Math.round(height * devicePixelRatio);
+    context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+    rebuildRoute();
+    loopResetDistance = routeLength + Math.max(tailLength, barFadeDistance) + Math.max(72, width * 0.12);
+
+    if (frameId) {
+      window.cancelAnimationFrame(frameId);
+      frameId = 0;
+    }
+
+    lastTime = 0;
+    draw(window.performance.now());
+  }
+
+  function handleResize() {
+    if (resizeTimer) {
+      window.clearTimeout(resizeTimer);
+    }
+
+    resizeTimer = window.setTimeout(resizeCanvas, 90);
+  }
+
+  function handleMotionChange() {
+    resizeCanvas();
+  }
+
+  window.addEventListener('resize', handleResize);
+
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', handleMotionChange);
+  } else if (typeof mediaQuery.addListener === 'function') {
+    mediaQuery.addListener(handleMotionChange);
+  }
+
+  resizeCanvas();
+}
+
 syncBrowserChromeColor();
 registerServiceWorker();
 
 // Minimal JS placeholder for site interactions
 document.addEventListener('DOMContentLoaded', function(){
   syncBrowserChromeColor();
+  setupSiteAnalyticsBackground();
   setupPwaInstallExperience();
   syncPwaModeInputs();
   setupLoginSubmitLoading();
