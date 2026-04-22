@@ -154,6 +154,33 @@ class LoginViewTests(TestCase):
 
 		self.assertRedirects(response, reverse("admin:index"), fetch_redirect_response=False)
 
+	@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+	def test_password_reset_view_sends_branded_email(self):
+		user = User.objects.create_user(username="browserreset", email="browserreset@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-0204")
+
+		response = self.client.post(reverse("password_reset"), {"email": "browserreset@example.com"}, follow=False)
+
+		self.assertRedirects(response, reverse("password_reset_done"), fetch_redirect_response=False)
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["browserreset@example.com"])
+		self.assertTrue(mail.outbox[0].alternatives)
+		html_body = mail.outbox[0].alternatives[0][0]
+		self.assertIn("Reset Your Password", html_body)
+		self.assertIn("Miranda Insights", html_body)
+
+	@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+	def test_recover_username_view_sends_username_email(self):
+		User.objects.create_user(username="browserrecover", email="browserrecover@example.com", password="correct-pass-123")
+
+		response = self.client.post(reverse("recover_username"), {"email": "browserrecover@example.com"}, follow=False)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "If an account exists for browserrecover@example.com")
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["browserrecover@example.com"])
+		self.assertIn("browserrecover", mail.outbox[0].body)
+
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class MobileAuthApiTests(TestCase):

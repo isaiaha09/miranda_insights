@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 from django.template.loader import render_to_string
 
+from landingpage.emailing import build_email_context
 from apps.operations.services import dispatch_raw_email
 from .models import AccountProfile
 
@@ -132,9 +133,16 @@ class StyledPasswordResetForm(PasswordResetForm):
         to_email,
         html_email_template_name=None,
     ):
-        subject = "".join(render_to_string(subject_template_name, context).splitlines())
-        text_body = render_to_string(email_template_name, context)
-        html_body = render_to_string(html_email_template_name, context) if html_email_template_name else None
+        email_context = build_email_context(
+            {
+                "email_title": "Reset Your Password",
+                "heading": "Reset Your Password",
+                **context,
+            }
+        )
+        subject = "".join(render_to_string(subject_template_name, email_context).splitlines())
+        text_body = render_to_string(email_template_name, email_context)
+        html_body = render_to_string(html_email_template_name, email_context) if html_email_template_name else None
         dispatch_raw_email(
             subject=subject,
             text_body=text_body,

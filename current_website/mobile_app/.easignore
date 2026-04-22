@@ -1,0 +1,51 @@
+# Exclude local development, editor, and build artefacts from EAS upload
+# Keep package.json, package-lock.json / yarn.lock, and app config files
+
+# Node artifacts
+node_modules/
+node_modules
+npm-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.*
+.env.example
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build outputs and caches
+build/
+dist/
+coverage/
+/.expo/
+.expo-shared/
+web-build/
+android/
+ios/
+Pods/
+DerivedData/
+fastlane/
+local.properties
+
+# Archive and package files
+*.tgz
+*.zip
+
+# Logs and temp
+*.log
+tmp/
+__pycache__/
+*.pyc
+
+# Keystore / credentials - never upload
+*.p8
+*.jks
+*.keystore
+
+# IDE project files
+*.iml
