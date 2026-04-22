@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import reverse
 from urllib.parse import unquote, urlparse
 
 try:
@@ -346,6 +347,25 @@ UNFOLD = {
     "SITE_SYMBOL": "monitoring",
     "STYLES": [
         "css/admin-theme.css",
+    ],
+    "TABS": [
+        {
+            "models": ["auth.user"],
+            "items": [
+                {
+                    "title": "All",
+                    "link": lambda request: reverse("admin:auth_user_changelist"),
+                },
+                {
+                    "title": "Staff",
+                    "link": lambda request: f"{reverse('admin:auth_user_changelist')}?is_staff__exact=1&is_superuser__exact=0",
+                },
+                {
+                    "title": "Admin",
+                    "link": lambda request: f"{reverse('admin:auth_user_changelist')}?is_superuser__exact=1",
+                },
+            ],
+        },
     ],
     "COLORS": {
         "primary": {
