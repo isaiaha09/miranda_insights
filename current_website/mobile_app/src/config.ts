@@ -13,6 +13,10 @@ export const MOBILE_APP_QUERY_VALUE = '1';
 const configuredBaseUrl = (process.env.EXPO_PUBLIC_INSIGHTS_SITE_URL || '').trim();
 export const EXPO_PUSH_PROJECT_ID = (process.env.EXPO_PUBLIC_EXPO_PROJECT_ID || '').trim();
 
+function isLoopbackHostname(hostname: string) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+}
+
 function getMetroHostname() {
   const sourceCode = NativeModules.SourceCode as { scriptURL?: string } | undefined;
   const scriptUrl = sourceCode?.scriptURL;
@@ -32,7 +36,7 @@ function getMetroHostname() {
 function getDefaultBaseUrl() {
   const metroHostname = getMetroHostname();
 
-  if (metroHostname && metroHostname !== 'localhost' && metroHostname !== '127.0.0.1') {
+  if (metroHostname && !isLoopbackHostname(metroHostname)) {
     return `http://${metroHostname}:8000`;
   }
 
@@ -49,7 +53,28 @@ function normalizeBaseUrl(value: string) {
   return value.replace(/\/+$/, '');
 }
 
-export const BASE_URL = normalizeBaseUrl(configuredBaseUrl || DEFAULT_BASE_URL);
+function resolveBaseUrl() {
+  const metroHostname = getMetroHostname();
+
+  if (!configuredBaseUrl) {
+    return DEFAULT_BASE_URL;
+  }
+
+  try {
+    const configuredUrl = new URL(normalizeBaseUrl(configuredBaseUrl));
+
+    if (metroHostname && !isLoopbackHostname(metroHostname) && isLoopbackHostname(configuredUrl.hostname)) {
+      configuredUrl.hostname = metroHostname;
+      return configuredUrl.toString().replace(/\/+$/, '');
+    }
+
+    return configuredUrl.toString().replace(/\/+$/, '');
+  } catch {
+    return normalizeBaseUrl(configuredBaseUrl);
+  }
+}
+
+export const BASE_URL = resolveBaseUrl();
 export const BASE_URL_LABEL = BASE_URL.replace(/^https?:\/\//, '');
 
 export const PRIMARY_ROUTES: AppRoute[] = [

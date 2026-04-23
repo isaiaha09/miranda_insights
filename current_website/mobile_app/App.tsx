@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
-import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
@@ -48,6 +48,7 @@ const MOBILE_LOGIN_PATH = '/mobile-api/login/';
 const MOBILE_USERNAME_RECOVERY_PATH = '/mobile-api/recover-username/';
 const MOBILE_PASSWORD_RESET_PATH = '/mobile-api/password-reset/';
 const MOBILE_PUSH_DEVICE_PATH = '/mobile-api/push-devices/';
+const REMEMBERED_PORTAL_LAUNCH_KEY = 'insights.mobile.resumePortalOnLaunch';
 
 type NativeScreen = 'landing' | 'login' | 'twoFactor' | 'forgotUsername' | 'forgotPassword' | 'web';
 type NativeAppScreen = Exclude<NativeScreen, 'web'>;
@@ -361,6 +362,22 @@ const MOBILE_WEBVIEW_CLEANUP_SCRIPT = `
       document.documentElement.style.overscrollBehavior = 'none';
       document.cookie = 'insights_mobile_app=1; path=/; SameSite=Lax';
 
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          registrations.forEach(function (registration) {
+            registration.unregister();
+          });
+        }).catch(function () {});
+      }
+
+      if (window.caches && typeof window.caches.keys === 'function') {
+        window.caches.keys().then(function (keys) {
+          keys.forEach(function (key) {
+            window.caches.delete(key);
+          });
+        }).catch(function () {});
+      }
+
       if (document.body) {
         document.body.style.background = '#0c111b';
         document.body.style.overscrollBehavior = 'none';
@@ -633,7 +650,6 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pageReady, setPageReady] = useState(false);
   const [showWebLoader, setShowWebLoader] = useState(false);
-  const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [webError, setWebError] = useState<string | null>(null);
   const [searchSheetOpen, setSearchSheetOpen] = useState(false);
   const [searchSheetMounted, setSearchSheetMounted] = useState(false);
@@ -730,6 +746,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let isActive = true;
+
+    AsyncStorage.getItem(REMEMBERED_PORTAL_LAUNCH_KEY)
+      .then(function (storedValue) {
+        if (!isActive || storedValue !== 'true') {
+          return;
+        }
+
+        resetAuthFeedback();
+        setOtpCode('');
+        openWebRoute('/dashboard/');
+      })
+      .catch(function () {
+        return null;
+      });
+
+    return function () {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
     async function buildSearchContentIndex() {
       if (searchIndexRequestedRef.current) {
         return;
@@ -794,18 +832,14 @@ export default function App() {
 
   useEffect(() => {
     function openNotificationRoute(routePath: string) {
-      const nextPath = routePath || '/dashboard/';
-      const nextUrl = buildRouteUrl(nextPath);
-      setCurrentUrl(nextUrl);
-      setCurrentTitle(getRouteForUrl(nextUrl)?.label || 'Client Portal');
-      setWebError(null);
-      beginWebLoader();
-      closeDrawer();
-      closeSearchSheet();
-      setNativeScreen('web');
+      openWebRoute(routePath || '/dashboard/');
     }
 
     function handleNotificationResponse(response: Notifications.NotificationResponse | null) {
+      if (!response) {
+        return;
+      }
+
       const routePath = response?.notification?.request?.content?.data?.routePath;
       openNotificationRoute(typeof routePath === 'string' ? routePath : '/dashboard/');
     }
@@ -922,6 +956,19 @@ export default function App() {
     });
   }
 
+  async function setPortalResumePreference(shouldResume: boolean) {
+    try {
+      if (shouldResume) {
+        await AsyncStorage.setItem(REMEMBERED_PORTAL_LAUNCH_KEY, 'true');
+        return;
+      }
+
+      await AsyncStorage.removeItem(REMEMBERED_PORTAL_LAUNCH_KEY);
+    } catch {
+      // Ignore storage failures and fall back to non-persistent launch behavior.
+    }
+  }
+
   function injectHighlightedSearchPhrase(phrase: string) {
     if (!phrase.trim()) {
       return;
@@ -968,6 +1015,17 @@ export default function App() {
     }
   }
 
+  function openWebRoute(path: string) {
+    const nextUrl = buildRouteUrl(path);
+    setCurrentUrl(nextUrl);
+    setCurrentTitle(getRouteForUrl(nextUrl)?.label || 'Client Portal');
+    setWebError(null);
+    beginWebLoader();
+    closeDrawer();
+    closeSearchSheet();
+    setNativeScreen('web');
+  }
+
   function syncPushTokenWithWebSession(token: string, action: 'register' | 'unregister' = 'register') {
     const normalizedToken = String(token || '').trim();
     if (!normalizedToken) {
@@ -1002,6 +1060,7 @@ export default function App() {
   }
 
   function completeMobileLogout() {
+    void setPortalResumePreference(false);
     resetAuthFeedback();
     setUsername('');
     setPassword('');
@@ -1246,28 +1305,6 @@ export default function App() {
     }
   }
 
-  async function launchCamera() {
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-
-      if (!permission.granted) {
-        Alert.alert('Camera access needed', 'Allow camera access in Expo Go to use this native action.');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        setCapturedImageUri(result.assets[0].uri);
-      }
-    } catch (error) {
-      Alert.alert('Camera unavailable', 'Launching the native camera failed.');
-    }
-  }
-
   function reloadPage() {
     setWebError(null);
     beginWebLoader();
@@ -1348,6 +1385,7 @@ export default function App() {
         return;
       }
 
+      void setPortalResumePreference(keepSignedIn);
       setCurrentUrl(data.sessionUrl);
       setCurrentTitle('Client Portal');
       setWebError(null);
@@ -1384,6 +1422,7 @@ export default function App() {
         return;
       }
 
+      void setPortalResumePreference(keepSignedIn);
       setCurrentUrl(data.sessionUrl);
       setCurrentTitle('Client Portal');
       setWebError(null);
@@ -1477,6 +1516,7 @@ export default function App() {
   }) {
     const authScreen = getNativeAuthScreenForPath(new URL(navigationState.url, BASE_URL).pathname);
     if (authScreen) {
+      void setPortalResumePreference(false);
       resetAuthFeedback();
       setOtpCode('');
       closeDrawer();
@@ -1529,6 +1569,7 @@ export default function App() {
         const requestUrl = new URL(request.url);
         const authScreen = getNativeAuthScreenForPath(requestUrl.pathname);
         if (authScreen) {
+          void setPortalResumePreference(false);
           resetAuthFeedback();
           setOtpCode('');
           closeDrawer();
@@ -1830,7 +1871,7 @@ export default function App() {
       eyebrow: 'Client Portal',
       title: 'Welcome to Miranda Insights',
       copy:
-        "Log in to access to your client portal dashboard. If you don't have an account with us yet, please book a consultation with us to get started.",
+        "Log in to access your Miranda Insights client portal. New clients can book a consultation to get started.",
       topContent: (
         <View style={styles.landingVisualStage}>{renderDynamicBrandIcon('landing')}</View>
       ),
@@ -1855,7 +1896,7 @@ export default function App() {
     return renderAuthScreenLayout({
       eyebrow: 'Client Portal',
       title: 'Log In',
-      copy: 'Enter your username and password to access your Insights account.',
+      copy: 'Miranda Insights clients can log in here to access their client portal, project updates, messages, and scheduling tools.',
       body: (
         <>
           {renderAuthMessage()}
@@ -2171,13 +2212,6 @@ export default function App() {
                   <Text style={styles.drawerActionText}>Enable Notifications</Text>
                 </Pressable>
               </View>
-
-              {capturedImageUri ? (
-                <View style={styles.drawerSection}>
-                  <Text style={styles.drawerSectionTitle}>Latest capture</Text>
-                  <Image source={{ uri: capturedImageUri }} style={styles.capturePreview} />
-                </View>
-              ) : null}
 
               <View style={styles.drawerFooter}>
                 <View style={styles.drawerFooterRow}>
@@ -2808,12 +2842,6 @@ const styles = StyleSheet.create({
     color: '#c9d7e6',
     fontSize: 14,
     fontWeight: '600',
-  },
-  capturePreview: {
-    width: '100%',
-    height: 180,
-    borderRadius: 18,
-    backgroundColor: '#0c111b',
   },
   drawerFooter: {
     marginTop: 'auto',

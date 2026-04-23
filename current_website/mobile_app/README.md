@@ -6,7 +6,7 @@ Expo Go TypeScript shell for the Django site in `current_website/`.
 
 - Wraps the Django site in `react-native-webview`
 - Adds a native header, bottom navigation, and drawer around the web content
-- Uses Expo-native APIs for camera and notification permissions
+- Uses Expo-native APIs for notification permissions
 - Keeps the Django templates as the primary UI/content layer
 
 ## Local setup
@@ -26,11 +26,14 @@ EXPO_PUBLIC_EXPO_PROJECT_ID=your-expo-project-id
 5. Run `npm start`.
 6. Open Expo Go on Android or iPhone and connect to the running Expo session.
 
+If you specifically want to test with a custom development client instead of Expo Go, run `npm run start:dev-client`.
+
 ## Useful commands
 
 ```bash
 npm start
 npm run start:tunnel
+npm run start:dev-client
 npm run android
 npm run ios
 npm run web
@@ -47,5 +50,4 @@ npm run typecheck
 
 - Expo Go is the intended workflow for fast Android and iPhone iteration from one codebase.
 - `npm run ios` still depends on Expo/iOS tooling availability, but Expo Go on a physical iPhone works from Windows on the same network.
-- The camera action uses Expo Image Picker's native camera flow.
 - Notification permission status is tracked in the shell; full production push setup still requires Expo credentials and app-specific configuration.
