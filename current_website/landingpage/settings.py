@@ -240,9 +240,8 @@ MEDIA_URL = '/media/'
 DJANGO_ADMIN_URL=os.getenv('DJANGO_ADMIN_URL')
 
 # Project-level static and template folders
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+PROJECT_STATIC_DIR = BASE_DIR / 'static'
+STATICFILES_DIRS = [PROJECT_STATIC_DIR] if PROJECT_STATIC_DIR.exists() else []
 
 # Optional STATIC_ROOT for collectstatic (useful for deployments)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
