@@ -568,6 +568,10 @@ function setupSiteAnalyticsBackground() {
     var shouldPreserveAnimation = (widthChanged || heightChanged) && width > 0 && routeLength > 0 && loopResetDistance > 0;
     var loopProgress = shouldPreserveAnimation ? clamp(headDistance / loopResetDistance, 0, 1) : 0;
 
+    if (!widthChanged && !heightChanged && width > 0 && height > 0) {
+      return;
+    }
+
     if (isHeightOnlyResize && shouldPreserveAnimation) {
       pendingCanvasMetrics = {
         width: nextWidth,
