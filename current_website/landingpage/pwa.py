@@ -61,7 +61,7 @@ def service_worker(request):
         request,
         "service-worker.js",
         {
-            "cache_name": "insights-pwa-v2",
+            "cache_name": "insights-pwa-v3",
         },
         content_type="application/javascript; charset=utf-8",
     )

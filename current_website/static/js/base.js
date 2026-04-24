@@ -260,17 +260,7 @@ function setupSiteAnalyticsBackground() {
     var centerY = height * (width < 700 ? 0.54 : 0.48);
     var range = height * (width < 700 ? 0.18 : 0.23);
     var currentY = centerY + randomBetween(-range * 0.2, range * 0.2);
-    var spacingWeights = [];
-    var totalWeight = 0;
     var points = [{ x: startX, y: currentY }];
-
-    for (var spacingIndex = 0; spacingIndex < pointCount - 1; spacingIndex += 1) {
-      var weight = randomBetween(0.72, 1.34);
-      spacingWeights.push(weight);
-      totalWeight += weight;
-    }
-
-    var currentX = startX;
 
     for (var index = 1; index < pointCount; index += 1) {
       var slopeMode = Math.random();
@@ -285,7 +275,7 @@ function setupSiteAnalyticsBackground() {
       }
 
       currentY = clamp(currentY + offset, centerY - range, centerY + range);
-      currentX += spanX * (spacingWeights[index - 1] / totalWeight);
+      var currentX = startX + ((spanX * index) / (pointCount - 1));
 
       points.push({
         x: index === pointCount - 1 ? endX : currentX,
