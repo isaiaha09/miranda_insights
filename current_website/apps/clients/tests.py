@@ -12,7 +12,7 @@ import tempfile
 
 from apps.accounts.models import AccountProfile
 from .admin import ClientAdmin, ProjectAdmin, ProjectMessageAdmin, ProjectNoteInline, ProjectSubtaskInline
-from .forms import AdminProjectCreateForm
+from .forms import AdminProjectCreateForm, ProjectMessageForm
 from .models import Client, Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
 from .workspace import render_client_workspace
 
@@ -110,6 +110,30 @@ class ClientProjectTests(TestCase):
 		self.assertContains(response, "Open shared link")
 		self.assertIn(message.attachment_file_name, mail.outbox[0].body)
 		self.assertIn("https://example.com/dashboard-spec", mail.outbox[0].body)
+
+	def test_project_message_form_accept_attribute_excludes_image_types(self):
+		form = ProjectMessageForm(client=self.client_record)
+
+		self.assertEqual(
+			form.fields["attachment_file"].widget.attrs["accept"],
+			".csv,.doc,.docx,.pdf,.ppt,.pptx,.rtf,.txt,.xls,.xlsx,.zip",
+		)
+
+	def test_dashboard_project_message_rejects_photo_uploads(self):
+		form = ProjectMessageForm(
+			data={
+				"project": self.project.pk,
+				"body": "",
+				"attachment_link": "",
+			},
+			files={
+				"attachment_file": SimpleUploadedFile("phone-photo.jpg", b"jpeg content", content_type="image/jpeg"),
+			},
+			client=self.client_record,
+		)
+
+		self.assertFalse(form.is_valid())
+		self.assertIn("Upload a PDF, Office document, text file, ZIP archive, or CSV file.", form.non_field_errors())
 
 	def test_dashboard_chat_widget_filters_messages_to_selected_project(self):
 		second_project = Project.objects.create(

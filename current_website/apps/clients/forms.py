@@ -18,8 +18,8 @@ BLOCKED_PROJECT_ATTACHMENT_EXTENSIONS = {
 	".xhtml",
 }
 ALLOWED_PROJECT_ATTACHMENT_EXTENSIONS = {
-	".csv", ".doc", ".docx", ".gif", ".jpeg", ".jpg", ".pdf", ".png", ".ppt",
-	".pptx", ".rtf", ".txt", ".webp", ".xls", ".xlsx", ".zip",
+	".csv", ".doc", ".docx", ".pdf", ".ppt", ".pptx", ".rtf", ".txt",
+	".xls", ".xlsx", ".zip",
 }
 ALLOWED_PROJECT_ATTACHMENT_CONTENT_TYPES = {
 	"application/msword",
@@ -32,10 +32,6 @@ ALLOWED_PROJECT_ATTACHMENT_CONTENT_TYPES = {
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 	"application/x-zip-compressed",
 	"application/zip",
-	"image/gif",
-	"image/jpeg",
-	"image/png",
-	"image/webp",
 	"text/csv",
 	"text/plain",
 }
@@ -90,7 +86,7 @@ class ProjectMessageForm(forms.ModelForm):
 			if blocked_extension:
 				raise ValidationError(f"Files ending in {blocked_extension} are not allowed for project attachments.")
 			if extension not in ALLOWED_PROJECT_ATTACHMENT_EXTENSIONS:
-				raise ValidationError("Upload a PDF, Office document, text file, ZIP archive, CSV, or common image format.")
+				raise ValidationError("Upload a PDF, Office document, text file, ZIP archive, or CSV file.")
 			content_type = str(getattr(attachment_file, "content_type", "") or "").split(";", 1)[0].strip().lower()
 			if content_type and content_type not in ALLOWED_PROJECT_ATTACHMENT_CONTENT_TYPES:
 				raise ValidationError("That file type is not allowed for project attachments.")
