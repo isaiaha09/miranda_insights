@@ -244,6 +244,7 @@ function setupSiteAnalyticsBackground() {
   var lastTime = 0;
   var resizeTimer = 0;
   var viewportResizeTolerance = 2;
+  var pendingCanvasMetrics = null;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -310,6 +311,21 @@ function setupSiteAnalyticsBackground() {
     if (resetHeadDistance !== false) {
       headDistance = 0;
     }
+  }
+
+  function applyCanvasMetrics(nextWidth, nextHeight, devicePixelRatio) {
+    width = nextWidth;
+    height = nextHeight;
+    speed = clamp(width * 0.17, 150, 290);
+    barFadeDistance = clamp(width * 0.98, 620, 1280);
+    arrowClearance = clamp(width * 0.028, 20, 34);
+
+    layer.style.bottom = 'auto';
+    layer.style.height = height + 'px';
+
+    canvas.width = Math.round(width * devicePixelRatio);
+    canvas.height = Math.round(height * devicePixelRatio);
+    context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   }
 
   function pointAtDistance(distance) {
@@ -455,6 +471,14 @@ function setupSiteAnalyticsBackground() {
     if (!mediaQuery.matches) {
       headDistance += speed * deltaSeconds;
       if (headDistance > loopResetDistance) {
+        if (pendingCanvasMetrics) {
+          applyCanvasMetrics(
+            pendingCanvasMetrics.width,
+            pendingCanvasMetrics.height,
+            pendingCanvasMetrics.devicePixelRatio
+          );
+          pendingCanvasMetrics = null;
+        }
         rebuildRoute();
       }
     } else if (headDistance === 0) {
@@ -540,18 +564,20 @@ function setupSiteAnalyticsBackground() {
     var nextHeight = Math.max(1, rect.height);
     var widthChanged = Math.abs(nextWidth - width) > viewportResizeTolerance;
     var heightChanged = Math.abs(nextHeight - height) > viewportResizeTolerance;
+    var isHeightOnlyResize = !widthChanged && heightChanged;
     var shouldPreserveAnimation = (widthChanged || heightChanged) && width > 0 && routeLength > 0 && loopResetDistance > 0;
     var loopProgress = shouldPreserveAnimation ? clamp(headDistance / loopResetDistance, 0, 1) : 0;
 
-    width = nextWidth;
-    height = nextHeight;
-    speed = clamp(width * 0.17, 150, 290);
-    barFadeDistance = clamp(width * 0.98, 620, 1280);
-    arrowClearance = clamp(width * 0.028, 20, 34);
+    if (isHeightOnlyResize && shouldPreserveAnimation) {
+      pendingCanvasMetrics = {
+        width: nextWidth,
+        height: nextHeight,
+        devicePixelRatio: devicePixelRatio,
+      };
+      return;
+    }
 
-    canvas.width = Math.round(width * devicePixelRatio);
-    canvas.height = Math.round(height * devicePixelRatio);
-    context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    applyCanvasMetrics(nextWidth, nextHeight, devicePixelRatio);
 
     rebuildRoute(!shouldPreserveAnimation);
     loopResetDistance = routeLength + Math.max(tailLength, barFadeDistance) + Math.max(72, width * 0.12);
