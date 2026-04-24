@@ -243,6 +243,7 @@ function setupSiteAnalyticsBackground() {
   var frameId = 0;
   var lastTime = 0;
   var resizeTimer = 0;
+  var viewportResizeTolerance = 2;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -286,7 +287,7 @@ function setupSiteAnalyticsBackground() {
     return points;
   }
 
-  function rebuildRoute() {
+  function rebuildRoute(resetHeadDistance) {
     var points = buildRoutePoints();
     route = [];
     routeLength = 0;
@@ -306,7 +307,9 @@ function setupSiteAnalyticsBackground() {
     }
 
     tailLength = clamp(width * 0.39, 260, 620);
-    headDistance = 0;
+    if (resetHeadDistance !== false) {
+      headDistance = 0;
+    }
   }
 
   function pointAtDistance(distance) {
@@ -533,9 +536,15 @@ function setupSiteAnalyticsBackground() {
   function resizeCanvas() {
     var rect = layer.getBoundingClientRect();
     var devicePixelRatio = window.devicePixelRatio || 1;
+    var nextWidth = Math.max(1, rect.width);
+    var nextHeight = Math.max(1, rect.height);
+    var widthChanged = Math.abs(nextWidth - width) > viewportResizeTolerance;
+    var heightChanged = Math.abs(nextHeight - height) > viewportResizeTolerance;
+    var shouldPreserveAnimation = (widthChanged || heightChanged) && width > 0 && routeLength > 0 && loopResetDistance > 0;
+    var loopProgress = shouldPreserveAnimation ? clamp(headDistance / loopResetDistance, 0, 1) : 0;
 
-    width = Math.max(1, rect.width);
-    height = Math.max(1, rect.height);
+    width = nextWidth;
+    height = nextHeight;
     speed = clamp(width * 0.17, 150, 290);
     barFadeDistance = clamp(width * 0.98, 620, 1280);
     arrowClearance = clamp(width * 0.028, 20, 34);
@@ -544,8 +553,12 @@ function setupSiteAnalyticsBackground() {
     canvas.height = Math.round(height * devicePixelRatio);
     context.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 
-    rebuildRoute();
+    rebuildRoute(!shouldPreserveAnimation);
     loopResetDistance = routeLength + Math.max(tailLength, barFadeDistance) + Math.max(72, width * 0.12);
+
+    if (shouldPreserveAnimation) {
+      headDistance = loopProgress * loopResetDistance;
+    }
 
     if (frameId) {
       window.cancelAnimationFrame(frameId);
