@@ -219,13 +219,122 @@
     linkStatus.textContent = linkInput.value.trim() ? 'Link ready to send' : 'No link added yet';
   }
 
-  function replaceWidget(widget, html) {
+  function getChannelHeightStorageKey(widget) {
+    var baseUrl = widget.dataset.refreshUrl || widget.dataset.submitUrl || window.location.pathname;
+    return "project-chat-channel-height:" + window.location.pathname + ":" + baseUrl;
+  }
+
+  function isStoredChannelHeight(value) {
+    return typeof value === "string" && /^\d+(?:\.\d+)?px$/.test(value);
+  }
+
+  function readStoredChannelHeight(widget) {
+    try {
+      var storedHeight = window.localStorage.getItem(getChannelHeightStorageKey(widget));
+      return isStoredChannelHeight(storedHeight) ? storedHeight : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function persistChannelHeight(widget, channel, height) {
+    var resolvedHeight = height || (channel ? channel.style.height : "");
+    if (!isStoredChannelHeight(resolvedHeight)) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(getChannelHeightStorageKey(widget), resolvedHeight);
+    } catch (error) {}
+  }
+
+  function applyStoredChannelHeight(widget, channel) {
+    if (!channel || channel.style.height) {
+      return;
+    }
+    var storedHeight = readStoredChannelHeight(widget);
+    if (storedHeight) {
+      channel.style.height = storedHeight;
+    }
+  }
+
+  function disconnectChannelResizeObserver(widget) {
+    var state = getWidgetState(widget);
+    if (state.channelResizeObserver) {
+      state.channelResizeObserver.disconnect();
+      state.channelResizeObserver = null;
+    }
+  }
+
+  function observeChannelResize(widget, channel) {
+    if (!channel || !window.ResizeObserver) {
+      return;
+    }
+    disconnectChannelResizeObserver(widget);
+    var resizeObserver = new window.ResizeObserver(function () {
+      if (!document.body.contains(channel) || !channel.style.height) {
+        return;
+      }
+      persistChannelHeight(widget, channel);
+    });
+    resizeObserver.observe(channel);
+    getWidgetState(widget).channelResizeObserver = resizeObserver;
+  }
+
+  function prepareReplacementWidget(widget, nextWidget, options) {
+    options = options || {};
+    var currentChannel = widget.querySelector(".project-chat-widget__channel");
+    var nextChannel = nextWidget.querySelector(".project-chat-widget__channel");
+    disconnectChannelResizeObserver(widget);
+    if (!currentChannel || !nextChannel) {
+      return;
+    }
+
+    var storedHeight = currentChannel.style.height || readStoredChannelHeight(widget);
+    if (storedHeight) {
+      nextChannel.style.height = storedHeight;
+      persistChannelHeight(nextWidget, nextChannel, storedHeight);
+    }
+
+    var bottomOffset = Math.max(0, currentChannel.scrollHeight - currentChannel.scrollTop - currentChannel.clientHeight);
+    var shouldStickToBottom = Boolean(options.scrollChannelToBottom || bottomOffset <= 24);
+
+    nextChannel.style.visibility = "hidden";
+    if (shouldStickToBottom) {
+      nextWidget.dataset.pendingChannelScroll = "bottom";
+      return;
+    }
+
+    nextWidget.dataset.pendingChannelScroll = "offset";
+    nextWidget.dataset.pendingChannelBottomOffset = String(bottomOffset);
+  }
+
+  function applyPendingChannelScroll(widget) {
+    var channel = widget.querySelector(".project-chat-widget__channel");
+    if (!channel) {
+      return;
+    }
+
+    var pendingScroll = widget.dataset.pendingChannelScroll;
+    if (pendingScroll === "offset") {
+      var bottomOffset = Number(widget.dataset.pendingChannelBottomOffset || 0);
+      channel.scrollTop = Math.max(0, channel.scrollHeight - channel.clientHeight - bottomOffset);
+    } else {
+      channel.scrollTop = channel.scrollHeight;
+    }
+
+    channel.style.visibility = "";
+    delete widget.dataset.pendingChannelScroll;
+    delete widget.dataset.pendingChannelBottomOffset;
+  }
+
+  function replaceWidget(widget, html, options) {
     var wrapper = document.createElement("div");
     wrapper.innerHTML = html.trim();
     var nextWidget = wrapper.firstElementChild;
     if (!nextWidget) {
       return;
     }
+    prepareReplacementWidget(widget, nextWidget, options);
     widget.replaceWith(nextWidget);
     initWidget(nextWidget);
   }
@@ -279,7 +388,7 @@
     if (!response.ok || !shouldApplyWidgetResponse(widget, requestToken)) {
       return;
     }
-    replaceWidget(widget, await response.text());
+    replaceWidget(widget, await response.text(), { preserveChannelScroll: true });
   }
 
   function scheduleRefresh(widget) {
@@ -491,13 +600,15 @@
         if (!finishWidgetRequest(widget, requestToken, { submitting: true })) {
           return;
         }
-        replaceWidget(widget, await response.text());
+        replaceWidget(widget, await response.text(), { scrollChannelToBottom: true });
       });
     }
 
     var channel = widget.querySelector(".project-chat-widget__channel");
     if (channel) {
-      channel.scrollTop = channel.scrollHeight;
+      applyStoredChannelHeight(widget, channel);
+      observeChannelResize(widget, channel);
+      applyPendingChannelScroll(widget);
     }
     syncExpandedWidget(widget);
     scheduleRefresh(widget);

@@ -572,9 +572,12 @@ form[data-client-workspace-form]:has(select[data-consultant-choice] option[value
 }
 
 .project-chat-widget__channel {
-    min-height: 18rem;
-    max-height: 28rem;
+    min-height: 25rem;
+    height: 24rem;
+    max-height: 100vh;
     overflow-y: auto;
+    overflow-x: hidden;
+    resize: vertical;
     padding: 1rem;
     border-radius: 1.25rem;
     border: 1px solid rgba(148, 163, 184, 0.14);
