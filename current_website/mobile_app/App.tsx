@@ -630,6 +630,7 @@ export default function App() {
   const webLoaderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const webLoaderStartedAtRef = useRef<number>(0);
   const pushRegistrationAttemptedRef = useRef(false);
+  const pendingFormRedirectRef = useRef(false);
   const pendingSearchHighlightRef = useRef<string | null>(null);
   const pendingDashboardFocusRef = useRef<MobileDashboardFocusTarget | null>(null);
   const drawerOffset = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -979,6 +980,18 @@ export default function App() {
 
   function injectDashboardFocusTarget(target: MobileDashboardFocusTarget) {
     webViewRef.current?.injectJavaScript(buildDashboardFocusScript(target));
+  }
+
+  function buildForcedWebReloadUrl(url: string) {
+    const mobileUrl = markMobileAppUrl(url);
+
+    try {
+      const nextUrl = new URL(mobileUrl, BASE_URL);
+      nextUrl.searchParams.set('_mobile_nav', String(Date.now()));
+      return nextUrl.toString();
+    } catch {
+      return mobileUrl;
+    }
   }
 
   function openRouteWithDashboardFocus(path: string, target: MobileDashboardFocusTarget) {
@@ -1494,6 +1507,7 @@ export default function App() {
   }
 
   function handleLoadEnd() {
+    pendingFormRedirectRef.current = false;
     finishWebLoader();
     webViewRef.current?.injectJavaScript(MOBILE_WEBVIEW_CLEANUP_SCRIPT);
     if (expoPushToken) {
@@ -1571,6 +1585,8 @@ export default function App() {
       const isFormSubmission = request.navigationType === 'formsubmit' || request.navigationType === 'formresubmit' || requestMethod !== 'GET';
 
       if (isFormSubmission) {
+        pendingFormRedirectRef.current = true;
+        beginWebLoader();
         return true;
       }
 
@@ -1601,6 +1617,12 @@ export default function App() {
       }
 
       const mobileUrl = markMobileAppUrl(request.url);
+
+      if (pendingFormRedirectRef.current) {
+        pendingFormRedirectRef.current = false;
+        setCurrentUrl(buildForcedWebReloadUrl(mobileUrl));
+        return false;
+      }
 
       if (mobileUrl !== request.url) {
         if (mobileUrl === currentUrl) {
@@ -2142,6 +2164,7 @@ export default function App() {
                 onNavigationStateChange={handleNavigationStateChange}
                 onShouldStartLoadWithRequest={handleShouldStartLoad}
                 onError={(event) => {
+                  pendingFormRedirectRef.current = false;
                   clearWebLoaderTimeout();
                   setShowWebLoader(false);
                   setWebError(event.nativeEvent.description);
