@@ -1603,6 +1603,10 @@ export default function App() {
       const mobileUrl = markMobileAppUrl(request.url);
 
       if (mobileUrl !== request.url) {
+        if (mobileUrl === currentUrl) {
+          return true;
+        }
+
         if (request.mainDocumentURL && request.mainDocumentURL !== request.url) {
           return true;
         }
