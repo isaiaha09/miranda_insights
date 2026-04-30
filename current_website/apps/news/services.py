@@ -13,7 +13,7 @@ from django.template.loader import render_to_string
 
 from landingpage.emailing import build_email_context
 
-from .models import NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
+from .models import NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber, newsletter_localtime
 from .newsletter_blocks import build_html, build_plain_text
 
 
@@ -87,7 +87,7 @@ def _build_campaign_body(campaign: NewsletterCampaign, recipient_email: str) -> 
     asset_map = _get_image_asset_map(campaign)
     body = build_plain_text(
         campaign.content_blocks,
-        formatter=lambda value: campaign._render_placeholder_text(value, timezone.localtime().strftime("%Y-%m-%d")),
+        formatter=lambda value: campaign._render_placeholder_text(value, newsletter_localtime().strftime("%Y-%m-%d")),
         image_resolver=lambda asset_id: asset_map.get(asset_id),
     ).rstrip() if campaign.content_blocks else campaign.rendered_body().rstrip()
     unsubscribe_url = build_unsubscribe_url(recipient_email)
@@ -102,7 +102,7 @@ def _build_campaign_html_body(campaign: NewsletterCampaign, recipient_email: str
     asset_map = _get_image_asset_map(campaign)
     body_html = build_html(
         campaign.content_blocks,
-        formatter=lambda value: campaign._render_placeholder_text(value, timezone.localtime().strftime("%Y-%m-%d")),
+        formatter=lambda value: campaign._render_placeholder_text(value, newsletter_localtime().strftime("%Y-%m-%d")),
         image_resolver=lambda asset_id: asset_map.get(asset_id),
     ) if campaign.content_blocks else escape(campaign.rendered_body().rstrip()).replace("\n", "<br>")
 

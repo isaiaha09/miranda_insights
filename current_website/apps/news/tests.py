@@ -1,4 +1,5 @@
 import tempfile
+from datetime import datetime, time, timezone as datetime_timezone
 from urllib.parse import urlsplit
 
 from django.contrib.admin.sites import AdminSite
@@ -286,6 +287,23 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="hero-spotlight", is_builtin=True).exists())
 		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="event-announcement", is_builtin=True).exists())
 		self.assertTrue(NewsletterBlockTemplate.objects.filter(slug="article-digest", is_builtin=True).exists())
+
+	@override_settings(TIME_ZONE="UTC", NEWSLETTER_TIME_ZONE="America/Los_Angeles")
+	def test_compute_next_send_at_uses_newsletter_timezone(self):
+		campaign = self.create_campaign(
+			mode=NewsletterCampaign.MODE_AUTOMATED,
+			frequency=NewsletterCampaign.FREQ_DAILY,
+			send_time=time(15, 0),
+		)
+
+		next_send_at = campaign.compute_next_send_at(
+			datetime(2026, 4, 30, 19, 0, tzinfo=datetime_timezone.utc)
+		)
+
+		self.assertEqual(
+			next_send_at,
+			datetime(2026, 4, 30, 22, 0, tzinfo=datetime_timezone.utc),
+		)
 
 
 class NewsletterSubscriberAdminTests(TestCase):

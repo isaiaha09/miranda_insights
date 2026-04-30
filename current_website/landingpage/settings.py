@@ -295,6 +295,7 @@ TURNSTILE_VERIFY_URL = os.getenv('TURNSTILE_VERIFY_URL', 'https://challenges.clo
 
 # Newsletter sender (use a dedicated address for outgoing newsletters)
 NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
+NEWSLETTER_TIME_ZONE = os.getenv('NEWSLETTER_TIME_ZONE', 'America/Los_Angeles')
 
 # Contact / support
 CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')

@@ -1,10 +1,26 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as datetime_timezone
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 from .newsletter_blocks import build_plain_text
+
+
+def get_newsletter_timezone():
+	tz_name = getattr(settings, "NEWSLETTER_TIME_ZONE", "") or settings.TIME_ZONE
+	try:
+		return ZoneInfo(tz_name)
+	except Exception:
+		return timezone.get_default_timezone()
+
+
+def newsletter_localtime(value=None):
+	current_value = value or timezone.now()
+	if timezone.is_naive(current_value):
+		current_value = timezone.make_aware(current_value, timezone=timezone.get_default_timezone())
+	return timezone.localtime(current_value, get_newsletter_timezone())
 
 
 class NewsletterSubscriber(models.Model):
@@ -185,7 +201,7 @@ class NewsletterCampaign(models.Model):
 
 	def rendered_body(self) -> str:
 		"""Render the plain text newsletter body for delivery."""
-		now = timezone.localtime()
+		now = newsletter_localtime()
 		date_value = now.strftime("%Y-%m-%d")
 
 		if self.content_blocks:
@@ -194,7 +210,7 @@ class NewsletterCampaign(models.Model):
 		return self._render_placeholder_text(self.body, date_value)
 
 	def rendered_preheader(self) -> str:
-		now = timezone.localtime()
+		now = newsletter_localtime()
 		return self._render_placeholder_text(self.preheader, now.strftime("%Y-%m-%d"))
 
 	def _render_placeholder_text(self, value: str, date_value: str) -> str:
@@ -206,7 +222,7 @@ class NewsletterCampaign(models.Model):
 
 	def compute_next_send_at(self, from_dt=None):
 		"""Compute the next scheduled send datetime based on frequency controls."""
-		base = timezone.localtime(from_dt or timezone.now())
+		base = newsletter_localtime(from_dt or timezone.now())
 		target_time = self.send_time
 
 		if self.frequency == self.FREQ_DAILY:
@@ -218,7 +234,7 @@ class NewsletterCampaign(models.Model):
 			)
 			if candidate <= base:
 				candidate += timedelta(days=1)
-			return candidate
+			return candidate.astimezone(datetime_timezone.utc)
 
 		if self.frequency == self.FREQ_WEEKLY:
 			desired_weekday = self.weekday if self.weekday is not None else 0
@@ -232,7 +248,7 @@ class NewsletterCampaign(models.Model):
 			)
 			if candidate <= base:
 				candidate += timedelta(days=7)
-			return candidate
+			return candidate.astimezone(datetime_timezone.utc)
 
 		if self.frequency == self.FREQ_MONTHLY:
 			desired_day = self.day_of_month or 1
@@ -253,7 +269,7 @@ class NewsletterCampaign(models.Model):
 					month = 1
 					year += 1
 				candidate = candidate.replace(year=year, month=month, day=desired_day)
-			return candidate
+			return candidate.astimezone(datetime_timezone.utc)
 
 		# interval mode
 		interval = max(1, self.interval_days)
@@ -264,7 +280,7 @@ class NewsletterCampaign(models.Model):
 			second=0,
 			microsecond=0,
 		)
-		return candidate
+		return candidate.astimezone(datetime_timezone.utc)
 
 
 class NewsletterSendLog(models.Model):

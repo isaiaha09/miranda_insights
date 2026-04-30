@@ -4,11 +4,12 @@ from django.contrib.auth import get_user_model
 from django.db.models import Exists, OuterRef
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
+from django.utils.formats import date_format
 from django.utils.html import format_html
 
 from apps.operations.services import dispatch_newsletter_campaign, should_queue_outbound_delivery
 from .forms import NewsletterBlockTemplateAdminForm, NewsletterCampaignAdminForm
-from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
+from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber, newsletter_localtime
 from .services import send_campaign
 
 
@@ -101,7 +102,7 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 		"mode",
 		"is_active",
 		"frequency",
-		"next_send_at",
+		"next_send_at_display",
 		"last_sent_at",
 		"send_now_link",
 	)
@@ -110,7 +111,7 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 	actions = ["send_selected_campaigns_now"]
 	readonly_fields = (
 		"last_sent_at",
-		"next_send_at",
+		"next_send_at_display",
 		"created_at",
 		"updated_at",
 		"send_now_button",
@@ -142,7 +143,7 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 					"weekday",
 					"day_of_month",
 					"send_time",
-					"next_send_at",
+					"next_send_at_display",
 				),
 			},
 		),
@@ -184,6 +185,13 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 		return format_html('<a href="{}">Send now</a>', url)
 
 	send_now_link.short_description = "Run"
+
+	def next_send_at_display(self, obj):
+		if not obj or not obj.next_send_at:
+			return "-"
+		return date_format(newsletter_localtime(obj.next_send_at), "DATETIME_FORMAT")
+
+	next_send_at_display.short_description = "Next send at"
 
 	def send_now_view(self, request, object_id):
 		campaign = self.get_object(request, object_id)
