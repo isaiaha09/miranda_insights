@@ -8,8 +8,9 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import PasswordResetView, RedirectURLMixin
-from django.core import signing
+from django.core.cache import cache
 from django.http import JsonResponse
+from django.db.models import Prefetch
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -29,7 +30,7 @@ from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_fo
 from .push_notifications import register_mobile_push_device, unregister_mobile_push_device
 
 from .forms import DeleteAccountForm, LoginForm, NewsletterPreferenceForm, SignupForm, StyledPasswordResetForm, TwoFactorChallengeForm, TwoFactorSetupForm, UsernameRecoveryForm
-from .models import AccountDeletionRequest, purge_expired_account_deletions
+from .models import AccountDeletionRequest, MobileSessionBridge, purge_expired_account_deletions
 from .two_factor import build_totp_uri, generate_totp_secret, verify_totp
 
 
@@ -87,34 +88,12 @@ def _serialize_last_login(user):
 	return timezone.localtime(user.last_login).isoformat()
 
 
-def _build_mobile_session_token(user, redirect_url):
-	return signing.dumps(
-		{
-			"user_id": user.pk,
-			"password": user.password,
-			"last_login": _serialize_last_login(user),
-			"redirect_url": redirect_url,
-			"remember_me": False,
-		},
-		salt="insights.mobile-session-login",
-	)
-
-
-def _build_mobile_session_token_with_options(user, redirect_url, *, remember_me=False):
-	return signing.dumps(
-		{
-			"user_id": user.pk,
-			"password": user.password,
-			"last_login": _serialize_last_login(user),
-			"redirect_url": redirect_url,
-			"remember_me": bool(remember_me),
-		},
-		salt="insights.mobile-session-login",
-	)
-
-
 def _build_mobile_session_url(request, user, redirect_url, *, remember_me=False):
-	token = _build_mobile_session_token_with_options(user, redirect_url, remember_me=remember_me)
+	token, _bridge = MobileSessionBridge.create_for_user(
+		user,
+		redirect_url=redirect_url,
+		remember_me=remember_me,
+	)
 	return request.build_absolute_uri(f"{reverse('mobile_session_login')}?{urlencode({'token': token})}")
 
 
@@ -165,7 +144,7 @@ class MobileSignInApiView(View):
 		user = form.get_user()
 		success_url = _build_login_success_url(request, user, redirect_url=redirect_url)
 		profile = getattr(user, "account_profile", None)
-		if profile and profile.two_factor_enabled and profile.two_factor_secret:
+		if profile and profile.two_factor_enabled and profile.has_usable_two_factor_secret:
 			if not otp_code:
 				return JsonResponse(
 					{
@@ -176,7 +155,7 @@ class MobileSignInApiView(View):
 					status=200,
 				)
 
-			if not verify_totp(profile.two_factor_secret, otp_code):
+			if not verify_totp(profile.get_two_factor_secret(), otp_code):
 				return _json_error(
 					"Enter a valid authentication code.",
 					field_errors={"otpCode": ["Enter a valid authentication code."]},
@@ -335,32 +314,30 @@ class MobileSessionLoginView(View):
 			messages.error(request, "Your mobile sign-in link is missing.")
 			return redirect("login")
 
-		try:
-			payload = signing.loads(token, salt="insights.mobile-session-login", max_age=300)
-		except signing.BadSignature:
+		bridge = MobileSessionBridge.consume_token(token)
+		if bridge is None:
 			messages.error(request, "Your mobile sign-in link is invalid or expired.")
 			return redirect("login")
 
-		user = User.objects.filter(pk=payload.get("user_id")).first()
-		if not user or user.password != payload.get("password"):
-			messages.error(request, "Your mobile sign-in link is invalid or expired.")
-			return redirect("login")
-
-		if _serialize_last_login(user) != payload.get("last_login", ""):
-			messages.error(request, "This mobile sign-in link has already been used. Please sign in again.")
-			return redirect("login")
+		user = bridge.user
 
 		user.backend = "django.contrib.auth.backends.ModelBackend"
 		login(request, user)
-		if payload.get("remember_me"):
+		if bridge.remember_me:
 			request.session.set_expiry(settings.MOBILE_APP_REMEMBER_ME_SESSION_AGE)
 		else:
 			request.session.set_expiry(0)
 		_recover_scheduled_deletion(request, user)
-		return redirect(payload.get("redirect_url") or settings.LOGIN_REDIRECT_URL)
+		return redirect(bridge.redirect_url or settings.LOGIN_REDIRECT_URL)
 
 
 class PortalContextMixin:
+	def _portal_snapshot_cache_key(self, client):
+		return f"portal-snapshot:{client.pk}"
+
+	def _invalidate_portal_snapshot(self, client):
+		cache.delete(self._portal_snapshot_cache_key(client))
+
 	def _get_client_record(self):
 		return get_or_create_client_for_user(self.request.user)
 
@@ -372,15 +349,32 @@ class PortalContextMixin:
 
 	def _build_portal_snapshot(self):
 		client = self._get_client_record()
-		projects = client.projects.select_related("consultant").prefetch_related("subtasks", "notes")
+		cache_key = self._portal_snapshot_cache_key(client)
+		cached_snapshot = cache.get(cache_key)
+		if cached_snapshot is not None:
+			return cached_snapshot
+
+		projects = client.projects.select_related("consultant").prefetch_related(
+			Prefetch(
+				"subtasks",
+				queryset=ProjectSubtask.objects.order_by("is_completed", "due_date", "created_at"),
+				to_attr="ordered_subtasks",
+			),
+			Prefetch(
+				"notes",
+				queryset=ProjectNote.objects.order_by("-created_at"),
+				to_attr="ordered_notes",
+			),
+		)
 		active_projects = []
 		completed_projects = []
 		reports = []
 
 		for project in projects:
-			next_subtask = project.subtasks.filter(is_completed=False).order_by("due_date", "created_at").first()
-			latest_note = project.latest_note
-			project_notes = list(project.notes.order_by("-created_at")[:6])
+			ordered_subtasks = list(getattr(project, "ordered_subtasks", []))
+			ordered_notes = list(getattr(project, "ordered_notes", []))
+			next_subtask = next((subtask for subtask in ordered_subtasks if not subtask.is_completed), None)
+			project_notes = ordered_notes[:6]
 			latest_note_entry = project_notes[0] if project_notes else None
 			past_note_entries = project_notes[1:]
 			subtask_items = [
@@ -390,7 +384,7 @@ class PortalContextMixin:
 					"is_completed": subtask.is_completed,
 					"due_date": subtask.due_date.strftime("%B %d, %Y") if subtask.due_date else "No due date",
 				}
-				for subtask in project.subtasks.order_by("is_completed", "due_date", "created_at")[:4]
+				for subtask in ordered_subtasks[:4]
 			]
 			project_payload = {
 				"name": project.name,
@@ -460,7 +454,7 @@ class PortalContextMixin:
 			for message in ProjectMessage.objects.filter(project__client=client).select_related("project", "sender").order_by("-created_at")[:8]
 		]
 
-		return {
+		snapshot = {
 			"active_projects": active_projects,
 			"completed_projects": completed_projects,
 			"progress_updates": progress_updates,
@@ -468,6 +462,8 @@ class PortalContextMixin:
 			"message_logs": message_logs,
 			"client_record": client,
 		}
+		cache.set(cache_key, snapshot, timeout=getattr(settings, "PORTAL_SNAPSHOT_CACHE_TIMEOUT", 60))
+		return snapshot
 
 	def _get_delete_account_rundown(self):
 		profile = self._get_account_profile()
@@ -546,7 +542,7 @@ class LoginView(RedirectURLMixin, FormView):
 		user = form.get_user()
 		success_url = _build_login_success_url(self.request, user, redirect_url=self.get_redirect_url())
 		profile = getattr(user, "account_profile", None)
-		if profile and profile.two_factor_enabled and profile.two_factor_secret:
+		if profile and profile.two_factor_enabled and profile.has_usable_two_factor_secret:
 			self.request.session["pending_2fa_user_id"] = user.pk
 			self.request.session["pending_2fa_backend"] = getattr(user, "backend", "django.contrib.auth.backends.ModelBackend")
 			self.request.session["pending_2fa_success_url"] = success_url
@@ -587,7 +583,7 @@ class TwoFactorChallengeView(FormView):
 		backend = self.request.session.get("pending_2fa_backend")
 		success_url = self.request.session.get("pending_2fa_success_url") or settings.LOGIN_REDIRECT_URL
 		user = User.objects.filter(pk=user_id).select_related("account_profile").first()
-		if not user or not getattr(user, "account_profile", None) or not user.account_profile.two_factor_secret:
+		if not user or not getattr(user, "account_profile", None) or not user.account_profile.has_usable_two_factor_secret:
 			messages.error(self.request, "Your 2FA session expired. Please sign in again.")
 			self.request.session.pop("pending_2fa_user_id", None)
 			self.request.session.pop("pending_2fa_backend", None)
@@ -595,7 +591,7 @@ class TwoFactorChallengeView(FormView):
 			self.request.session.pop("pending_login_pwa_mode", None)
 			return redirect("login")
 
-		if not verify_totp(user.account_profile.two_factor_secret, form.cleaned_data["otp_code"]):
+		if not verify_totp(user.account_profile.get_two_factor_secret(), form.cleaned_data["otp_code"]):
 			form.add_error("otp_code", "Enter a valid authentication code.")
 			return self.form_invalid(form)
 
@@ -642,6 +638,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 						messages.success(request, "You have been unsubscribed from newsletter updates.")
 				else:
 					messages.error(request, "Add an email address to your account before managing newsletter preferences.")
+				self._invalidate_portal_snapshot(client)
 
 				return redirect("dashboard")
 
@@ -652,6 +649,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 			form = ClientPortalProfileForm(request.POST, instance=client, profile=profile)
 			if form.is_valid():
 				form.save()
+				self._invalidate_portal_snapshot(client)
 				messages.success(request, "Your business profile has been updated.")
 				return redirect("dashboard")
 
@@ -665,6 +663,7 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 				project_message.sender = request.user
 				project_message.save()
 				project_message.send_notification()
+				self._invalidate_portal_snapshot(client)
 				messages.success(request, "Your project message has been sent.")
 				return redirect("dashboard")
 
@@ -688,9 +687,10 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 				messages.error(request, "Start 2FA setup again before confirming.")
 				return redirect("dashboard")
 			if form.is_valid() and verify_totp(pending_secret, form.cleaned_data["otp_code"]):
-				profile.two_factor_secret = pending_secret
+				profile.set_two_factor_secret(pending_secret)
 				profile.two_factor_enabled = True
 				profile.save(update_fields=["two_factor_secret", "two_factor_enabled"])
+				self._invalidate_portal_snapshot(client)
 				request.session.pop("pending_2fa_secret", None)
 				messages.success(request, "Two-factor authentication has been enabled.")
 				return redirect("dashboard")
@@ -702,8 +702,9 @@ class DashboardView(LoginRequiredMixin, PortalContextMixin, TemplateView):
 
 		if action == "disable_2fa":
 			profile.two_factor_enabled = False
-			profile.two_factor_secret = ""
+			profile.set_two_factor_secret("")
 			profile.save(update_fields=["two_factor_enabled", "two_factor_secret"])
+			self._invalidate_portal_snapshot(client)
 			request.session.pop("pending_2fa_secret", None)
 			messages.success(request, "Two-factor authentication has been disabled.")
 			return redirect("dashboard")

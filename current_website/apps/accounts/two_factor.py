@@ -8,6 +8,39 @@ import struct
 import time
 from urllib.parse import quote
 
+from cryptography.fernet import Fernet, InvalidToken
+from django.conf import settings
+
+
+def _build_fernet() -> Fernet:
+    configured_key = str(getattr(settings, "TWO_FACTOR_ENCRYPTION_KEY", "") or "").strip()
+    if configured_key:
+        key_material = configured_key.encode("utf-8")
+    else:
+        key_material = str(settings.SECRET_KEY).encode("utf-8")
+    derived_key = base64.urlsafe_b64encode(hashlib.sha256(key_material).digest())
+    return Fernet(derived_key)
+
+
+def encrypt_totp_secret(secret: str) -> str:
+    normalized = str(secret or "").strip()
+    if not normalized:
+        return ""
+    return f"enc:{_build_fernet().encrypt(normalized.encode('utf-8')).decode('utf-8')}"
+
+
+def decrypt_totp_secret(secret: str) -> str:
+    normalized = str(secret or "").strip()
+    if not normalized:
+        return ""
+    if not normalized.startswith("enc:"):
+        return normalized
+    try:
+        decrypted = _build_fernet().decrypt(normalized[4:].encode("utf-8"))
+    except InvalidToken as exc:
+        raise ValueError("Unable to decrypt stored two-factor secret.") from exc
+    return decrypted.decode("utf-8")
+
 
 def generate_totp_secret(length: int = 20) -> str:
     return base64.b32encode(secrets.token_bytes(length)).decode("ascii").rstrip("=")

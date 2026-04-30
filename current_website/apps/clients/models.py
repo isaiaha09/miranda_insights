@@ -132,6 +132,9 @@ class ProjectSubtask(models.Model):
 
 	class Meta:
 		ordering = ["is_completed", "created_at"]
+		indexes = [
+			models.Index(fields=["project", "is_completed", "due_date", "created_at"], name="clients_pro_project_2677f4_idx"),
+		]
 
 	def __str__(self):
 		return self.title
@@ -159,6 +162,9 @@ class ProjectNote(models.Model):
 
 	class Meta:
 		ordering = ["-created_at"]
+		indexes = [
+			models.Index(fields=["project", "-created_at"], name="clients_pro_project_5d9f3e_idx"),
+		]
 
 	def __str__(self):
 		return f"Note for {self.project.name}"
@@ -174,6 +180,9 @@ class ProjectMessage(models.Model):
 
 	class Meta:
 		ordering = ["created_at"]
+		indexes = [
+			models.Index(fields=["project", "-created_at"], name="clients_pro_project_957694_idx"),
+		]
 
 	def __str__(self):
 		return f"Message on {self.project.name}"

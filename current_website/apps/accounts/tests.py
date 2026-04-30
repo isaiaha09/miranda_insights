@@ -11,7 +11,8 @@ from django.utils import timezone
 from unittest.mock import patch
 
 from .admin import AccountProfileAdmin, StaffUserAdmin
-from .models import AccountDeletionRequest, AccountProfile
+from .models import AccountDeletionRequest, AccountProfile, MobileSessionBridge
+from .two_factor import decrypt_totp_secret
 from apps.clients.models import Client, Project, ProjectMessage, ProjectSubtask, get_or_create_client_for_user
 from apps.news.models import NewsletterSubscriber
 
@@ -198,6 +199,7 @@ class MobileAuthApiTests(TestCase):
 		payload = response.json()
 		self.assertTrue(payload["ok"])
 		self.assertIn(reverse("mobile_session_login"), payload["sessionUrl"])
+		self.assertEqual(MobileSessionBridge.objects.filter(user=user, consumed_at__isnull=True).count(), 1)
 
 	def test_mobile_login_api_includes_remember_me_flag(self):
 		user = User.objects.create_user(username="remembermobile", email="remember@example.com", password="correct-pass-123")
@@ -229,6 +231,7 @@ class MobileAuthApiTests(TestCase):
 		self.assertEqual(int(self.client.session.get("_auth_user_id")), user.pk)
 		self.assertFalse(self.client.session.get_expire_at_browser_close())
 		self.assertGreaterEqual(self.client.session.get_expiry_age(), 86000)
+		self.assertFalse(MobileSessionBridge.objects.filter(user=user, consumed_at__isnull=True).exists())
 
 	def test_mobile_session_login_without_remember_me_expires_at_browser_close(self):
 		user = User.objects.create_user(username="sessionmobile", email="session@example.com", password="correct-pass-123")
@@ -244,6 +247,42 @@ class MobileAuthApiTests(TestCase):
 
 		self.assertEqual(session_response.status_code, 302)
 		self.assertTrue(self.client.session.get_expire_at_browser_close())
+
+	def test_mobile_session_login_token_cannot_be_reused(self):
+		user = User.objects.create_user(username="reusemobile", email="reuse@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1211")
+
+		api_response = self.client.post(
+			reverse("mobile_login_api"),
+			data='{"username": "reusemobile", "password": "correct-pass-123"}',
+			content_type="application/json",
+		)
+		payload = api_response.json()
+
+		first_response = self.client.get(payload["sessionUrl"], follow=False)
+		second_response = self.client.get(payload["sessionUrl"], follow=False)
+
+		self.assertEqual(first_response.status_code, 302)
+		self.assertEqual(second_response.status_code, 302)
+		self.assertEqual(second_response.url, reverse("login"))
+
+	def test_mobile_session_login_invalidates_token_after_password_change(self):
+		user = User.objects.create_user(username="changemobile", email="change@example.com", password="correct-pass-123")
+		AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-1212")
+
+		api_response = self.client.post(
+			reverse("mobile_login_api"),
+			data='{"username": "changemobile", "password": "correct-pass-123"}',
+			content_type="application/json",
+		)
+		payload = api_response.json()
+		user.set_password("updated-pass-123")
+		user.save(update_fields=["password"])
+
+		response = self.client.get(payload["sessionUrl"], follow=False)
+
+		self.assertEqual(response.status_code, 302)
+		self.assertEqual(response.url, reverse("login"))
 
 	@patch("apps.accounts.views.verify_totp", return_value=False)
 	def test_mobile_login_api_requires_valid_2fa_code(self, mocked_verify_totp):
@@ -354,6 +393,39 @@ class StaffUserAdminTests(TestCase):
 		self.assertEqual(len(mail.outbox), 1)
 		self.assertEqual(mail.outbox[0].to, ["admindelete@example.com"])
 		self.assertIn("successfully deleted", mail.outbox[0].body)
+
+
+class TwoFactorSecretStorageTests(TestCase):
+	def test_profile_encrypts_two_factor_secret_at_rest(self):
+		user = User.objects.create_user(username="secure2fa", email="secure2fa@example.com", password="test-pass-123")
+		profile = AccountProfile.objects.create(
+			user=user,
+			industry_type=AccountProfile.INDUSTRY_OTHER,
+			phone_number="555-0209",
+			two_factor_secret="BASE32SECRET",
+		)
+
+		profile.refresh_from_db()
+		self.assertNotEqual(profile.two_factor_secret, "BASE32SECRET")
+		self.assertTrue(profile.two_factor_secret.startswith("enc:"))
+		self.assertEqual(profile.get_two_factor_secret(), "BASE32SECRET")
+
+	def test_profile_can_clear_two_factor_secret(self):
+		user = User.objects.create_user(username="clear2fa", email="clear2fa@example.com", password="test-pass-123")
+		profile = AccountProfile.objects.create(
+			user=user,
+			industry_type=AccountProfile.INDUSTRY_OTHER,
+			phone_number="555-0210",
+		)
+
+		profile.set_two_factor_secret("BASE32SECRET")
+		profile.save(update_fields=["two_factor_secret"])
+		profile.set_two_factor_secret("")
+		profile.save(update_fields=["two_factor_secret"])
+		profile.refresh_from_db()
+
+		self.assertEqual(profile.two_factor_secret, "")
+		self.assertEqual(profile.get_two_factor_secret(), "")
 
 
 @override_settings(

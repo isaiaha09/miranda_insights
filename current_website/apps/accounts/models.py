@@ -1,17 +1,21 @@
 import logging
+import hashlib
+import secrets
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 
 from .services import delete_account_for_user
+from .two_factor import decrypt_totp_secret, encrypt_totp_secret
 
 
 ACCOUNT_DELETION_GRACE_PERIOD = timedelta(days=7)
 logger = logging.getLogger(__name__)
+MOBILE_SESSION_BRIDGE_TTL = timedelta(minutes=5)
 
 
 class AccountProfile(models.Model):
@@ -39,7 +43,7 @@ class AccountProfile(models.Model):
 	industry_type = models.CharField(max_length=64, choices=INDUSTRY_CHOICES)
 	phone_number = models.CharField(max_length=40)
 	two_factor_enabled = models.BooleanField(default=False)
-	two_factor_secret = models.CharField(max_length=64, blank=True)
+	two_factor_secret = models.TextField(blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
@@ -48,6 +52,21 @@ class AccountProfile(models.Model):
 
 	def __str__(self):
 		return f"Profile for {self.user.username}"
+
+	def get_two_factor_secret(self) -> str:
+		return decrypt_totp_secret(self.two_factor_secret)
+
+	def set_two_factor_secret(self, secret: str):
+		self.two_factor_secret = encrypt_totp_secret(secret)
+
+	@property
+	def has_usable_two_factor_secret(self) -> bool:
+		return bool(self.get_two_factor_secret())
+
+	def save(self, *args, **kwargs):
+		if self.two_factor_secret and not str(self.two_factor_secret).startswith("enc:"):
+			self.two_factor_secret = encrypt_totp_secret(self.two_factor_secret)
+		super().save(*args, **kwargs)
 
 
 class AccountDeletionRequest(models.Model):
@@ -106,10 +125,78 @@ class MobilePushDevice(models.Model):
 		verbose_name = "Mobile Push Device"
 		verbose_name_plural = "Mobile Push Devices"
 		ordering = ["-last_registered_at", "-updated_at"]
+		indexes = [
+			models.Index(fields=["user", "is_active"], name="accounts_mo_user_id_6fc96f_idx"),
+			models.Index(fields=["user", "is_active", "-last_registered_at"], name="accounts_mo_user_id_7f0b84_idx"),
+		]
 
 	def __str__(self):
 		label = self.device_name or self.get_platform_display()
 		return f"{label} for {self.user.username}"
+
+
+class MobileSessionBridge(models.Model):
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="mobile_session_bridges")
+	token_digest = models.CharField(max_length=64, unique=True)
+	password_hash = models.CharField(max_length=128)
+	redirect_url = models.TextField(blank=True)
+	remember_me = models.BooleanField(default=False)
+	expires_at = models.DateTimeField(db_index=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+	consumed_at = models.DateTimeField(null=True, blank=True)
+
+	class Meta:
+		ordering = ["-created_at"]
+		indexes = [
+			models.Index(fields=["user", "expires_at"], name="accounts_mo_user_id_1e9e3e_idx"),
+		]
+
+	def __str__(self):
+		return f"Mobile session bridge for {self.user.username}"
+
+	@staticmethod
+	def _token_digest(token: str) -> str:
+		return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+	@classmethod
+	def create_for_user(cls, user, *, redirect_url: str = "", remember_me: bool = False):
+		cls.objects.filter(user=user, consumed_at__isnull=True).delete()
+		token = secrets.token_urlsafe(32)
+		bridge = cls.objects.create(
+			user=user,
+			token_digest=cls._token_digest(token),
+			password_hash=user.password,
+			redirect_url=redirect_url,
+			remember_me=bool(remember_me),
+			expires_at=timezone.now() + MOBILE_SESSION_BRIDGE_TTL,
+		)
+		return token, bridge
+
+	@classmethod
+	def consume_token(cls, token: str):
+		token = str(token or "").strip()
+		if not token:
+			return None
+
+		digest = cls._token_digest(token)
+		with transaction.atomic():
+			bridge = (
+				cls.objects.select_for_update()
+				.select_related("user")
+				.filter(token_digest=digest)
+				.first()
+			)
+			if bridge is None:
+				return None
+			if bridge.consumed_at is not None or bridge.expires_at <= timezone.now():
+				bridge.delete()
+				return None
+			if bridge.user.password != bridge.password_hash:
+				bridge.delete()
+				return None
+			bridge.consumed_at = timezone.now()
+			bridge.save(update_fields=["consumed_at"])
+		return bridge
 
 
 def purge_expired_account_deletions(reference_time=None):

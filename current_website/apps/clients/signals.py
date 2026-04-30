@@ -1,10 +1,26 @@
 from __future__ import annotations
 
+from django.core.cache import cache
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
-from .models import Project, ProjectNote, ProjectSubtask
+from .models import Client, Project, ProjectMessage, ProjectNote, ProjectSubtask
 from .push_notifications import notify_project_client, truncate_push_body
+
+
+def _invalidate_portal_snapshot(client_id):
+	if client_id:
+		cache.delete(f"portal-snapshot:{client_id}")
+
+
+@receiver(post_save, sender=Client)
+def invalidate_client_snapshot_on_save(sender, instance, **kwargs):
+	_invalidate_portal_snapshot(instance.pk)
+
+
+@receiver(post_delete, sender=Client)
+def invalidate_client_snapshot_on_delete(sender, instance, **kwargs):
+	_invalidate_portal_snapshot(instance.pk)
 
 
 @receiver(pre_save, sender=Project)
@@ -25,6 +41,7 @@ def capture_previous_project_state(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Project)
 def notify_project_saved(sender, instance, created, **kwargs):
+	_invalidate_portal_snapshot(instance.client_id)
 	if created:
 		notify_project_client(
 			instance,
@@ -80,6 +97,7 @@ def capture_previous_subtask_state(sender, instance, **kwargs):
 @receiver(post_save, sender=ProjectSubtask)
 def notify_subtask_saved(sender, instance, created, **kwargs):
 	project = instance.project
+	_invalidate_portal_snapshot(project.client_id)
 	if created:
 		notify_project_client(
 			project,
@@ -116,6 +134,7 @@ def notify_subtask_saved(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=ProjectSubtask)
 def notify_subtask_deleted(sender, instance, **kwargs):
+	_invalidate_portal_snapshot(instance.project.client_id)
 	notify_project_client(
 		instance.project,
 		title="Project task removed",
@@ -135,6 +154,7 @@ def capture_previous_note_state(sender, instance, **kwargs):
 @receiver(post_save, sender=ProjectNote)
 def notify_project_note_saved(sender, instance, created, **kwargs):
 	project = instance.project
+	_invalidate_portal_snapshot(project.client_id)
 	note_preview = truncate_push_body(instance.content, fallback=f"A new update is available for {project.name}.")
 	if created:
 		notify_project_client(
@@ -155,3 +175,18 @@ def notify_project_note_saved(sender, instance, created, **kwargs):
 			kind="project_note_updated",
 			extra_data={"noteId": instance.pk},
 		)
+
+
+@receiver(post_delete, sender=ProjectNote)
+def invalidate_project_note_snapshot(sender, instance, **kwargs):
+	_invalidate_portal_snapshot(instance.project.client_id)
+
+
+@receiver(post_save, sender=ProjectMessage)
+def invalidate_project_message_snapshot(sender, instance, **kwargs):
+	_invalidate_portal_snapshot(instance.project.client_id)
+
+
+@receiver(post_delete, sender=ProjectMessage)
+def invalidate_project_message_snapshot_on_delete(sender, instance, **kwargs):
+	_invalidate_portal_snapshot(instance.project.client_id)

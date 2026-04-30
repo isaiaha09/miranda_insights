@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
@@ -6,6 +7,10 @@ from django.views import View
 from .chat import render_project_chat_widget
 from .forms import ProjectMessageForm
 from .models import ProjectMessage, get_or_create_client_for_user
+
+
+def _portal_snapshot_cache_key(client):
+	return f"portal-snapshot:{client.pk}"
 
 
 class ProjectChatWidgetView(LoginRequiredMixin, View):
@@ -30,6 +35,7 @@ class ProjectChatWidgetView(LoginRequiredMixin, View):
 			project_message.sender = request.user
 			project_message.save()
 			project_message.send_notification()
+			cache.delete(_portal_snapshot_cache_key(client))
 			form = ProjectMessageForm(client=client, initial={"project": project_message.project_id})
 			selected_project_id = project_message.project_id
 		widget = render_project_chat_widget(

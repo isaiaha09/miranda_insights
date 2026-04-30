@@ -107,11 +107,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DEBUG', True)
+
+# SECURITY WARNING: keep the secret key used in production secret!
+configured_secret_key = (os.getenv('SECRET_KEY') or '').strip()
+development_secret_key = 'django-insecure-a!3-g6epp3h*4*!e!1w=0lqmrh+d0z2)s099c547u72=pb2q7s'
+SECRET_KEY = configured_secret_key or development_secret_key
+if not DEBUG:
+    if not configured_secret_key:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG=False.')
+    if SECRET_KEY.startswith('django-insecure-'):
+        raise ImproperlyConfigured('SECRET_KEY must not use Django\'s generated insecure development value when DEBUG=False.')
+
+TWO_FACTOR_ENCRYPTION_KEY = (os.getenv('TWO_FACTOR_ENCRYPTION_KEY') or '').strip()
 
 configured_allowed_hosts = env_list('ALLOWED_HOSTS')
 if configured_allowed_hosts:
@@ -304,6 +313,7 @@ SENTRY_PROFILES_SAMPLE_RATE = float(os.getenv('SENTRY_PROFILES_SAMPLE_RATE', '0'
 
 THROTTLE_ENABLED = env_bool('THROTTLE_ENABLED', True)
 THROTTLE_CACHE_ALIAS = os.getenv('THROTTLE_CACHE_ALIAS', 'default')
+PORTAL_SNAPSHOT_CACHE_TIMEOUT = env_int('PORTAL_SNAPSHOT_CACHE_TIMEOUT', 60)
 OUTBOUND_DELIVERY_MODE = os.getenv('OUTBOUND_DELIVERY_MODE', 'sync' if DEBUG else 'queue').strip().lower()
 OUTBOUND_WORKER_SLEEP_SECONDS = float(os.getenv('OUTBOUND_WORKER_SLEEP_SECONDS', '5'))
 LOGIN_RATE_LIMIT = os.getenv('LOGIN_RATE_LIMIT', '10/10m')
