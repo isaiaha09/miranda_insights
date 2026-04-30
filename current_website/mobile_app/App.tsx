@@ -1544,6 +1544,8 @@ export default function App() {
     url: string;
     isTopFrame?: boolean;
     mainDocumentURL?: string;
+    method?: string;
+    navigationType?: 'click' | 'formsubmit' | 'backforward' | 'reload' | 'formresubmit' | 'other';
   }) {
     if (request.isTopFrame === false) {
       return true;
@@ -1565,6 +1567,13 @@ export default function App() {
     }
 
     if (request.url.startsWith(BASE_URL)) {
+      const requestMethod = String(request.method || 'GET').trim().toUpperCase();
+      const isFormSubmission = request.navigationType === 'formsubmit' || request.navigationType === 'formresubmit' || requestMethod !== 'GET';
+
+      if (isFormSubmission) {
+        return true;
+      }
+
       try {
         const requestUrl = new URL(request.url);
         const authScreen = getNativeAuthScreenForPath(requestUrl.pathname);
