@@ -96,6 +96,16 @@ class NewsletterBlockTemplateAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 
 @admin.register(NewsletterCampaign)
 class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
+	SCHEDULE_FIELDS = {
+		"mode",
+		"is_active",
+		"frequency",
+		"interval_days",
+		"weekday",
+		"day_of_month",
+		"send_time",
+	}
+
 	form = NewsletterCampaignAdminForm
 	list_display = (
 		"name",
@@ -229,8 +239,12 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 	def save_model(self, request, obj, form, change):
 		if not obj.created_by_id:
 			obj.created_by = request.user
-		if obj.mode == NewsletterCampaign.MODE_AUTOMATED and obj.is_active and not obj.next_send_at:
-			obj.next_send_at = obj.compute_next_send_at()
+		schedule_changed = (not change) or bool(self.SCHEDULE_FIELDS.intersection(getattr(form, "changed_data", [])))
+		if obj.mode == NewsletterCampaign.MODE_AUTOMATED and obj.is_active:
+			if schedule_changed or not obj.next_send_at:
+				obj.next_send_at = obj.compute_next_send_at()
+		else:
+			obj.next_send_at = None
 		super().save_model(request, obj, form, change)
 
 

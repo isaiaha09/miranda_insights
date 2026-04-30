@@ -1,5 +1,6 @@
 import tempfile
 from datetime import datetime, time, timezone as datetime_timezone
+from unittest.mock import patch
 from urllib.parse import urlsplit
 
 from django.contrib.admin.sites import AdminSite
@@ -13,7 +14,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.templatetags.static import static
 
-from .admin import HasAccountListFilter, NewsletterSubscriberAdmin
+from .admin import HasAccountListFilter, NewsletterCampaignAdmin, NewsletterSubscriberAdmin
 from .newsletter_blocks import normalize_blocks
 from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
 from .services import send_campaign
@@ -340,6 +341,49 @@ class NewsletterSubscriberAdminTests(TestCase):
 		filtered = filter_instance.queryset(request, self.admin.get_queryset(request))
 
 		self.assertEqual(list(filtered.values_list("email", flat=True)), ["with-account@example.com"])
+
+
+class NewsletterCampaignAdminTests(TestCase):
+	def setUp(self):
+		self.site = AdminSite()
+		self.admin = NewsletterCampaignAdmin(NewsletterCampaign, self.site)
+		self.factory = RequestFactory()
+		self.staff_user = User.objects.create_user(
+			username="newsletteradmin",
+			email="newsletteradmin@example.com",
+			password="test-pass-123",
+			is_staff=True,
+		)
+
+	@override_settings(TIME_ZONE="UTC", NEWSLETTER_TIME_ZONE="America/Los_Angeles")
+	def test_save_model_recomputes_next_send_at_when_schedule_changes(self):
+		campaign = NewsletterCampaign.objects.create(
+			name="Monthly campaign",
+			subject="Monthly update",
+			body="Body text",
+			mode=NewsletterCampaign.MODE_AUTOMATED,
+			is_active=True,
+			frequency=NewsletterCampaign.FREQ_MONTHLY,
+			day_of_month=1,
+			send_time=time(8, 0),
+			next_send_at=datetime(2026, 5, 1, 15, 0, tzinfo=datetime_timezone.utc),
+		)
+		campaign.day_of_month = 5
+		campaign.send_time = time(15, 0)
+		request = self.factory.post(f"/admin/news/newslettercampaign/{campaign.pk}/change/")
+		request.user = self.staff_user
+
+		class StubForm:
+			changed_data = ["day_of_month", "send_time"]
+
+		with patch("apps.news.models.timezone.now", return_value=datetime(2026, 4, 30, 19, 0, tzinfo=datetime_timezone.utc)):
+			self.admin.save_model(request, campaign, StubForm(), change=True)
+
+		campaign.refresh_from_db()
+		self.assertEqual(
+			campaign.next_send_at,
+			datetime(2026, 5, 5, 22, 0, tzinfo=datetime_timezone.utc),
+		)
 
 
 @override_settings(
