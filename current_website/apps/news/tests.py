@@ -385,6 +385,22 @@ class NewsletterCampaignAdminTests(TestCase):
 			datetime(2026, 5, 5, 22, 0, tzinfo=datetime_timezone.utc),
 		)
 
+	@override_settings(TIME_ZONE="UTC", NEWSLETTER_TIME_ZONE="America/Los_Angeles")
+	def test_last_sent_at_display_uses_newsletter_timezone(self):
+		campaign = NewsletterCampaign.objects.create(
+			name="Daily campaign",
+			subject="Daily update",
+			body="Body text",
+			mode=NewsletterCampaign.MODE_AUTOMATED,
+			is_active=True,
+			frequency=NewsletterCampaign.FREQ_DAILY,
+			last_sent_at=datetime(2026, 5, 1, 19, 0, tzinfo=datetime_timezone.utc),
+		)
+
+		display_value = self.admin.last_sent_at_display(campaign)
+
+		self.assertEqual(display_value, "May 1, 2026, noon")
+
 
 @override_settings(
 	EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",

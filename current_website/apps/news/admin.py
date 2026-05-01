@@ -113,14 +113,14 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 		"is_active",
 		"frequency",
 		"next_send_at_display",
-		"last_sent_at",
+		"last_sent_at_display",
 		"send_now_link",
 	)
 	list_filter = ("mode", "is_active", "frequency")
 	search_fields = ("name", "subject")
 	actions = ["send_selected_campaigns_now"]
 	readonly_fields = (
-		"last_sent_at",
+		"last_sent_at_display",
 		"next_send_at_display",
 		"created_at",
 		"updated_at",
@@ -162,7 +162,7 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 			{
 				"fields": (
 					"created_by",
-					"last_sent_at",
+					"last_sent_at_display",
 					"send_now_button",
 					"created_at",
 					"updated_at",
@@ -197,11 +197,19 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 	send_now_link.short_description = "Run"
 
 	def next_send_at_display(self, obj):
-		if not obj or not obj.next_send_at:
-			return "-"
-		return date_format(newsletter_localtime(obj.next_send_at), "DATETIME_FORMAT")
+		return self._format_newsletter_datetime(getattr(obj, "next_send_at", None))
 
 	next_send_at_display.short_description = "Next send at"
+
+	def last_sent_at_display(self, obj):
+		return self._format_newsletter_datetime(getattr(obj, "last_sent_at", None))
+
+	last_sent_at_display.short_description = "Last sent at"
+
+	def _format_newsletter_datetime(self, value):
+		if not value:
+			return "-"
+		return date_format(newsletter_localtime(value), "DATETIME_FORMAT")
 
 	def send_now_view(self, request, object_id):
 		campaign = self.get_object(request, object_id)
