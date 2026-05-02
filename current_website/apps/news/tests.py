@@ -211,6 +211,7 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'class="cf-turnstile"', html=False)
 		self.assertContains(response, 'data-sitekey="site-key"', html=False)
+		self.assertNotContains(response, 'challenges.cloudflare.com/turnstile/v0/api.js', html=False)
 
 	def test_subscribe_requires_turnstile_when_enabled(self):
 		with override_settings(TURNSTILE_SITE_KEY="site-key", TURNSTILE_SECRET_KEY="secret-key"):

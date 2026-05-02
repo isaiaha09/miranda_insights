@@ -236,6 +236,9 @@
     var emailInput = form.querySelector('input[name="email"]');
     var turnstileWidget = form.querySelector('[data-turnstile-widget]');
     var sectionId = form.getAttribute('data-section-id') || 'newsletter-signup';
+    var turnstileScriptPromise = null;
+    var turnstileResizeBound = false;
+    var turnstilePreloaded = false;
 
     function getHeaderOffset() {
       var header = document.querySelector('.site-header');
@@ -266,6 +269,115 @@
       messageHost.replaceChildren(message);
     }
 
+    function fitTurnstileWidget() {
+      if (!turnstileWidget) {
+        return;
+      }
+
+      var wrapper = turnstileWidget.closest('.turnstile-wrap');
+      var iframe = wrapper ? wrapper.querySelector('iframe') : null;
+      if (!wrapper || !iframe) {
+        return;
+      }
+
+      turnstileWidget.style.transform = '';
+      turnstileWidget.style.transformOrigin = '';
+      wrapper.style.minHeight = '';
+
+      var isMobile = window.matchMedia('(max-width: 520px)').matches;
+      if (!isMobile) {
+        return;
+      }
+
+      var widgetWidth = iframe.offsetWidth || 300;
+      var widgetHeight = iframe.offsetHeight || 65;
+      var availableWidth = wrapper.clientWidth;
+
+      if (!availableWidth || availableWidth >= widgetWidth) {
+        wrapper.style.minHeight = widgetHeight + 'px';
+        return;
+      }
+
+      var scale = availableWidth / widgetWidth;
+      turnstileWidget.style.transform = 'scale(' + scale + ')';
+      turnstileWidget.style.transformOrigin = 'left top';
+      wrapper.style.minHeight = Math.ceil(widgetHeight * scale) + 'px';
+    }
+
+    function getTurnstileResponse() {
+      var input = form.querySelector('[name="cf-turnstile-response"]');
+      return input ? input.value.trim() : '';
+    }
+
+    function renderTurnstileWidget() {
+      if (!turnstileWidget || !window.turnstile || turnstileWidget.dataset.widgetId) {
+        return;
+      }
+
+      var isMobile = window.matchMedia('(max-width: 520px)').matches;
+      var size = isMobile ? (turnstileWidget.dataset.mobileSize || 'flexible') : (turnstileWidget.dataset.desktopSize || 'flexible');
+      var widgetId = window.turnstile.render(turnstileWidget, {
+        sitekey: turnstileWidget.dataset.sitekey,
+        size: size,
+      });
+
+      turnstileWidget.dataset.widgetId = widgetId;
+      window.requestAnimationFrame(fitTurnstileWidget);
+
+      if (!turnstileResizeBound) {
+        window.addEventListener('resize', fitTurnstileWidget);
+        turnstileResizeBound = true;
+      }
+    }
+
+    function ensureTurnstileReady() {
+      if (!turnstileWidget) {
+        return Promise.resolve(false);
+      }
+
+      if (window.turnstile) {
+        renderTurnstileWidget();
+        return Promise.resolve(true);
+      }
+
+      if (turnstileScriptPromise) {
+        return turnstileScriptPromise;
+      }
+
+      turnstileScriptPromise = new Promise(function (resolve, reject) {
+        window.onloadNewsletterTurnstile = function () {
+          renderTurnstileWidget();
+          resolve(true);
+        };
+
+        var script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadNewsletterTurnstile';
+        script.async = true;
+        script.defer = true;
+        script.onerror = function () {
+          reject(new Error('Turnstile failed to load.'));
+        };
+
+        document.head.appendChild(script);
+      }).catch(function () {
+        turnstileScriptPromise = null;
+        throw new Error('Turnstile failed to load.');
+      });
+
+      return turnstileScriptPromise;
+    }
+
+    function preloadTurnstile() {
+      if (!turnstileWidget || turnstilePreloaded) {
+        return;
+      }
+
+      turnstilePreloaded = true;
+      ensureTurnstileReady().catch(function () {
+        turnstilePreloaded = false;
+      });
+    }
+
     function resetTurnstile() {
       if (!turnstileWidget || !window.turnstile || !turnstileWidget.dataset.widgetId) {
         return;
@@ -280,13 +392,43 @@
       });
     }
 
+    if (emailInput && turnstileWidget) {
+      emailInput.addEventListener('focus', preloadTurnstile, { once: true });
+      emailInput.addEventListener('pointerdown', preloadTurnstile, { once: true });
+      emailInput.addEventListener('touchstart', preloadTurnstile, { once: true });
+    }
+
     form.addEventListener('submit', function (event) {
       event.preventDefault();
 
-      var formData = new FormData(form);
       if (submitButton) {
         submitButton.disabled = true;
       }
+
+      if (turnstileWidget && !getTurnstileResponse()) {
+        ensureTurnstileReady()
+          .then(function (loaded) {
+            if (!loaded) {
+              return;
+            }
+
+            renderMessage('info', 'Complete the security check, then subscribe again.');
+            scrollSectionIntoView(true);
+          })
+          .catch(function () {
+            renderMessage('error', 'Security verification could not be loaded right now. Please try again.');
+            scrollSectionIntoView(true);
+          })
+          .finally(function () {
+            if (submitButton) {
+              submitButton.disabled = false;
+            }
+          });
+
+        return;
+      }
+
+      var formData = new FormData(form);
 
       fetch(form.action, {
         method: 'POST',
