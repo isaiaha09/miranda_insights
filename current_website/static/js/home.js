@@ -234,6 +234,7 @@
 
     var submitButton = form.querySelector('button[type="submit"]');
     var emailInput = form.querySelector('input[name="email"]');
+    var turnstileWidget = form.querySelector('[data-turnstile-widget]');
     var sectionId = form.getAttribute('data-section-id') || 'newsletter-signup';
 
     function getHeaderOffset() {
@@ -263,6 +264,14 @@
       message.textContent = text;
       messageHost.hidden = false;
       messageHost.replaceChildren(message);
+    }
+
+    function resetTurnstile() {
+      if (!turnstileWidget || !window.turnstile || !turnstileWidget.dataset.widgetId) {
+        return;
+      }
+
+      window.turnstile.reset(turnstileWidget.dataset.widgetId);
     }
 
     if (window.location.hash === '#' + sectionId || window.location.search.indexOf('newsletter_status=') !== -1) {
@@ -305,6 +314,8 @@
           scrollSectionIntoView(true);
         })
         .finally(function () {
+          resetTurnstile();
+
           if (submitButton) {
             submitButton.disabled = false;
           }

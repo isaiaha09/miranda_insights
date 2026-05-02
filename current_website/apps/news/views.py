@@ -95,16 +95,17 @@ def _newsletter_response(request, message_text, *, level, status_code=200):
 	return redirect(_newsletter_anchor_url())
 
 
+def _newsletter_page_context(request, *, form=None):
+	return {
+		"subscribe_form": form or NewsletterSubscribeForm(),
+		"newsletter_section_id": NEWSLETTER_SECTION_ID,
+		"turnstile_enabled": is_turnstile_enabled_for_request(request),
+		"turnstile_site_key": settings.TURNSTILE_SITE_KEY,
+	}
+
+
 def home(request):
-	form = NewsletterSubscribeForm()
-	return render(
-		request,
-		"index.html",
-		{
-			"subscribe_form": form,
-			"newsletter_section_id": NEWSLETTER_SECTION_ID,
-		},
-	)
+	return render(request, "index.html", _newsletter_page_context(request))
 
 
 def services(request):
@@ -155,10 +156,7 @@ def subscribe(request):
 			response = render(
 				request,
 				"index.html",
-				{
-					"subscribe_form": NewsletterSubscribeForm(request.POST),
-					"newsletter_section_id": NEWSLETTER_SECTION_ID,
-				},
+				_newsletter_page_context(request, form=NewsletterSubscribeForm(request.POST)),
 				status=429,
 			)
 		return apply_retry_after(response, throttle_result.retry_after)
@@ -166,6 +164,14 @@ def subscribe(request):
 	form = NewsletterSubscribeForm(request.POST)
 	if not form.is_valid():
 		return _newsletter_response(request, "Please enter a valid email address.", level="error", status_code=400)
+
+	turnstile_ok, _ = verify_turnstile_for_request(
+		request,
+		(request.POST.get("cf-turnstile-response") or "").strip(),
+		_client_ip(request),
+	)
+	if not turnstile_ok:
+		return _newsletter_response(request, "Security verification failed. Please try again.", level="error", status_code=400)
 
 	email = form.cleaned_data["email"].strip().lower()
 	subscriber, created = NewsletterSubscriber.objects.get_or_create(

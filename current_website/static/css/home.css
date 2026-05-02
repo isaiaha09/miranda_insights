@@ -31,7 +31,7 @@ body.landing .site-header {
     gap: 2rem;
     max-width: 1000px;
     margin: 0 auto;
-    padding: 1rem;
+    padding: clamp(1rem, 2.2vw, 1.35rem);
 }
 
 .content-row .hero {
@@ -47,14 +47,13 @@ body.landing .site-header {
 .hero-block {
     width: 100%;
     background: transparent;
-    color: var(--text);
     position: relative;
     overflow: hidden;
 }
 
 .hero-landing {
     width: 100%;
-    background: transparent;
+    padding: clamp(1.15rem, 3vw, 1.95rem);
     color: var(--text);
     padding: 3.5rem 0 1.5rem 0;
 }
@@ -415,7 +414,7 @@ body.landing .hero-right {
 }
 
 .subscribe {
-    
+    padding: 0 1rem 2.75rem 1rem;
     scroll-margin-top: calc(var(--header-height) + 1rem);
 }
 
@@ -486,19 +485,31 @@ body.landing .hero-right {
     outline: none;
 }
 
+.subscribe-shell {
+    width: 100%;
+    margin: 0 auto;
+    padding: clamp(1rem, 2.2vw, 1.35rem);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius-lg) + 0.2rem);
+    background:
+        radial-gradient(760px circle at 10% -18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%),
+        radial-gradient(640px circle at 100% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 48%),
+        linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, #05070c), color-mix(in srgb, var(--surface) 88%, #05070c));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.24);
+}
+
 .subscribe-inner {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: .5rem;
     text-align: center;
-    padding: 1rem 0;
-    padding-bottom: 100px;
+    padding: 0.35rem 0;
 }
 
 .subscribe h3 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: clamp(1.75rem, 3.2vw, 2.25rem);
 }
 
 .subscribe p {
@@ -533,16 +544,28 @@ body.landing .hero-right {
 
 .subscribe-form {
     display: flex;
-    gap: .5rem;
+    flex-direction: column;
+    gap: 0.7rem;
     align-items: center;
+    justify-content: center;
+    width: min(100%, 32rem);
+}
+
+.subscribe-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    width: 100%;
+    flex-wrap: nowrap;
 }
 
 .subscribe-form input[type="email"] {
     padding: .75rem 1rem;
     border-radius: var(--radius-lg);
     border: 1px solid var(--input-border);
-    width: 320px;
-    max-width: 60vw;
+    width: 100%;
+    max-width: 100%;
     background: var(--input-bg);
     color: var(--text);
     transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
@@ -559,6 +582,25 @@ body.landing .hero-right {
 .subscribe-form button[disabled] {
     opacity: 0.75;
     cursor: wait;
+}
+
+.subscribe-turnstile-wrap {
+    flex: 1 1 300px;
+    min-width: 0;
+    max-width: 300px;
+    display: flex;
+    justify-content: flex-start;
+    order: 1;
+}
+
+.subscribe-turnstile-wrap .cf-turnstile {
+    max-width: 300px;
+    width: 100%;
+}
+
+.subscribe-form button {
+    flex: 0 0 auto;
+    order: 2;
 }
 
 .features-section {
@@ -692,7 +734,11 @@ body.landing .hero-right {
     }
 
     .subscribe {
-        padding: 1.5rem 0 2rem 0;
+        padding: 1.5rem 1rem 2rem 1rem;
+    }
+
+    .subscribe-shell {
+        padding: 1.15rem;
     }
 
     .hero-inner {
@@ -724,11 +770,39 @@ body.landing .hero-right {
     }
 
     .subscribe-form {
+        width: 100%;
+    }
+
+    .subscribe-form-actions {
         flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
     }
 
     .subscribe-form input[type="email"] {
         width: 100%;
+        max-width: 100%;
+    }
+
+    .subscribe-turnstile-wrap {
+        width: 100%;
+        flex: 0 1 auto;
+        max-width: 300px;
+        justify-content: center;
+        order: 1;
+    }
+
+    .subscribe-turnstile-wrap .cf-turnstile {
+        max-width: 100%;
+    }
+
+    .subscribe-form button {
+        order: 2;
+        align-self: center;
+        min-width: 0;
+        padding-left: 0.95rem;
+        padding-right: 0.95rem;
     }
 
     .features {

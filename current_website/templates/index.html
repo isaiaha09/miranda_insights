@@ -60,19 +60,28 @@
 
     <!-- Subscribe / Newsletter -->
     <section class="subscribe" id="{{ newsletter_section_id|default:'newsletter-signup' }}" tabindex="-1">
-      <div class="container subscribe-inner">
-        <h3>Subscribe to our newsletter</h3>
-        <p>Get monthly insights and product updates delivered to your inbox.</p>
-        <div class="subscribe-messages" aria-live="polite" data-subscribe-messages {% if not messages %}hidden{% endif %}>
-          {% for message in messages %}
-            <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>
-          {% endfor %}
+      <div class="subscribe-shell container">
+        <div class="subscribe-inner">
+          <h3>Subscribe to Miranda Insights Newsletter</h3>
+          <p>Get monthly insights and product updates delivered to your inbox.</p>
+          <div class="subscribe-messages" aria-live="polite" data-subscribe-messages {% if not messages %}hidden{% endif %}>
+            {% for message in messages %}
+              <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>
+            {% endfor %}
+          </div>
+          <form class="subscribe-form" action="{% url 'newsletter_subscribe' %}" method="post" data-subscribe-form data-section-id="{{ newsletter_section_id|default:'newsletter-signup' }}">
+            {% csrf_token %}
+            <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
+            <div class="subscribe-form-actions">
+              <button class="btn btn-primary" type="submit">Subscribe</button>
+              {% if turnstile_enabled %}
+                <div class="turnstile-wrap subscribe-turnstile-wrap">
+                  <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-mobile-size="flexible" data-desktop-size="flexible" data-turnstile-widget></div>
+                </div>
+              {% endif %}
+            </div>
+          </form>
         </div>
-        <form class="subscribe-form" action="{% url 'newsletter_subscribe' %}" method="post" data-subscribe-form data-section-id="{{ newsletter_section_id|default:'newsletter-signup' }}">
-          {% csrf_token %}
-          <input type="email" name="email" placeholder="you@example.com" aria-label="Email address" required />
-          <button class="btn btn-primary" type="submit">Subscribe</button>
-        </form>
       </div>
     </section>
 
@@ -145,5 +154,69 @@
 {% endblock %}
 
 {% block extra_js %}
+  {% if turnstile_enabled %}
+    <script>
+      function fitTurnstileWidgets() {
+        document.querySelectorAll('.turnstile-wrap').forEach(function (wrapper) {
+          var widget = wrapper.querySelector('.cf-turnstile');
+          var iframe = wrapper.querySelector('iframe');
+
+          if (!widget || !iframe) {
+            return;
+          }
+
+          widget.style.transform = '';
+          widget.style.transformOrigin = '';
+          wrapper.style.minHeight = '';
+
+          var isMobile = window.matchMedia('(max-width: 520px)').matches;
+          if (!isMobile) {
+            return;
+          }
+
+          var widgetWidth = iframe.offsetWidth || 300;
+          var widgetHeight = iframe.offsetHeight || 65;
+          var availableWidth = wrapper.clientWidth;
+
+          if (!availableWidth || availableWidth >= widgetWidth) {
+            wrapper.style.minHeight = widgetHeight + 'px';
+            return;
+          }
+
+          var scale = availableWidth / widgetWidth;
+          widget.style.transform = 'scale(' + scale + ')';
+          widget.style.transformOrigin = 'left top';
+          wrapper.style.minHeight = Math.ceil(widgetHeight * scale) + 'px';
+        });
+      }
+
+      function renderResponsiveTurnstile() {
+        if (!window.turnstile) {
+          return;
+        }
+
+        var isMobile = window.matchMedia('(max-width: 520px)').matches;
+        document.querySelectorAll('.cf-turnstile').forEach(function (element) {
+          if (element.dataset.widgetId) {
+            return;
+          }
+
+          var size = isMobile ? (element.dataset.mobileSize || 'compact') : (element.dataset.desktopSize || 'flexible');
+          var widgetId = window.turnstile.render(element, {
+            sitekey: element.dataset.sitekey,
+            size: size,
+          });
+
+          element.dataset.widgetId = widgetId;
+        });
+
+        window.requestAnimationFrame(fitTurnstileWidgets);
+      }
+
+      window.onloadTurnstileCallback = renderResponsiveTurnstile;
+      window.addEventListener('resize', fitTurnstileWidgets);
+    </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback" async defer></script>
+  {% endif %}
   <script src="{% static 'js/home.js' %}"></script>
 {% endblock %}

@@ -95,6 +95,8 @@ class ContactSupportFlowTests(TestCase):
 	SITE_URL="https://mirandainsights.com",
 	MEDIA_ROOT=TEMP_MEDIA_ROOT,
 	MEDIA_URL="/media/",
+	TURNSTILE_SITE_KEY="",
+	TURNSTILE_SECRET_KEY="",
 )
 class NewsletterSendCampaignTests(TestCase):
 	def create_campaign(self, **overrides):
@@ -201,6 +203,44 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertEqual(response.json()["level"], "success")
 		self.assertEqual(response.json()["sectionId"], "newsletter-signup")
 		self.assertTrue(NewsletterSubscriber.objects.filter(email="person@example.com", is_active=True).exists())
+
+	def test_home_renders_turnstile_widget_when_enabled(self):
+		with override_settings(TURNSTILE_SITE_KEY="site-key", TURNSTILE_SECRET_KEY="secret-key"):
+			response = self.client.get(reverse("home"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'class="cf-turnstile"', html=False)
+		self.assertContains(response, 'data-sitekey="site-key"', html=False)
+
+	def test_subscribe_requires_turnstile_when_enabled(self):
+		with override_settings(TURNSTILE_SITE_KEY="site-key", TURNSTILE_SECRET_KEY="secret-key"):
+			response = self.client.post(
+				reverse("newsletter_subscribe"),
+				{"email": "person@example.com"},
+				HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+			)
+
+		self.assertEqual(response.status_code, 400)
+		self.assertEqual(response.json()["level"], "error")
+		self.assertEqual(response.json()["message"], "Security verification failed. Please try again.")
+		self.assertFalse(NewsletterSubscriber.objects.filter(email="person@example.com").exists())
+
+	@patch("apps.news.views.verify_turnstile_for_request", return_value=(True, []))
+	def test_subscribe_accepts_valid_turnstile_when_enabled(self, verify_turnstile_for_request_mock):
+		with override_settings(TURNSTILE_SITE_KEY="site-key", TURNSTILE_SECRET_KEY="secret-key"):
+			response = self.client.post(
+				reverse("newsletter_subscribe"),
+				{
+					"email": "person@example.com",
+					"cf-turnstile-response": "token-value",
+				},
+				HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+			)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json()["level"], "success")
+		self.assertTrue(NewsletterSubscriber.objects.filter(email="person@example.com", is_active=True).exists())
+		verify_turnstile_for_request_mock.assert_called_once()
 
 	def test_unsubscribe_link_deletes_subscriber(self):
 		subscriber = NewsletterSubscriber.objects.create(email="sub1@example.com", is_active=True)
@@ -433,11 +473,16 @@ class ContactSupportThrottleTests(TestCase):
 		self.assertLessEqual(int(second_response["Retry-After"]), 3600)
 
 
-@override_settings(NEWSLETTER_SUBSCRIBE_RATE_LIMIT="1/1h")
+@override_settings(
+	NEWSLETTER_SUBSCRIBE_RATE_LIMIT="1/1h",
+	TURNSTILE_SITE_KEY="",
+	TURNSTILE_SECRET_KEY="",
+)
 class NewsletterSubscribeThrottleTests(TestCase):
 	def test_subscribe_rate_limit_returns_429_after_limit(self):
-		first_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"}, secure=True)
-		second_response = self.client.post(reverse("newsletter_subscribe"), {"email": "person@example.com"}, secure=True)
+		payload = {"email": "throttle-person@example.com"}
+		first_response = self.client.post(reverse("newsletter_subscribe"), payload, secure=True)
+		second_response = self.client.post(reverse("newsletter_subscribe"), payload, secure=True)
 
 		self.assertEqual(first_response.status_code, 302)
 		self.assertEqual(second_response.status_code, 429)
