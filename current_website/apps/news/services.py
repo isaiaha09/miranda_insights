@@ -1,3 +1,4 @@
+import logging
 import re
 from urllib.parse import urlencode
 
@@ -6,6 +7,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import validate_email
+from django.db import OperationalError, close_old_connections, connections
 from django.urls import reverse
 from django.utils.html import escape
 from django.utils import timezone
@@ -20,6 +22,9 @@ from .newsletter_blocks import build_html, build_plain_text
 UNSUBSCRIBE_TOKEN_SALT = "news.unsubscribe"
 UNSUBSCRIBE_LABEL = "Unsubscribe"
 UNSUBSCRIBE_FOOTER_TEXT = "If you wish to not receive anymore newsletters from us, click"
+
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_direct_recipient_emails(raw_recipients: str):
@@ -212,10 +217,27 @@ def process_due_automated_campaigns():
     from apps.operations.services import dispatch_newsletter_campaign
 
     now = timezone.now()
-    campaigns = NewsletterCampaign.objects.filter(
-        mode=NewsletterCampaign.MODE_AUTOMATED,
-        is_active=True,
-    )
+    close_old_connections()
+
+    def fetch_campaigns():
+        return list(
+            NewsletterCampaign.objects.filter(
+                mode=NewsletterCampaign.MODE_AUTOMATED,
+                is_active=True,
+            )
+        )
+
+    try:
+        campaigns = fetch_campaigns()
+    except OperationalError:
+        logger.warning("Retrying automated newsletter campaign query after database connection failure.")
+        connections.close_all()
+        close_old_connections()
+        try:
+            campaigns = fetch_campaigns()
+        except OperationalError:
+            logger.exception("Skipping automated newsletter campaign processing because the database is unavailable.")
+            return 0
 
     processed = 0
     for campaign in campaigns:

@@ -9,6 +9,7 @@ from django.contrib.messages import get_messages
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import OperationalError
 from django.test import RequestFactory
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -17,7 +18,7 @@ from django.templatetags.static import static
 from .admin import HasAccountListFilter, NewsletterCampaignAdmin, NewsletterSubscriberAdmin
 from .newsletter_blocks import normalize_blocks
 from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
-from .services import send_campaign
+from .services import process_due_automated_campaigns, send_campaign
 
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp()
@@ -258,6 +259,42 @@ class NewsletterSendCampaignTests(TestCase):
 		self.assertIn("newsletter_status=unsubscribed#newsletter-signup", response.redirect_chain[0][0])
 		self.assertFalse(NewsletterSubscriber.objects.filter(pk=subscriber.pk).exists())
 		self.assertContains(response, "You have been unsubscribed from newsletter emails.")
+
+	@patch("apps.operations.services.dispatch_newsletter_campaign")
+	@patch("apps.news.services.connections.close_all")
+	@patch("apps.news.services.NewsletterCampaign.objects.filter")
+	def test_process_due_automated_campaigns_retries_once_after_operational_error(
+		self,
+		filter_mock,
+		close_all_mock,
+		dispatch_newsletter_campaign_mock,
+	):
+		campaign = self.create_campaign(
+			mode=NewsletterCampaign.MODE_AUTOMATED,
+			is_active=True,
+			next_send_at=datetime(2026, 1, 1, tzinfo=datetime_timezone.utc),
+		)
+
+		filter_mock.side_effect = [OperationalError("timeout"), [campaign]]
+
+		processed = process_due_automated_campaigns()
+
+		self.assertEqual(processed, 1)
+		close_all_mock.assert_called_once()
+		dispatch_newsletter_campaign_mock.assert_called_once_with(campaign)
+
+	@patch("apps.news.services.connections.close_all")
+	@patch("apps.news.services.NewsletterCampaign.objects.filter", side_effect=OperationalError("timeout"))
+	def test_process_due_automated_campaigns_returns_zero_when_database_stays_unavailable(
+		self,
+		filter_mock,
+		close_all_mock,
+	):
+		processed = process_due_automated_campaigns()
+
+		self.assertEqual(processed, 0)
+		self.assertEqual(filter_mock.call_count, 2)
+		close_all_mock.assert_called_once()
 
 	def test_send_campaign_renders_structured_blocks(self):
 		NewsletterSubscriber.objects.create(email="sub1@example.com", is_active=True)
