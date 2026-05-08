@@ -407,15 +407,31 @@ LOGGING = {
             'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
         },
     },
+    'filters': {
+        'skip_health_check_requests': {
+            '()': 'landingpage.health.SkipHealthCheckRequestFilter',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
+        'console_request': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            'filters': ['skip_health_check_requests'],
+        },
         'mail_admins': {
             'level': 'ERROR',
             'class': 'django.utils.log.AdminEmailHandler',
             'include_html': True,
+        },
+        'mail_admins_request': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+            'filters': ['skip_health_check_requests'],
         },
     },
     'root': {
@@ -429,7 +445,7 @@ LOGGING = {
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['console', 'mail_admins'],
+            'handlers': ['console_request', 'mail_admins_request'],
             'level': 'ERROR',
             'propagate': False,
         },
