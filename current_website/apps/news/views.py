@@ -22,28 +22,37 @@ logger = logging.getLogger(__name__)
 NEWSLETTER_SECTION_ID = "newsletter-signup"
 DELIVERABLE_EXAMPLES = [
 	{
-		"title": "Student Dashboard",
-		"description": "Interactive HTML dashboard example showing how processed student data can be delivered in a browser-ready format.",
+		"title": "Dashboard",
+		"description": "Interactive HTML dashboard example showing how processed data can be delivered in a browser-ready format.",
 		"file_type": "HTML",
 		"cta_label": "Preview Example",
 		"preview_static_path": "deliverables/student-dashboard.html",
 		"download_static_path": "deliverables/student-dashboard.html",
+		"thumbnail_static_path": "img/services/student-dashboard-preview.png",
+		"thumbnail_alt": "Preview of the Dashboard overview and key metrics",
+		"preview_fallback": "Interactive HTML dashboard",
 	},
 	{
-		"title": "Student Data Analysis Workbook",
+		"title": "Data Analysis Workbook",
 		"description": "Excel workbook example for structured analysis outputs, tabular review, and client handoff workflows.",
 		"file_type": "XLSX",
 		"cta_label": "Open Workbook",
 		"preview_static_path": "deliverables/student-data-analysis.png",
 		"download_static_path": "deliverables/student-data-analysis.xlsx",
+		"thumbnail_static_path": "img/services/student-data-analysis-preview.png",
+		"thumbnail_alt": "Preview of the Data Analysis Workbook dashboard",
+		"preview_fallback": "Excel workbook",
 	},
 	{
-		"title": "Student Dashboard Presentation",
+		"title": "Dashboard Presentation",
 		"description": "Presentation-ready PDF example for sharing findings, charts, and narrative summaries with stakeholders.",
 		"file_type": "PDF",
 		"cta_label": "Open Presentation",
 		"preview_static_path": "deliverables/student-dashboard-presentation.pdf",
 		"download_static_path": "deliverables/student-dashboard-presentation.pdf",
+		"thumbnail_static_path": "img/services/student-dashboard-presentation-preview.png",
+		"thumbnail_alt": "Title slide of the Dashboard Presentation",
+		"preview_fallback": "PDF presentation",
 	},
 	{
 		"title": "Project Documentation",
@@ -52,6 +61,9 @@ DELIVERABLE_EXAMPLES = [
 		"cta_label": "Open Documentation",
 		"preview_static_path": "deliverables/deliverable-documentation.pdf",
 		"download_static_path": "deliverables/deliverable-documentation.pdf",
+		"thumbnail_static_path": "img/services/project-documentation-preview.png",
+		"thumbnail_alt": "Cover page of the Project Documentation technical report",
+		"preview_fallback": "PDF technical report",
 	},
 ]
 
@@ -120,6 +132,14 @@ def services(request):
 
 def about(request):
 	return render(request, "about.html")
+
+
+def operational_partnership(request):
+	return render(request, "operational_partnership.html")
+
+
+def individual_services(request):
+	return render(request, "individual_services.html")
 
 
 def products(request):

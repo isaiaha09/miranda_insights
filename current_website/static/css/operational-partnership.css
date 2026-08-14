@@ -1,0 +1,667 @@
+/* Operational Partnership page */
+
+body.operational-partnership-page {
+    --bg: #061224;
+    --text: #f5f0e6;
+    --muted: #b8b6ae;
+    --accent: #d8a43a;
+    --accent-2: #f1d58b;
+    --surface: rgba(16, 27, 42, 0.84);
+    --border: rgba(231, 211, 168, 0.2);
+    --ring: rgba(216, 164, 58, 0.28);
+    --partnership-gold: #d8a43a;
+    --partnership-gold-light: #f1d58b;
+    --partnership-navy: #061224;
+    --partnership-navy-light: #0a1b31;
+}
+
+body.operational-partnership-page .site-main {
+    overflow: hidden;
+}
+
+.operational-partnership-page .partnership-shell {
+    color: var(--text);
+}
+
+.operational-partnership-page .partnership-container {
+    width: min(calc(100% - 2rem), 1240px);
+    margin-inline: auto;
+}
+
+.operational-partnership-page .partnership-eyebrow,
+.operational-partnership-page .partnership-card-label {
+    margin: 0;
+    color: var(--partnership-gold-light);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.operational-partnership-page .partnership-hero {
+    position: relative;
+    display: grid;
+    min-height: min(48rem, 78vh);
+    place-items: center;
+    padding: clamp(5rem, 10vw, 8.5rem) 0;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(231, 211, 168, 0.13);
+    background:
+        radial-gradient(680px circle at 14% 24%, rgba(216, 164, 58, 0.15), transparent 62%),
+        radial-gradient(760px circle at 88% 76%, rgba(241, 213, 139, 0.07), transparent 66%),
+        linear-gradient(135deg, rgba(6, 18, 36, 0.96), rgba(9, 23, 42, 0.92));
+}
+
+.operational-partnership-page .partnership-hero::before {
+    content: "";
+    position: absolute;
+    width: min(62vw, 48rem);
+    aspect-ratio: 1;
+    right: -18%;
+    bottom: -68%;
+    border: 1px solid rgba(216, 164, 58, 0.24);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4rem rgba(216, 164, 58, 0.018), 0 0 0 9rem rgba(241, 213, 139, 0.012);
+    pointer-events: none;
+}
+
+.operational-partnership-page .partnership-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.14;
+    background-image:
+        linear-gradient(rgba(241, 213, 139, 0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(241, 213, 139, 0.16) 1px, transparent 1px);
+    background-size: 7rem 7rem;
+    mask-image: linear-gradient(to bottom, transparent, black 34%, transparent 92%);
+    pointer-events: none;
+}
+
+.operational-partnership-page .partnership-hero__inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.operational-partnership-page .partnership-hero h1 {
+    max-width: 18ch;
+    margin: 0.8rem auto 0;
+    color: var(--text);
+    font-size: clamp(2.65rem, 6.2vw, 5.4rem);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1.01;
+    text-wrap: balance;
+}
+
+.operational-partnership-page .partnership-hero__lead {
+    max-width: 58rem;
+    margin: 1.5rem auto 0;
+    color: var(--muted);
+    font-size: clamp(1.02rem, 1.7vw, 1.22rem);
+    line-height: 1.75;
+    text-wrap: balance;
+}
+
+.operational-partnership-page .partnership-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+}
+
+.operational-partnership-page .partnership-actions .btn,
+.operational-partnership-page .partnership-level-card__contact .btn {
+    min-height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.78rem 1.25rem;
+    font-weight: 700;
+}
+
+.operational-partnership-page .partnership-actions .btn-primary {
+    box-shadow: 0 14px 34px rgba(216, 164, 58, 0.24);
+}
+
+.operational-partnership-page .partnership-actions .btn:focus-visible,
+.operational-partnership-page .partnership-level-card__contact .btn:focus-visible,
+.operational-partnership-page .partnership-pathways__options a:focus-visible,
+.operational-partnership-page .partnership-faq__item a:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 4px;
+}
+
+.operational-partnership-page .partnership-section {
+    position: relative;
+    padding: clamp(4rem, 8vw, 7rem) 0;
+}
+
+.operational-partnership-page .partnership-section:nth-child(odd) {
+    background: radial-gradient(700px circle at 0% 50%, rgba(216, 164, 58, 0.04), transparent 62%), linear-gradient(180deg, transparent, rgba(20, 25, 34, 0.36), transparent);
+}
+
+.operational-partnership-page .partnership-section-heading {
+    max-width: 50rem;
+    margin-bottom: clamp(2rem, 4vw, 3.25rem);
+}
+
+.operational-partnership-page .partnership-section-heading--centered {
+    margin-inline: auto;
+    text-align: center;
+}
+
+.operational-partnership-page .partnership-section-heading h2,
+.operational-partnership-page .partnership-final-cta h2 {
+    margin: 0.6rem 0 0;
+    color: var(--text);
+    font-size: clamp(2rem, 4vw, 3.35rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    text-wrap: balance;
+}
+
+.operational-partnership-page .partnership-section-heading > p:last-child:not(.partnership-eyebrow),
+.operational-partnership-page .partnership-editorial-copy p,
+.operational-partnership-page .partnership-card p,
+.operational-partnership-page .partnership-final-cta__panel > p:not(.partnership-eyebrow) {
+    color: var(--muted);
+    line-height: 1.75;
+}
+
+.operational-partnership-page .partnership-section-heading > p:last-child:not(.partnership-eyebrow) {
+    margin: 1rem 0 0;
+    font-size: 1.03rem;
+}
+
+.operational-partnership-page .partnership-section-heading--centered > p:last-child:not(.partnership-eyebrow) {
+    margin-inline: auto;
+}
+
+.operational-partnership-page .partnership-editorial-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2.5rem, 7vw, 7rem);
+    align-items: start;
+}
+
+.operational-partnership-page .partnership-editorial-layout__heading {
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
+    margin-bottom: 0;
+}
+
+.operational-partnership-page .partnership-editorial-layout__heading::after {
+    content: "";
+    display: block;
+    width: 5rem;
+    height: 2px;
+    margin-top: 1.5rem;
+    background: linear-gradient(90deg, var(--partnership-gold), transparent);
+}
+
+.operational-partnership-page .partnership-editorial-copy {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    border-left: 1px solid rgba(216, 164, 58, 0.42);
+    background: linear-gradient(100deg, rgba(216, 164, 58, 0.045), transparent 70%);
+}
+
+.operational-partnership-page .partnership-editorial-copy p {
+    margin: 0;
+    font-size: clamp(1.02rem, 1.5vw, 1.17rem);
+}
+
+.operational-partnership-page .partnership-editorial-copy p + p {
+    margin-top: 1.35rem;
+}
+
+.operational-partnership-page .partnership-pathways {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    margin-top: clamp(2.5rem, 6vw, 5rem);
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    border: 1px solid rgba(231, 211, 168, 0.2);
+    border-radius: 2rem 0.9rem 2rem 0.9rem;
+    background: radial-gradient(440px circle at 100% 0%, rgba(216, 164, 58, 0.08), transparent 58%), linear-gradient(180deg, rgba(10, 25, 45, 0.95), rgba(7, 18, 34, 0.97));
+    box-shadow: 0 20px 54px rgba(2, 6, 23, 0.22);
+}
+
+.operational-partnership-page .partnership-pathways__heading h3 {
+    margin: 0.6rem 0 0;
+    color: var(--text);
+    font-size: clamp(1.3rem, 2.5vw, 2rem);
+    line-height: 1.2;
+}
+
+.operational-partnership-page .partnership-pathways__options {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+}
+
+.operational-partnership-page .partnership-pathways__options a {
+    min-height: 5.75rem;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    border: 1px solid rgba(216, 164, 58, 0.38);
+    border-radius: 1.35rem 0.6rem 1.35rem 0.6rem;
+    color: var(--text);
+    background: rgba(6, 18, 36, 0.74);
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.operational-partnership-page .partnership-pathways__options a:hover {
+    transform: translateY(-2px);
+    border-color: rgba(216, 164, 58, 0.7);
+    background: rgba(16, 36, 61, 0.9);
+}
+
+.operational-partnership-page .partnership-pathways__connector {
+    color: var(--partnership-gold-light);
+    font-size: 1.9rem;
+    line-height: 1;
+    text-shadow: 0 0 18px rgba(216, 164, 58, 0.28);
+}
+
+.operational-partnership-page .partnership-card-grid {
+    display: grid;
+    align-items: stretch;
+    gap: 1rem;
+}
+
+.operational-partnership-page .partnership-card-grid--six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.operational-partnership-page .partnership-card {
+    position: relative;
+    min-width: 0;
+    height: 100%;
+    padding: clamp(1.3rem, 2.5vw, 1.75rem);
+    overflow: hidden;
+    border: 1px solid rgba(231, 211, 168, 0.2);
+    border-radius: 1.7rem 0.8rem 1.7rem 0.8rem;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 42%), radial-gradient(420px circle at 100% 0%, rgba(216, 164, 58, 0.065), transparent 56%), linear-gradient(180deg, rgba(10, 25, 45, 0.95), rgba(7, 18, 34, 0.97));
+    box-shadow: 0 20px 52px rgba(2, 6, 23, 0.2);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.operational-partnership-page .partnership-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 1.5rem 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--partnership-gold), var(--partnership-gold-light), transparent);
+    opacity: 0.56;
+}
+
+.operational-partnership-page .partnership-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(216, 164, 58, 0.5);
+    box-shadow: 0 25px 60px rgba(2, 6, 23, 0.3), 0 0 28px rgba(216, 164, 58, 0.05);
+}
+
+.operational-partnership-page .partnership-card__marker {
+    display: block;
+    margin-bottom: 2rem;
+    color: var(--partnership-gold);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.operational-partnership-page .partnership-card h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.28rem;
+    line-height: 1.25;
+}
+
+.operational-partnership-page .partnership-card p {
+    margin: 0.75rem 0 0;
+}
+
+.operational-partnership-page .partnership-card--audience,
+.operational-partnership-page .partnership-card--feature {
+    min-height: 14.5rem;
+}
+
+.operational-partnership-page .partnership-card--feature {
+    padding-top: 4.25rem;
+}
+
+.operational-partnership-page .partnership-card--feature::before {
+    content: "";
+    position: absolute;
+    top: 1.6rem;
+    left: 1.7rem;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid rgba(216, 164, 58, 0.48);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(241, 213, 139, 0.7) 0 2px, transparent 3px), rgba(216, 164, 58, 0.08);
+}
+
+.operational-partnership-page .partnership-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(231, 211, 168, 0.2);
+    border-radius: 2rem 0.9rem 2rem 0.9rem;
+    background: rgba(7, 18, 34, 0.86);
+    list-style: none;
+}
+
+.operational-partnership-page .partnership-benefits-grid li {
+    position: relative;
+    min-height: 4.25rem;
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem 1rem 3.25rem;
+    border-right: 1px solid rgba(231, 211, 168, 0.13);
+    border-bottom: 1px solid rgba(231, 211, 168, 0.13);
+    color: var(--text);
+    line-height: 1.45;
+}
+
+.operational-partnership-page .partnership-benefits-grid li:nth-child(2n) {
+    border-right: 0;
+}
+
+.operational-partnership-page .partnership-benefits-grid li:nth-last-child(-n + 2) {
+    border-bottom: 0;
+}
+
+.operational-partnership-page .partnership-benefits-grid li::before {
+    content: "";
+    position: absolute;
+    left: 1.3rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 1px solid rgba(216, 164, 58, 0.75);
+    border-radius: 50% 50% 42% 58%;
+    background: radial-gradient(circle, var(--partnership-gold-light) 0 2px, transparent 3px);
+    box-shadow: 0 0 14px rgba(216, 164, 58, 0.12);
+}
+
+.operational-partnership-page .partnership-inclusions__note {
+    max-width: 52rem;
+    margin: 1.25rem 0 0;
+    color: var(--partnership-gold-light);
+    font-size: 0.94rem;
+    line-height: 1.65;
+}
+
+.operational-partnership-page .partnership-levels {
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+.operational-partnership-page .partnership-level-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 1rem;
+}
+
+.operational-partnership-page .partnership-level-card {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.operational-partnership-page .partnership-level-card > h3 {
+    margin-top: 0.8rem;
+    font-size: clamp(1.45rem, 2.4vw, 2rem);
+}
+
+.operational-partnership-page .partnership-level-card h4 {
+    margin: 0;
+    color: var(--partnership-gold-light);
+    font-size: 0.72rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.operational-partnership-page .partnership-level-card__fit,
+.operational-partnership-page .partnership-level-card__includes,
+.operational-partnership-page .partnership-level-card__contact {
+    margin-top: 1.5rem;
+    padding-top: 1.3rem;
+    border-top: 1px solid rgba(231, 211, 168, 0.15);
+}
+
+.operational-partnership-page .partnership-level-card__includes {
+    flex: 1 1 auto;
+}
+
+.operational-partnership-page .partnership-level-card__includes ul {
+    display: grid;
+    gap: 0.65rem;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    color: var(--muted);
+    list-style: none;
+}
+
+.operational-partnership-page .partnership-level-card__includes li {
+    position: relative;
+    padding-left: 1.25rem;
+    line-height: 1.5;
+}
+
+.operational-partnership-page .partnership-level-card__includes li::before {
+    content: "";
+    position: absolute;
+    top: 0.66em;
+    left: 0;
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 50%;
+    background: var(--partnership-gold);
+}
+
+.operational-partnership-page .partnership-level-card__contact {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.operational-partnership-page .partnership-level-card__contact p {
+    margin-top: 0;
+}
+
+.operational-partnership-page .partnership-level-card--custom {
+    border-color: rgba(216, 164, 58, 0.4);
+    background: radial-gradient(500px circle at 100% 0%, rgba(216, 164, 58, 0.12), transparent 60%), linear-gradient(180deg, rgba(12, 29, 51, 0.97), rgba(7, 18, 34, 0.98));
+}
+
+.operational-partnership-page .partnership-faq__layout {
+    display: grid;
+    grid-template-columns: minmax(15rem, 0.68fr) minmax(0, 1.32fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: start;
+}
+
+.operational-partnership-page .partnership-faq__layout .partnership-section-heading {
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
+    margin-bottom: 0;
+}
+
+.operational-partnership-page .partnership-faq__item {
+    border-color: rgba(231, 211, 168, 0.2);
+    border-radius: 1.3rem 0.65rem 1.3rem 0.65rem;
+    background: linear-gradient(180deg, rgba(10, 25, 45, 0.95), rgba(7, 18, 34, 0.97));
+    box-shadow: 0 16px 42px rgba(2, 6, 23, 0.18);
+}
+
+.operational-partnership-page .partnership-faq__item summary {
+    position: relative;
+    padding: 1.25rem 3.5rem 1.25rem 1.35rem;
+    color: var(--text);
+}
+
+.operational-partnership-page .partnership-faq__item summary::after {
+    content: "+";
+    position: absolute;
+    top: 50%;
+    right: 1.35rem;
+    color: var(--partnership-gold-light);
+    font-size: 1.4rem;
+    font-weight: 400;
+    transform: translateY(-50%);
+}
+
+.operational-partnership-page .partnership-faq__item[open] summary::after {
+    content: "−";
+}
+
+.operational-partnership-page .partnership-faq__item p {
+    color: var(--muted);
+}
+
+.operational-partnership-page .partnership-faq__item p a {
+    color: var(--partnership-gold-light);
+}
+
+.operational-partnership-page .partnership-final-cta {
+    padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+.operational-partnership-page .partnership-final-cta__panel {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(2rem, 6vw, 5rem);
+    border: 1px solid rgba(231, 211, 168, 0.22);
+    border-radius: 2.5rem 1rem 2.5rem 1rem;
+    background: radial-gradient(560px circle at 50% 0%, rgba(216, 164, 58, 0.11), transparent 65%), linear-gradient(180deg, rgba(10, 25, 45, 0.96), rgba(7, 18, 34, 0.98));
+    box-shadow: 0 24px 64px rgba(2, 6, 23, 0.28);
+    text-align: center;
+}
+
+.operational-partnership-page .partnership-final-cta__panel::before {
+    content: "";
+    position: absolute;
+    width: 24rem;
+    aspect-ratio: 1;
+    top: -16rem;
+    right: -8rem;
+    border: 1px solid rgba(216, 164, 58, 0.25);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3.5rem rgba(216, 164, 58, 0.018);
+    pointer-events: none;
+}
+
+.operational-partnership-page .partnership-final-cta__panel > * {
+    position: relative;
+    z-index: 1;
+}
+
+.operational-partnership-page .partnership-final-cta h2 {
+    max-width: 18ch;
+    margin-inline: auto;
+}
+
+.operational-partnership-page .partnership-final-cta__panel > p:not(.partnership-eyebrow) {
+    max-width: 52rem;
+    margin: 1rem auto 0;
+    font-size: 1.03rem;
+}
+
+@media (max-width: 980px) {
+    .operational-partnership-page .partnership-card-grid--six {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .operational-partnership-page .partnership-pathways {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .operational-partnership-page .partnership-hero {
+        min-height: auto;
+    }
+
+    .operational-partnership-page .partnership-editorial-layout,
+    .operational-partnership-page .partnership-faq__layout,
+    .operational-partnership-page .partnership-level-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .operational-partnership-page .partnership-editorial-layout__heading,
+    .operational-partnership-page .partnership-faq__layout .partnership-section-heading {
+        position: static;
+    }
+
+    .operational-partnership-page .partnership-editorial-copy {
+        padding-right: 0;
+    }
+
+    .operational-partnership-page .partnership-pathways__options {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+    }
+
+    .operational-partnership-page .partnership-pathways__connector {
+        justify-self: center;
+        transform: rotate(90deg);
+    }
+
+    .operational-partnership-page .partnership-pathways__options a {
+        min-height: 4.75rem;
+    }
+
+    .operational-partnership-page .partnership-level-card {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 560px) {
+    .operational-partnership-page .partnership-container {
+        width: min(calc(100% - 1.25rem), 1240px);
+    }
+
+    .operational-partnership-page .partnership-card-grid--six,
+    .operational-partnership-page .partnership-benefits-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .operational-partnership-page .partnership-benefits-grid li {
+        border-right: 0;
+        border-bottom: 1px solid rgba(231, 211, 168, 0.13);
+    }
+
+    .operational-partnership-page .partnership-benefits-grid li:nth-last-child(2) {
+        border-bottom: 1px solid rgba(231, 211, 168, 0.13);
+    }
+
+    .operational-partnership-page .partnership-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .operational-partnership-page .partnership-card,
+    .operational-partnership-page .partnership-pathways__options a {
+        transition: none;
+    }
+}

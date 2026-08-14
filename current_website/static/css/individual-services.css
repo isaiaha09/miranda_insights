@@ -1,0 +1,767 @@
+/* Individual Services page */
+
+body.individual-services-page {
+    --bg: #061224;
+    --text: #f5f0e6;
+    --muted: #b8b6ae;
+    --accent: #d8a43a;
+    --accent-2: #f1d58b;
+    --surface: rgba(16, 27, 42, 0.84);
+    --border: rgba(231, 211, 168, 0.2);
+    --ring: rgba(241, 213, 139, 0.72);
+    --individual-gold: #d8a43a;
+    --individual-gold-light: #f1d58b;
+    --individual-navy: #061224;
+    --individual-navy-light: #102844;
+    --individual-white: #f5f0e6;
+    color: var(--individual-white);
+    background: var(--individual-navy);
+}
+
+body.individual-services-page .site-main {
+    overflow: hidden;
+}
+
+.individual-services-page .individual-shell {
+    position: relative;
+    isolation: isolate;
+    background:
+        radial-gradient(850px circle at 7% 8%, rgba(31, 91, 137, 0.16), transparent 58%),
+        radial-gradient(700px circle at 96% 33%, rgba(216, 164, 58, 0.07), transparent 60%),
+        linear-gradient(180deg, #071526, #061224 48%, #050f1e);
+}
+
+.individual-services-page .individual-container {
+    width: min(1180px, calc(100% - 2.5rem));
+    margin-inline: auto;
+}
+
+.individual-services-page .individual-eyebrow,
+.individual-services-page .individual-card-label,
+.individual-services-page .individual-service-card__area-label {
+    margin: 0;
+    color: var(--individual-gold-light);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.individual-services-page .individual-hero {
+    position: relative;
+    min-height: clamp(38rem, 74vh, 48rem);
+    display: grid;
+    align-items: center;
+    padding: clamp(6.25rem, 11vw, 9.5rem) 0 clamp(5rem, 9vw, 8rem);
+    overflow: hidden;
+    border-bottom: 1px solid rgba(231, 211, 168, 0.16);
+}
+
+.individual-services-page .individual-hero::before {
+    content: "";
+    position: absolute;
+    width: min(60vw, 45rem);
+    aspect-ratio: 1;
+    right: -13%;
+    bottom: -45%;
+    border: 1px solid rgba(216, 164, 58, 0.22);
+    border-radius: 50%;
+    box-shadow:
+        0 0 0 4rem rgba(216, 164, 58, 0.018),
+        0 0 0 9rem rgba(241, 213, 139, 0.012),
+        0 0 90px rgba(216, 164, 58, 0.06);
+    pointer-events: none;
+}
+
+.individual-services-page .individual-hero::after {
+    content: "";
+    position: absolute;
+    width: min(42vw, 32rem);
+    height: 9rem;
+    right: 5%;
+    bottom: 23%;
+    opacity: 0.65;
+    background:
+        radial-gradient(circle at 5% 77%, var(--individual-gold-light) 0 2px, transparent 3px),
+        radial-gradient(circle at 37% 57%, var(--individual-gold-light) 0 2px, transparent 3px),
+        radial-gradient(circle at 68% 39%, var(--individual-gold-light) 0 2px, transparent 3px),
+        radial-gradient(circle at 95% 14%, var(--individual-gold-light) 0 2px, transparent 3px),
+        linear-gradient(166deg, transparent 47.5%, rgba(216, 164, 58, 0.58) 49%, rgba(216, 164, 58, 0.58) 49.5%, transparent 51%);
+    filter: drop-shadow(0 0 12px rgba(216, 164, 58, 0.18));
+    pointer-events: none;
+}
+
+.individual-services-page .individual-hero__inner {
+    position: relative;
+    z-index: 1;
+}
+
+.individual-services-page .individual-hero h1 {
+    max-width: 12ch;
+    margin: 0.8rem 0 0;
+    color: var(--individual-white);
+    font-size: clamp(3.1rem, 8vw, 7rem);
+    letter-spacing: -0.05em;
+    line-height: 0.94;
+}
+
+.individual-services-page .individual-hero__copy {
+    max-width: 61rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.2rem, 3vw, 2.5rem);
+    margin-top: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.individual-services-page .individual-hero__copy p,
+.individual-services-page .individual-introduction__copy p,
+.individual-services-page .individual-section-heading > p:last-child,
+.individual-services-page .individual-service-card__overview > p,
+.individual-services-page .individual-audiences__closing,
+.individual-services-page .individual-process-card p,
+.individual-services-page .individual-final-cta__panel > p:not(.individual-eyebrow) {
+    color: var(--muted);
+    line-height: 1.75;
+}
+
+.individual-services-page .individual-hero__copy p {
+    margin: 0;
+    font-size: clamp(1rem, 1.4vw, 1.14rem);
+}
+
+.individual-services-page .individual-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 2rem;
+}
+
+.individual-services-page .individual-actions .btn,
+.individual-services-page .individual-service-card__footer .btn,
+.individual-services-page .individual-comparison-card .btn {
+    min-height: 3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.individual-services-page .btn-primary {
+    color: #07111f;
+    border-color: rgba(241, 213, 139, 0.74);
+    background: linear-gradient(135deg, var(--individual-gold-light), var(--individual-gold));
+    box-shadow: 0 13px 32px rgba(216, 164, 58, 0.17);
+}
+
+.individual-services-page .btn-primary:hover {
+    box-shadow: 0 16px 38px rgba(216, 164, 58, 0.25);
+}
+
+.individual-services-page .btn-ghost {
+    color: var(--individual-white);
+    border-color: rgba(231, 211, 168, 0.32);
+    background: rgba(5, 15, 30, 0.3);
+}
+
+.individual-services-page .btn-ghost:hover {
+    border-color: rgba(216, 164, 58, 0.62);
+    background: rgba(216, 164, 58, 0.08);
+}
+
+.individual-services-page .individual-section {
+    position: relative;
+    padding: clamp(4.75rem, 9vw, 8rem) 0;
+}
+
+.individual-services-page .individual-section + .individual-section {
+    border-top: 1px solid rgba(231, 211, 168, 0.12);
+}
+
+.individual-services-page .individual-section-heading {
+    max-width: 49rem;
+    margin-bottom: clamp(2rem, 4vw, 3.25rem);
+}
+
+.individual-services-page .individual-section-heading--centered {
+    margin-inline: auto;
+    text-align: center;
+}
+
+.individual-services-page .individual-section-heading h2,
+.individual-services-page .individual-final-cta__panel h2 {
+    margin: 0.65rem 0 0;
+    color: var(--individual-white);
+    font-size: clamp(2.15rem, 5vw, 4rem);
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    text-wrap: balance;
+}
+
+.individual-services-page .individual-section-heading > p:last-child {
+    margin: 1rem 0 0;
+    font-size: 1.05rem;
+}
+
+.individual-services-page .individual-introduction__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: clamp(2.5rem, 7vw, 7rem);
+    align-items: start;
+}
+
+.individual-services-page .individual-introduction__layout .individual-section-heading {
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
+    margin-bottom: 0;
+}
+
+.individual-services-page .individual-framework-statement {
+    margin-top: 1.6rem !important;
+    padding: 1.1rem 1.2rem;
+    border-left: 2px solid var(--individual-gold);
+    color: var(--individual-gold-light) !important;
+    background: linear-gradient(90deg, rgba(216, 164, 58, 0.08), transparent);
+    font-weight: 600;
+}
+
+.individual-services-page .individual-introduction__copy {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    border-left: 1px solid rgba(216, 164, 58, 0.4);
+    background: linear-gradient(100deg, rgba(216, 164, 58, 0.045), transparent 72%);
+}
+
+.individual-services-page .individual-introduction__copy p {
+    margin: 0;
+    font-size: clamp(1.02rem, 1.5vw, 1.17rem);
+}
+
+.individual-services-page .individual-introduction__copy p + p {
+    margin-top: 1.35rem;
+}
+
+.individual-services-page #individual-services {
+    scroll-margin-top: 7rem;
+}
+
+.individual-services-page .individual-services {
+    background:
+        radial-gradient(650px circle at 100% 8%, rgba(216, 164, 58, 0.045), transparent 62%),
+        linear-gradient(180deg, rgba(16, 23, 34, 0.25), transparent);
+}
+
+.individual-services-page .individual-service-list {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.individual-services-page .individual-service-card,
+.individual-services-page .individual-audience-card,
+.individual-services-page .individual-comparison-card,
+.individual-services-page .individual-process-card,
+.individual-services-page .individual-final-cta__panel {
+    border: 1px solid rgba(231, 211, 168, 0.2);
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 42%),
+        radial-gradient(470px circle at 100% 0%, rgba(216, 164, 58, 0.06), transparent 58%),
+        linear-gradient(180deg, rgba(10, 25, 45, 0.96), rgba(7, 18, 34, 0.98));
+    box-shadow: 0 22px 56px rgba(2, 6, 23, 0.22);
+}
+
+.individual-services-page .individual-service-card {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1.5rem, 3.5vw, 2.5rem);
+    border-radius: 2rem 0.85rem 2rem 0.85rem;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.individual-services-page .individual-service-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 2rem 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--individual-gold), var(--individual-gold-light), transparent);
+    opacity: 0.58;
+}
+
+.individual-services-page .individual-service-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(216, 164, 58, 0.48);
+    box-shadow: 0 28px 64px rgba(2, 6, 23, 0.3), 0 0 28px rgba(216, 164, 58, 0.05);
+}
+
+.individual-services-page .individual-service-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(231, 211, 168, 0.16);
+}
+
+.individual-services-page .individual-service-card__icon {
+    width: 3.6rem;
+    height: 3.6rem;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(216, 164, 58, 0.48);
+    border-radius: 1.15rem 0.5rem 1.15rem 0.5rem;
+    color: var(--individual-gold-light);
+    background: rgba(216, 164, 58, 0.07);
+    box-shadow: inset 0 0 18px rgba(216, 164, 58, 0.035), 0 0 20px rgba(216, 164, 58, 0.06);
+}
+
+.individual-services-page .individual-service-card__icon svg {
+    width: 2rem;
+    height: 2rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.individual-services-page .individual-service-card__area {
+    margin: 0.35rem 0 0;
+    color: var(--individual-white);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.individual-services-page .individual-service-card__content {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    padding-top: clamp(1.75rem, 4vw, 2.75rem);
+}
+
+.individual-services-page .individual-service-card__overview h3,
+.individual-services-page .individual-comparison-card h3,
+.individual-services-page .individual-process-card h3,
+.individual-services-page .individual-audience-card h3 {
+    margin: 0;
+    color: var(--individual-white);
+    line-height: 1.2;
+}
+
+.individual-services-page .individual-service-card__overview h3 {
+    font-size: clamp(1.75rem, 3vw, 2.45rem);
+    letter-spacing: -0.03em;
+}
+
+.individual-services-page .individual-service-card__overview > p {
+    margin: 1rem 0 0;
+}
+
+.individual-services-page .individual-service-card__note {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(231, 211, 168, 0.14);
+    font-size: 0.9rem;
+}
+
+.individual-services-page .individual-service-card__principle {
+    color: var(--individual-gold-light) !important;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.individual-services-page .individual-service-card__support h4,
+.individual-services-page .individual-comparison-card h4 {
+    margin: 0 0 0.9rem;
+    color: var(--individual-gold-light);
+    font-size: 0.73rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.individual-services-page .individual-service-card__support ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem 1.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.individual-services-page .individual-service-card__support li,
+.individual-services-page .individual-comparison-card li {
+    position: relative;
+    padding-left: 1rem;
+    color: #dedbd2;
+    line-height: 1.5;
+}
+
+.individual-services-page .individual-service-card__support li::before,
+.individual-services-page .individual-comparison-card li::before {
+    content: "";
+    position: absolute;
+    top: 0.58em;
+    left: 0;
+    width: 0.35rem;
+    height: 0.35rem;
+    border: 1px solid rgba(216, 164, 58, 0.82);
+    border-radius: 50%;
+}
+
+.individual-services-page .individual-service-card__footer {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(231, 211, 168, 0.14);
+}
+
+.individual-services-page .individual-audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.individual-services-page .individual-audience-card {
+    min-height: 9.5rem;
+    padding: 1.5rem;
+    border-radius: 1.5rem 0.7rem 1.5rem 0.7rem;
+}
+
+.individual-services-page .individual-audience-card span {
+    display: block;
+    margin-bottom: 1.7rem;
+    color: var(--individual-gold);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.individual-services-page .individual-audience-card h3 {
+    font-size: 1.15rem;
+}
+
+.individual-services-page .individual-audiences__closing {
+    max-width: 59rem;
+    margin: 1.8rem auto 0;
+    padding-top: 1.4rem;
+    border-top: 1px solid rgba(231, 211, 168, 0.14);
+    text-align: center;
+}
+
+.individual-services-page .individual-comparison {
+    background: linear-gradient(90deg, rgba(4, 13, 26, 0.3), rgba(16, 32, 50, 0.34), rgba(4, 13, 26, 0.3));
+}
+
+.individual-services-page .individual-comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem;
+}
+
+.individual-services-page .individual-comparison-card {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border-radius: 1.8rem 0.8rem 1.8rem 0.8rem;
+}
+
+.individual-services-page .individual-comparison-card h3 {
+    margin-top: 0.7rem;
+    font-size: clamp(1.55rem, 2.8vw, 2.1rem);
+}
+
+.individual-services-page .individual-comparison-card h4 {
+    margin-top: 1.5rem;
+}
+
+.individual-services-page .individual-comparison-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.individual-services-page .individual-comparison-card li + li {
+    margin-top: 0.7rem;
+}
+
+.individual-services-page .individual-comparison-card__closing {
+    margin: auto 0 0;
+    padding: 1.75rem 0 1rem;
+    color: var(--individual-gold-light);
+    font-weight: 600;
+}
+
+.individual-services-page .individual-comparison-card .btn {
+    align-self: flex-start;
+}
+
+.individual-services-page .individual-process-list {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.individual-services-page .individual-process-list::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 2.5rem;
+    right: 7%;
+    left: 7%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(216, 164, 58, 0.55), transparent);
+}
+
+.individual-services-page .individual-process-card {
+    position: relative;
+    z-index: 1;
+    min-height: 17rem;
+    padding: 1.55rem;
+    border-radius: 1.6rem 0.8rem 1.6rem 0.8rem;
+}
+
+.individual-services-page .individual-process-card__number {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: grid;
+    place-items: center;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(216, 164, 58, 0.55);
+    border-radius: 50%;
+    color: var(--individual-gold-light);
+    background: var(--individual-navy-light);
+    box-shadow: 0 0 22px rgba(216, 164, 58, 0.09);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.individual-services-page .individual-process-card h3 {
+    font-size: 1.3rem;
+}
+
+.individual-services-page .individual-process-card p {
+    margin: 0.8rem 0 0;
+}
+
+.individual-services-page .individual-process-card a,
+.individual-services-page .individual-faq__item a {
+    color: var(--individual-gold-light);
+    text-decoration-color: rgba(241, 213, 139, 0.45);
+    text-underline-offset: 0.18em;
+}
+
+.individual-services-page .individual-faq__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+}
+
+.individual-services-page .individual-faq__layout .individual-section-heading {
+    position: sticky;
+    top: calc(var(--header-height) + 2rem);
+    margin-bottom: 0;
+}
+
+.individual-services-page .individual-faq__list {
+    margin: 0;
+}
+
+.individual-services-page .individual-faq__item {
+    border-color: rgba(231, 211, 168, 0.2);
+    background: linear-gradient(180deg, rgba(11, 27, 47, 0.94), rgba(7, 18, 34, 0.96));
+}
+
+.individual-services-page .individual-faq__item summary {
+    color: var(--individual-white);
+}
+
+.individual-services-page .individual-faq__item[open] {
+    border-color: rgba(216, 164, 58, 0.44);
+}
+
+.individual-services-page .individual-final-cta {
+    padding-top: clamp(3.5rem, 7vw, 6rem);
+}
+
+.individual-services-page .individual-final-cta__panel {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(2.25rem, 6vw, 5.2rem);
+    border-color: rgba(216, 164, 58, 0.35);
+    border-radius: 2.4rem 0.9rem 2.4rem 0.9rem;
+    background:
+        radial-gradient(640px circle at 88% 15%, rgba(216, 164, 58, 0.14), transparent 55%),
+        linear-gradient(135deg, rgba(15, 39, 65, 0.98), rgba(6, 18, 36, 0.98));
+    box-shadow: 0 35px 90px rgba(2, 6, 23, 0.36), inset 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.individual-services-page .individual-final-cta__panel::after {
+    content: "";
+    position: absolute;
+    width: 25rem;
+    aspect-ratio: 1;
+    right: -7rem;
+    bottom: -12rem;
+    border: 1px solid rgba(241, 213, 139, 0.18);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.individual-services-page .individual-final-cta__panel > * {
+    position: relative;
+    z-index: 1;
+}
+
+.individual-services-page .individual-final-cta__panel > p:not(.individual-eyebrow) {
+    max-width: 51rem;
+    margin: 1.2rem 0 0;
+    font-size: 1.06rem;
+}
+
+.individual-services-page a:focus-visible,
+.individual-services-page summary:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 4px;
+}
+
+@media (max-width: 980px) {
+    .individual-services-page .individual-service-card__content {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+    }
+
+    .individual-services-page .individual-audience-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .individual-services-page .individual-process-list {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        padding-left: 1.25rem;
+    }
+
+    .individual-services-page .individual-process-list::before {
+        top: 2rem;
+        bottom: 2rem;
+        left: 2.05rem;
+        width: 1px;
+        height: auto;
+        background: linear-gradient(transparent, rgba(216, 164, 58, 0.55), transparent);
+    }
+
+    .individual-services-page .individual-process-card {
+        min-height: auto;
+        padding: 1.45rem 1.4rem 1.45rem 4.8rem;
+    }
+
+    .individual-services-page .individual-process-card__number {
+        position: absolute;
+        top: 1.25rem;
+        left: 0.65rem;
+        margin: 0;
+    }
+}
+
+@media (max-width: 800px) {
+    .individual-services-page .individual-container {
+        width: min(100% - 1.5rem, 44rem);
+    }
+
+    .individual-services-page .individual-hero {
+        min-height: auto;
+        padding: 5.5rem 0 4.75rem;
+    }
+
+    .individual-services-page .individual-hero::before {
+        right: -15rem;
+        width: 31rem;
+    }
+
+    .individual-services-page .individual-hero::after {
+        display: none;
+    }
+
+    .individual-services-page .individual-hero__copy,
+    .individual-services-page .individual-introduction__layout,
+    .individual-services-page .individual-comparison-grid,
+    .individual-services-page .individual-faq__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .individual-services-page .individual-hero__copy {
+        gap: 1rem;
+    }
+
+    .individual-services-page .individual-introduction__layout .individual-section-heading,
+    .individual-services-page .individual-faq__layout .individual-section-heading {
+        position: static;
+        margin-bottom: 0;
+    }
+
+    .individual-services-page .individual-introduction__copy {
+        padding-right: 0;
+    }
+}
+
+@media (max-width: 560px) {
+    .individual-services-page .individual-hero h1 {
+        font-size: clamp(2.75rem, 15vw, 4.2rem);
+    }
+
+    .individual-services-page .individual-section {
+        padding-block: 4.25rem;
+    }
+
+    .individual-services-page .individual-actions,
+    .individual-services-page .individual-actions .btn,
+    .individual-services-page .individual-service-card__footer,
+    .individual-services-page .individual-service-card__footer .btn,
+    .individual-services-page .individual-comparison-card .btn {
+        width: 100%;
+    }
+
+    .individual-services-page .individual-service-card__identity {
+        align-items: flex-start;
+    }
+
+    .individual-services-page .individual-service-card__support ul,
+    .individual-services-page .individual-audience-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .individual-services-page .individual-process-list {
+        padding-left: 0;
+    }
+
+    .individual-services-page .individual-process-list::before {
+        display: none;
+    }
+
+    .individual-services-page .individual-process-card {
+        padding: 3.9rem 1.3rem 1.4rem;
+    }
+
+    .individual-services-page .individual-process-card__number {
+        top: 1rem;
+        left: 1.25rem;
+    }
+
+    .individual-services-page .individual-final-cta__panel {
+        border-radius: 1.65rem 0.7rem 1.65rem 0.7rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .individual-services-page .individual-service-card,
+    .individual-services-page .btn {
+        transition: none;
+    }
+
+    .individual-services-page .individual-service-card:hover {
+        transform: none;
+    }
+}

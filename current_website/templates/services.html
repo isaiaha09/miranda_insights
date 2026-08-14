@@ -1,185 +1,213 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Services{% endblock %}
+{% block title %}Operational Services | Miranda Insights{% endblock %}
 
 {% block body_class %}services-page{% endblock %}
 
 {% block extra_css %}
   <link rel="stylesheet" href="{% static 'css/marketing-pages.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/services.css' %}" />
 {% endblock %}
 
 {% block content %}
-  <section class="marketing-shell container">
-    <header class="marketing-hero marketing-hero-wide">
-      <p class="marketing-eyebrow">Services</p>
-      <h1>Structured data, survey, evaluation, and web services with a clear service catalog.</h1>
-      <p class="marketing-lead">Miranda Insights works with school districts, agencies, nonprofits, and organizations that need defined service options, practical reporting support, and a client portal where they can stay aligned, communicate directly, and book time with the team.</p>
-      <div class="marketing-actions">
-        <a class="btn btn-primary" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=booking{% else %}{% url 'dashboard' %}{% endif %}">Book Through Portal</a>
-        <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Us</a>
-      </div>
-    </header>
-
-    <section class="marketing-section" aria-labelledby="services-core-heading">
-      <div class="marketing-section-head">
-        <p class="marketing-kicker">Service Catalog</p>
-        <h2 id="services-core-heading">Current service IDs and delivery types</h2>
-        <p>These offerings are the defined service options currently represented by Miranda Insights.</p>
-      </div>
-      <div class="card-grid card-grid-services">
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-001</span>
-            <span class="marketing-badge">Data Project</span>
-          </div>
-          <h3>Single Data Project</h3>
-          <p>A single analysis project built from CSV or XLSX files.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-002</span>
-            <span class="marketing-badge">Data Project</span>
-          </div>
-          <h3>Multi-Data Project</h3>
-          <p>Multiple analysis projects built from CSV or XLSX files.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-003</span>
-            <span class="marketing-badge">InsightSurveys</span>
-          </div>
-          <h3>Single Survey/Test Non-Recurring</h3>
-          <p>A single survey analysis for one distinct survey administered and analyzed once using InsightSurveys for data collection. Miranda Insights offers both standard survey options and a custom survey add-on.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-004</span>
-            <span class="marketing-badge">InsightSurveys</span>
-          </div>
-          <h3>Single Survey/Test Recurring</h3>
-          <p>Multiple survey analyses for one distinct survey administered and analyzed more than once using InsightSurveys for data collection, with standard survey options and a custom survey add-on.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-005</span>
-            <span class="marketing-badge">InsightSurveys</span>
-          </div>
-          <h3>Multi-Survey/Test Non-Recurring</h3>
-          <p>Multiple survey analyses for multiple different surveys, each administered and analyzed once using InsightSurveys for data collection, with standard survey options and a custom survey add-on.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-006</span>
-            <span class="marketing-badge">InsightSurveys</span>
-          </div>
-          <h3>Multi-Survey/Test Recurring</h3>
-          <p>Multiple survey analyses for multiple different surveys, each administered and analyzed more than once using InsightSurveys for data collection, with standard survey options and a custom survey add-on.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-007</span>
-            <span class="marketing-badge">Evaluation</span>
-          </div>
-          <h3>Research Design &amp; Program Eval</h3>
-          <p>A custom research design or program evaluation developed in collaboration with the client to solidify methodology before administering data processes and analyzing results.</p>
-        </article>
-        <article class="marketing-card">
-          <div class="marketing-card-meta">
-            <span class="marketing-card-tag">S-008</span>
-            <span class="marketing-badge">Web</span>
-          </div>
-          <h3>Website Development &amp; Hosting</h3>
-          <p>A single website developed and hosted for a client with their desired customizations.</p>
-        </article>
+  <div class="services-shell">
+    <section class="services-hero" aria-labelledby="services-hero-heading">
+      <div class="services-container services-hero__inner">
+        <p class="services-eyebrow">Project-Based Professional Services</p>
+        <h1 id="services-hero-heading">Operational Services</h1>
+        <div class="services-hero__copy">
+          <p>Miranda Insights provides professional consulting and systems development services designed to help individuals, businesses, schools, nonprofits, and community organizations operate more effectively. Every engagement is customized to the client’s goals, ensuring that recommendations and deliverables are practical, sustainable, and built to support long-term success.</p>
+          <p>Whether you’re looking to organize operations, analyze information, improve digital infrastructure, or develop a custom solution, Miranda Insights works collaboratively to build systems that create measurable value.</p>
+        </div>
+        <div class="services-actions">
+          <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+          <a class="btn btn-ghost" href="#service-areas">Explore Service Areas</a>
+        </div>
       </div>
     </section>
 
-    <section class="marketing-section marketing-section-split" aria-labelledby="services-fit-heading">
-      <article class="marketing-panel">
-        <p class="marketing-kicker">Who We Work With</p>
-        <h2 id="services-fit-heading">Built for mission-driven teams</h2>
-        <ul class="marketing-list">
-          <li>School districts and education-focused teams</li>
-          <li>Government and public agencies</li>
-          <li>Organizations and nonprofits</li>
-          <li>Other groups that need structured reporting and better visibility</li>
-        </ul>
-      </article>
-      <article class="marketing-panel">
-        <p class="marketing-kicker">How We Work</p>
-        <h2>Simple process, visible progress</h2>
-        <ol class="marketing-list marketing-list-numbered">
-          <li>Discovery</li>
-          <li>Data Analysis</li>
-          <li>Insight Development</li>
-          <li>Reporting and Communication</li>
-        </ol>
-      </article>
-    </section>
-
-    <section class="marketing-section" aria-labelledby="services-portal-heading">
-      <div class="marketing-section-head">
-        <p class="marketing-kicker">Client Experience</p>
-        <h2 id="services-portal-heading">Projects do not disappear into email threads</h2>
-        <p>Active clients have access to a secure portal experience that keeps project work visible, organized, and schedulable.</p>
-      </div>
-      <div class="card-grid card-grid-three-up">
-        <article class="marketing-card">
-          <h3>Project tracking</h3>
-          <p>Clients can monitor active projects, view progress percentages, and see current subtasks and next steps.</p>
-        </article>
-        <article class="marketing-card">
-          <h3>Deliverable visibility</h3>
-          <p>Reports and update history stay accessible in one place so deliverables are easier to review over time.</p>
-        </article>
-        <article class="marketing-card">
-          <h3>Booking and scheduling</h3>
-          <p>The client portal includes booking access so clients can schedule consultations, project touchpoints, and follow-up conversations from the same workspace.</p>
-        </article>
-        <article class="marketing-card">
-          <h3>Direct communication</h3>
-          <p>The portal supports project messaging and file or link sharing so questions and updates remain connected to the work.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="marketing-section" aria-labelledby="services-deliverables-heading">
-      <div class="marketing-section-head">
-        <p class="marketing-kicker">Deliverable Examples</p>
-        <h2 id="services-deliverables-heading">Sample files from client-ready work</h2>
-        <p>These examples show the kinds of dashboard, workbook, presentation, and documentation files Miranda Insights can prepare as part of a project.</p>
-      </div>
-      <div class="card-grid card-grid-two-up">
-        {% for example in deliverable_examples %}
-          <article class="marketing-card">
-            <div class="marketing-card-meta">
-              <span class="marketing-card-tag">Example {{ forloop.counter }}</span>
-              <span class="marketing-badge">{{ example.file_type }}</span>
+    <section class="services-section services-areas" id="service-areas" aria-labelledby="service-areas-heading">
+      <div class="services-container">
+        <header class="services-section-heading services-section-heading--centered">
+          <p class="services-eyebrow">Customized to the Work</p>
+          <h2 id="service-areas-heading">Our Service Areas</h2>
+          <p>Four complementary areas provide a clear starting point. Each project is shaped around the client’s goals rather than a one-size-fits-all package.</p>
+        </header>
+        <div class="services-area-grid">
+          <article class="service-area-card">
+            <p class="service-area-card__code">INT-001</p>
+            <h3>Operational Intelligence</h3>
+            <p>Operational Intelligence focuses on helping clients make informed decisions through research, analytics, and strategic evaluation.</p>
+            <div class="service-area-card__details">
+              <h4>Example Services</h4>
+              <ul>
+                <li>Research &amp; Analysis</li>
+                <li>Program Evaluation</li>
+                <li>Survey Design &amp; Administration</li>
+                <li>Data Analysis</li>
+                <li>Interactive Dashboards</li>
+                <li>Executive Reporting</li>
+                <li>Strategic Planning Support</li>
+                <li>Decision Support</li>
+              </ul>
             </div>
-            <h3>{{ example.title }}</h3>
-            <p>{{ example.description }}</p>
-            <div class="marketing-actions">
-              <a class="btn btn-primary" href="{% static example.preview_static_path %}" target="_blank" rel="noopener">{{ example.cta_label }}</a>
-              <a class="btn btn-ghost" href="{% static example.download_static_path %}" download>Download</a>
+            <div class="service-area-card__fit">
+              <h4>Ideal For</h4>
+              <p>Organizations or individuals seeking to better understand information, evaluate performance, or support strategic decision-making.</p>
             </div>
           </article>
-        {% endfor %}
+
+          <article class="service-area-card">
+            <p class="service-area-card__code">INT-002</p>
+            <h3>Operational Services</h3>
+            <p>Operational Services help clients organize the systems that support their daily work. These services focus on improving efficiency, organization, documentation, and long-term sustainability.</p>
+            <div class="service-area-card__details">
+              <h4>Example Services</h4>
+              <ul>
+                <li>Operational Documentation</li>
+                <li>Standard Operating Procedures (SOPs)</li>
+                <li>Workflow Development</li>
+                <li>Digital Organization</li>
+                <li>Cloud Storage Organization</li>
+                <li>Knowledge Management</li>
+                <li>Administrative System Development</li>
+                <li>Technology Organization</li>
+                <li>Process Improvement</li>
+              </ul>
+            </div>
+            <div class="service-area-card__fit">
+              <h4>Ideal For</h4>
+              <p>Anyone looking to improve organization, streamline operations, or build sustainable systems for personal or professional use.</p>
+            </div>
+          </article>
+
+          <article class="service-area-card">
+            <p class="service-area-card__code">DGT-001</p>
+            <h3>Digital Presence Systems</h3>
+            <p>Digital Presence Systems help clients establish and maintain a professional online presence while improving communication with their audiences.</p>
+            <div class="service-area-card__details">
+              <h4>Example Services</h4>
+              <ul>
+                <li>Professional Websites</li>
+                <li>Client Portals</li>
+                <li>Booking Systems</li>
+                <li>Contact Forms</li>
+                <li>Hosting &amp; Maintenance</li>
+                <li>Website Updates</li>
+                <li>Digital Resource Pages</li>
+                <li>Business Information Systems</li>
+              </ul>
+            </div>
+            <div class="service-area-card__fit">
+              <h4>Ideal For</h4>
+              <p>Individuals, businesses, and organizations seeking a modern, functional, and professional digital presence.</p>
+            </div>
+          </article>
+
+          <article class="service-area-card">
+            <p class="service-area-card__code">DGT-002</p>
+            <h3>Intelligence Application Development</h3>
+            <p>Custom applications designed to solve operational challenges through technology and automation.</p>
+            <div class="service-area-card__details">
+              <h4>Example Services</h4>
+              <ul>
+                <li>Custom Web Applications</li>
+                <li>Internal Business Tools</li>
+                <li>Workflow Automation</li>
+                <li>Process Digitization</li>
+                <li>Database Development</li>
+                <li>Custom Software Solutions</li>
+                <li>API Integrations</li>
+              </ul>
+            </div>
+            <div class="service-area-card__fit">
+              <h4>Ideal For</h4>
+              <p>Clients with unique operational needs that cannot be solved through off-the-shelf software.</p>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section class="marketing-section" aria-labelledby="services-support-heading">
-      <article class="marketing-banner">
-        <div>
-          <p class="marketing-kicker">Ongoing Support</p>
-          <h2 id="services-support-heading">R-001: Retainer Agreement</h2>
-          <p>An agreement that guarantees Miranda Insights services for a client’s data needs over the contract duration while providing priority service and lower service rates.</p>
-        </div>
-        <div class="marketing-actions marketing-actions-stacked">
-          <a class="btn btn-primary" href="{% if request.GET.mobile_app or request.COOKIES.insights_mobile_app %}{% url 'dashboard' %}?mobile_focus=booking{% else %}{% url 'dashboard' %}{% endif %}">Book Retainer Consultation</a>
-          <a class="btn btn-ghost" href="{% url 'contact_support' %}">Ask About R-001</a>
-        </div>
-      </article>
+    <section class="services-section services-process" aria-labelledby="services-process-heading">
+      <div class="services-container">
+        <header class="services-section-heading">
+          <p class="services-eyebrow">Engagement Process</p>
+          <h2 id="services-process-heading">Our Process</h2>
+          <p>A clear, collaborative process keeps the work aligned from the first conversation through final delivery.</p>
+        </header>
+        <ol class="services-process-list">
+          <li class="services-process-card"><span class="services-process-card__number" aria-hidden="true">01</span><h3>Discovery</h3><p>Meet to discuss goals, challenges, project scope, and determine the most appropriate services.</p></li>
+          <li class="services-process-card"><span class="services-process-card__number" aria-hidden="true">02</span><h3>Planning</h3><p>Develop a project plan outlining objectives, deliverables, timeline, and estimated investment.</p></li>
+          <li class="services-process-card"><span class="services-process-card__number" aria-hidden="true">03</span><h3>Development</h3><p>Complete the agreed-upon work while maintaining regular communication and progress updates.</p></li>
+          <li class="services-process-card"><span class="services-process-card__number" aria-hidden="true">04</span><h3>Review</h3><p>Present completed deliverables, gather feedback, and make final refinements where appropriate.</p></li>
+          <li class="services-process-card"><span class="services-process-card__number" aria-hidden="true">05</span><h3>Ongoing Support</h3><p>Clients may conclude the project or continue through an <a href="{% url 'operational_partnership' %}">Operational Partnership</a> for continued support and system improvement.</p></li>
+        </ol>
+      </div>
     </section>
-  </section>
+
+    <section class="services-section services-deliverables" aria-labelledby="services-deliverables-heading">
+      <div class="services-container">
+        <header class="services-section-heading services-section-heading--centered">
+          <p class="services-eyebrow">Examples of the Work</p>
+          <h2 id="services-deliverables-heading">Possible Deliverables</h2>
+          <p>Real examples show how analysis, reporting, and documentation can be prepared for practical client use.</p>
+        </header>
+        <div class="services-deliverable-grid">
+          {% for example in deliverable_examples %}
+            <article class="services-deliverable-card">
+              <a class="services-deliverable-card__preview" href="{% static example.preview_static_path %}" target="_blank" rel="noopener noreferrer" aria-label="{{ example.cta_label }}: {{ example.title }}">
+                {% if example.thumbnail_static_path %}
+                  <img src="{% static example.thumbnail_static_path %}" alt="{{ example.thumbnail_alt }}" loading="lazy" />
+                {% else %}
+                  <span class="services-deliverable-card__fallback" aria-hidden="true"><span>{{ example.file_type }}</span><strong>{{ example.title }}</strong><small>{{ example.preview_fallback }}</small></span>
+                {% endif %}
+              </a>
+              <div class="services-deliverable-card__body">
+                <div class="services-deliverable-card__meta"><span>Example {{ forloop.counter }}</span><span>{{ example.file_type }}</span></div>
+                <h3>{{ example.title }}</h3>
+                <p>{{ example.description }}</p>
+                <div class="services-actions services-actions--compact">
+                  <a class="btn btn-primary" href="{% static example.preview_static_path %}" target="_blank" rel="noopener noreferrer">{{ example.cta_label }}</a>
+                  <a class="btn btn-ghost" href="{% static example.download_static_path %}" download>Download</a>
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+        <p class="services-deliverables__additional">Other possible deliverables include SOPs, workflow diagrams, websites, client portals, and digital organization systems.</p>
+      </div>
+    </section>
+
+    <section class="services-section services-faq" aria-labelledby="services-faq-heading">
+      <div class="services-container services-faq__layout">
+        <header class="services-section-heading">
+          <p class="services-eyebrow">Questions &amp; Answers</p>
+          <h2 id="services-faq-heading">Frequently Asked Questions</h2>
+        </header>
+        <div class="faq-list services-faq__list">
+          <details class="faq-item services-faq__item" open><summary>Do you offer standardized service packages?</summary><p>No. Every engagement is customized to the client’s goals and project requirements.</p></details>
+          <details class="faq-item services-faq__item"><summary>Can multiple services be combined?</summary><p>Yes. Many projects include multiple service areas working together to create a complete operational solution.</p></details>
+          <details class="faq-item services-faq__item"><summary>Do you work with individuals as well as organizations?</summary><p>Yes. Miranda Insights works with individuals, entrepreneurs, businesses, schools, nonprofits, and community organizations.</p></details>
+          <details class="faq-item services-faq__item"><summary>How are projects priced?</summary><p>Pricing varies depending on project scope, complexity, and estimated time requirements. A Discovery Session is the first step toward developing a customized proposal.</p></details>
+          <details class="faq-item services-faq__item"><summary>Do you provide ongoing support?</summary><p>Yes. Clients may continue working with Miranda Insights through an <a href="{% url 'operational_partnership' %}">Operational Partnership</a> after project completion.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="services-section services-final-cta" aria-labelledby="services-final-cta-heading">
+      <div class="services-container">
+        <div class="services-final-cta__panel">
+          <p class="services-eyebrow">Ready to Start?</p>
+          <h2 id="services-final-cta-heading">Let’s Build a Solution Together</h2>
+          <p>Every project begins with a conversation. Schedule a Discovery Session to discuss your goals, explore possibilities, and determine how Miranda Insights can help support your next project.</p>
+          <div class="services-actions">
+            <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+            <a class="btn btn-ghost" href="{% url 'operational_partnership' %}">Learn About Operational Partnership</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 {% endblock %}

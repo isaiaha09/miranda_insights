@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Individual Services | Miranda Insights{% endblock %}
+
+{% block body_class %}individual-services-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/marketing-pages.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/individual-services.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <div class="individual-shell">
+    <section class="individual-hero" aria-labelledby="individual-hero-heading">
+      <div class="individual-container individual-hero__inner">
+        <p class="individual-eyebrow">Focused Individual Support</p>
+        <h1 id="individual-hero-heading">Individual Services</h1>
+        <div class="individual-hero__copy">
+          <p>Sometimes you don’t need a complete operational system. You need focused support in one area.</p>
+          <p>Miranda Insights provides personalized academic, physical, and developmental support built around your goals, priorities, and progress.</p>
+        </div>
+        <div class="individual-actions">
+          <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+          <a class="btn btn-ghost" href="#individual-services">Explore Individual Services</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="individual-section individual-introduction" aria-labelledby="individual-introduction-heading">
+      <div class="individual-container individual-introduction__layout">
+        <header class="individual-section-heading">
+          <p class="individual-eyebrow">Support with Purpose</p>
+          <h2 id="individual-introduction-heading">Focused Support. Built Around Your Goals.</h2>
+          <p class="individual-framework-statement">The right support should fit the goal.</p>
+        </header>
+        <div class="individual-introduction__copy">
+          <p>Individual Services are designed for people who want focused support in a specific area. Each engagement is personalized around your goals, current needs, and preferred level of structure.</p>
+          <p>Whether you’re strengthening academic skills, improving physical performance, or looking for greater organization and accountability, Miranda Insights provides practical support designed to help you keep progressing.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="individual-section individual-services" id="individual-services" aria-labelledby="individual-services-heading">
+      <div class="individual-container">
+        <header class="individual-section-heading individual-section-heading--centered">
+          <p class="individual-eyebrow">Three Ways to Work Together</p>
+          <h2 id="individual-services-heading">Individual Services</h2>
+          <p>Each service offers focused support within the broader Miranda Insights development framework.</p>
+        </header>
+
+        <div class="individual-service-list">
+          <article class="individual-service-card individual-service-card--academic">
+            <div class="individual-service-card__identity">
+              <span class="individual-service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" focusable="false"><path d="M7 10.5h11.5c3 0 5.5 2.5 5.5 5.5v23c0-3-2.5-5.5-5.5-5.5H7z"/><path d="M41 10.5H29.5c-3 0-5.5 2.5-5.5 5.5v23c0-3 2.5-5.5 5.5-5.5H41z"/><path d="M13 17h6M29 17h6M13 22h6M29 22h6"/></svg>
+              </span>
+              <div>
+                <p class="individual-service-card__area-label">Development Area</p>
+                <p class="individual-service-card__area">Academic Development</p>
+              </div>
+            </div>
+            <div class="individual-service-card__content">
+              <div class="individual-service-card__overview">
+                <h3>Academic Tutoring</h3>
+                <p>Personalized academic support designed to strengthen understanding, organization, confidence, and independent learning.</p>
+                <p class="individual-service-card__note">Subject availability is confirmed during Discovery, with particular strengths in mathematics, quantitative reasoning, organization, and learning strategy.</p>
+              </div>
+              <div class="individual-service-card__support">
+                <h4>Areas of Support</h4>
+                <ul>
+                  <li>Mathematics &amp; Quantitative Subjects</li>
+                  <li>Homework &amp; Assignment Support within Agreed Subject Areas</li>
+                  <li>Study Planning</li>
+                  <li>Academic Organization</li>
+                  <li>Problem-Solving Strategies</li>
+                  <li>Test Preparation</li>
+                  <li>Learning Accountability</li>
+                  <li>Goal Planning</li>
+                </ul>
+              </div>
+            </div>
+            <div class="individual-service-card__footer">
+              <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Discuss Academic Support</a>
+            </div>
+          </article>
+
+          <article class="individual-service-card individual-service-card--fitness">
+            <div class="individual-service-card__identity">
+              <span class="individual-service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" focusable="false"><path d="M6 19v10M11 15v18M16 20v8M32 20v8M37 15v18M42 19v10M16 24h16"/></svg>
+              </span>
+              <div>
+                <p class="individual-service-card__area-label">Development Area</p>
+                <p class="individual-service-card__area">Physical Development</p>
+              </div>
+            </div>
+            <div class="individual-service-card__content">
+              <div class="individual-service-card__overview">
+                <h3>Fitness Coaching</h3>
+                <p>Structured fitness support designed around consistency, performance, sustainable habits, and individual goals.</p>
+              </div>
+              <div class="individual-service-card__support">
+                <h4>Areas of Support</h4>
+                <ul>
+                  <li>Training Structure</li>
+                  <li>Fitness Goal Planning</li>
+                  <li>Exercise Organization</li>
+                  <li>Accountability</li>
+                  <li>Strength Development</li>
+                  <li>Performance Development</li>
+                  <li>Habit Development</li>
+                  <li>Progress Tracking</li>
+                </ul>
+              </div>
+            </div>
+            <div class="individual-service-card__footer">
+              <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Discuss Fitness Coaching</a>
+            </div>
+          </article>
+
+          <article class="individual-service-card individual-service-card--mentorship">
+            <div class="individual-service-card__identity">
+              <span class="individual-service-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48" focusable="false"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="10"/><path d="m29 19-3 7-7 3 3-7z"/><path d="M24 7v4M24 37v4M7 24h4M37 24h4"/></svg>
+              </span>
+              <div>
+                <p class="individual-service-card__area-label">Development Areas</p>
+                <p class="individual-service-card__area">Personal · Professional · Operational</p>
+              </div>
+            </div>
+            <div class="individual-service-card__content">
+              <div class="individual-service-card__overview">
+                <h3>Mentorship &amp; Accountability</h3>
+                <p>Practical guidance and accountability for people working toward goals that benefit from greater structure, organization, and consistent follow-through.</p>
+                <p class="individual-service-card__principle">Direction · Structure · Accountability</p>
+              </div>
+              <div class="individual-service-card__support">
+                <h4>Areas of Support</h4>
+                <ul>
+                  <li>Goal Planning</li>
+                  <li>Accountability</li>
+                  <li>Personal Organization</li>
+                  <li>Professional Development</li>
+                  <li>Routine Development</li>
+                  <li>Project Planning</li>
+                  <li>Decision Support</li>
+                  <li>Resource Organization</li>
+                  <li>Digital Organization</li>
+                  <li>Progress Reviews</li>
+                </ul>
+              </div>
+            </div>
+            <div class="individual-service-card__footer">
+              <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Discuss Mentorship &amp; Accountability</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="individual-section individual-audiences" aria-labelledby="individual-audiences-heading">
+      <div class="individual-container">
+        <header class="individual-section-heading individual-section-heading--centered">
+          <p class="individual-eyebrow">Who We Support</p>
+          <h2 id="individual-audiences-heading">Support That Meets You Where You Are</h2>
+          <p>Individual Services are available to people working toward meaningful academic, physical, personal, professional, or operational goals.</p>
+        </header>
+        <div class="individual-audience-grid" aria-label="Examples of people Individual Services can support">
+          <div class="individual-audience-card"><span aria-hidden="true">01</span><h3>Students</h3></div>
+          <div class="individual-audience-card"><span aria-hidden="true">02</span><h3>Athletes</h3></div>
+          <div class="individual-audience-card"><span aria-hidden="true">03</span><h3>Professionals</h3></div>
+          <div class="individual-audience-card"><span aria-hidden="true">04</span><h3>Entrepreneurs</h3></div>
+          <div class="individual-audience-card"><span aria-hidden="true">05</span><h3>Individuals</h3></div>
+          <div class="individual-audience-card"><span aria-hidden="true">06</span><h3>People Navigating New Goals or Projects</h3></div>
+        </div>
+        <p class="individual-audiences__closing">If you have a goal and believe greater structure, support, or accountability could help you move it forward, we can start there.</p>
+      </div>
+    </section>
+
+    <section class="individual-section individual-comparison" aria-labelledby="individual-comparison-heading">
+      <div class="individual-container">
+        <header class="individual-section-heading individual-section-heading--centered">
+          <p class="individual-eyebrow">Flexible Ways to Work</p>
+          <h2 id="individual-comparison-heading">What Kind of Support Fits Your Goal?</h2>
+          <p>Either model can be your starting point. The right fit depends on the focus, breadth, and continuity of support you need.</p>
+        </header>
+        <div class="individual-comparison-grid">
+          <article class="individual-comparison-card">
+            <p class="individual-card-label">Focused Support</p>
+            <h3>Individual Services</h3>
+            <h4>Best for:</h4>
+            <ul>
+              <li>One focused area</li>
+              <li>Specific skill development</li>
+              <li>Tutoring</li>
+              <li>Fitness coaching</li>
+              <li>Focused mentorship</li>
+              <li>Individual appointments</li>
+              <li>Goals that do not require ongoing multi-area support</li>
+            </ul>
+            <p class="individual-comparison-card__closing">Focused support when you need it.</p>
+            <a class="btn btn-ghost" href="#individual-services">Explore Individual Services</a>
+          </article>
+          <article class="individual-comparison-card">
+            <p class="individual-card-label">Ongoing Collaboration</p>
+            <h3>Operational Partnership</h3>
+            <h4>Best for:</h4>
+            <ul>
+              <li>Multiple goals</li>
+              <li>Ongoing accountability</li>
+              <li>Long-term development</li>
+              <li>Multiple development areas</li>
+              <li>Continued operational guidance</li>
+              <li>More consistent collaboration</li>
+            </ul>
+            <p class="individual-comparison-card__closing">Ongoing support as your goals evolve.</p>
+            <a class="btn btn-ghost" href="{% url 'operational_partnership' %}">Explore Operational Partnership</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="individual-section individual-process" aria-labelledby="individual-process-heading">
+      <div class="individual-container">
+        <header class="individual-section-heading">
+          <p class="individual-eyebrow">How Individual Services Work</p>
+          <h2 id="individual-process-heading">Simple, Focused, Personal</h2>
+        </header>
+        <ol class="individual-process-list">
+          <li class="individual-process-card"><span class="individual-process-card__number" aria-hidden="true">01</span><h3>Connect</h3><p>Schedule a Discovery Session and tell us what you’re working toward.</p></li>
+          <li class="individual-process-card"><span class="individual-process-card__number" aria-hidden="true">02</span><h3>Define the Goal</h3><p>Together, we’ll identify the type of support, priorities, and structure that best fit your needs.</p></li>
+          <li class="individual-process-card"><span class="individual-process-card__number" aria-hidden="true">03</span><h3>Work Together</h3><p>Meet for focused sessions centered around your goals and progress.</p></li>
+          <li class="individual-process-card"><span class="individual-process-card__number" aria-hidden="true">04</span><h3>Adjust as You Grow</h3><p>Continue, pause, change focus, or explore an <a href="{% url 'operational_partnership' %}">Operational Partnership</a> as your needs evolve.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="individual-section individual-faq" aria-labelledby="individual-faq-heading">
+      <div class="individual-container individual-faq__layout">
+        <header class="individual-section-heading">
+          <p class="individual-eyebrow">Questions &amp; Answers</p>
+          <h2 id="individual-faq-heading">Frequently Asked Questions</h2>
+        </header>
+        <div class="faq-list individual-faq__list">
+          <details class="faq-item individual-faq__item" open><summary>Who can use Individual Services?</summary><p>Individual Services are available to students, athletes, professionals, entrepreneurs, and other individuals seeking focused support around specific goals.</p></details>
+          <details class="faq-item individual-faq__item"><summary>Do I need an Operational Partnership first?</summary><p>No. Individual Services and <a href="{% url 'operational_partnership' %}">Operational Partnership</a> are separate ways to work with Miranda Insights. You can begin with whichever structure best fits your goals.</p></details>
+          <details class="faq-item individual-faq__item"><summary>Can I use more than one Individual Service?</summary><p>Yes. Your needs may change over time, and different Individual Services may support different goals. If your support becomes broader or more ongoing, an <a href="{% url 'operational_partnership' %}">Operational Partnership</a> may also be worth exploring.</p></details>
+          <details class="faq-item individual-faq__item"><summary>How are sessions scheduled?</summary><p>Scheduling and availability are discussed during the Discovery process. Available sessions can then be coordinated based on the agreed service and schedule.</p></details>
+          <details class="faq-item individual-faq__item"><summary>Are Individual Services customized?</summary><p>Yes. Individual Services are structured around the individual’s goals, current needs, and appropriate level of support.</p></details>
+          <details class="faq-item individual-faq__item"><summary>Where can I find current pricing?</summary><p>Current service pricing and engagement details can be discussed during a Discovery Session.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="individual-section individual-final-cta" aria-labelledby="individual-final-cta-heading">
+      <div class="individual-container">
+        <div class="individual-final-cta__panel">
+          <p class="individual-eyebrow">Ready to Get Started?</p>
+          <h2 id="individual-final-cta-heading">Let’s Build Support Around Your Goals.</h2>
+          <p>Whether you’re focused on academics, fitness, personal organization, professional development, or simply becoming more consistent, the right support can help you keep moving forward.</p>
+          <div class="individual-actions">
+            <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+            <a class="btn btn-ghost" href="{% url 'operational_partnership' %}">Explore Operational Partnership</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

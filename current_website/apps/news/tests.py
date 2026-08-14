@@ -28,6 +28,20 @@ User = get_user_model()
 class PublicPageTests(TestCase):
 	DISCOVERY_URL = "https://calendar.notion.so/meet/mirandalegacy/discovery"
 
+	def _shared_navigation_blocks(self, response):
+		content = response.content.decode()
+		primary_start = content.index('<div class="nav-center" id="nav-menu">')
+		primary_end = content.index("</div>", primary_start)
+		actions_start = content.index('<div class="nav-right">')
+		actions_end = content.index("</div>", actions_start)
+		footer_start = content.index('<footer class="site-footer">')
+		footer_end = content.index("</footer>", footer_start)
+		return (
+			content[primary_start:primary_end],
+			content[actions_start:actions_end],
+			content[footer_start:footer_end],
+		)
+
 	def test_homepage_renders_redesign_sections_in_order(self):
 		response = self.client.get(reverse("home"))
 
@@ -81,6 +95,73 @@ class PublicPageTests(TestCase):
 		self.assertNotContains(response, ">Our Process<", html=False)
 		self.assertNotContains(response, ">Client Access<", html=False)
 		self.assertNotContains(response, ">What We Do<", html=False)
+
+	def test_shared_primary_navigation_uses_current_public_destinations(self):
+		expected_links = [
+			f'<a href="{reverse("about")}">About</a>',
+			f'<a href="{reverse("operational_partnership")}">Partnerships</a>',
+			f'<a href="{reverse("services")}">Services</a>',
+			f'<a href="{reverse("dashboard")}">Client Portal</a>',
+		]
+
+		for route_name in ("home", "about", "operational_partnership"):
+			with self.subTest(route_name=route_name):
+				response = self.client.get(reverse(route_name))
+				primary_nav, navigation_actions, _footer = self._shared_navigation_blocks(response)
+				link_positions = [primary_nav.index(link) for link in expected_links]
+
+				self.assertEqual(link_positions, sorted(link_positions))
+				self.assertNotIn(">Products</a>", primary_nav)
+				self.assertNotIn(">FAQ</a>", primary_nav)
+				self.assertNotIn(">Client Portal</a>", navigation_actions)
+
+	def test_shared_navigation_preserves_anonymous_portal_and_signup_behavior(self):
+		response = self.client.get(reverse("home"))
+		primary_nav, navigation_actions, _footer = self._shared_navigation_blocks(response)
+
+		self.assertIn(f'<a href="{reverse("dashboard")}">Client Portal</a>', primary_nav)
+		self.assertIn(f'<a class="signup" href="{reverse("signup")}">Sign Up</a>', navigation_actions)
+		self.assertNotIn(">Logout</button>", navigation_actions)
+
+		dashboard_response = self.client.get(reverse("dashboard"))
+		self.assertRedirects(
+			dashboard_response,
+			f'{reverse("login")}?next={reverse("dashboard")}',
+			fetch_redirect_response=False,
+		)
+
+	def test_shared_navigation_preserves_authenticated_logout_behavior(self):
+		user = User.objects.create_user(username="navclient", email="navclient@example.com", password="test-pass-123")
+		self.client.force_login(user)
+
+		response = self.client.get(reverse("home"))
+		primary_nav, navigation_actions, _footer = self._shared_navigation_blocks(response)
+
+		self.assertIn(f'<a href="{reverse("dashboard")}">Client Portal</a>', primary_nav)
+		self.assertIn(f'<form class="auth-action-form" action="{reverse("logout")}" method="post">', navigation_actions)
+		self.assertIn('name="csrfmiddlewaretoken"', navigation_actions)
+		self.assertIn(">Logout</button>", navigation_actions)
+		self.assertNotIn(">Sign Up</a>", navigation_actions)
+
+	def test_products_and_faq_remain_available_outside_primary_navigation(self):
+		response = self.client.get(reverse("home"))
+		primary_nav, _navigation_actions, footer = self._shared_navigation_blocks(response)
+
+		self.assertNotIn(f'href="{reverse("products")}"', primary_nav)
+		self.assertNotIn(f'href="{reverse("faq")}"', primary_nav)
+		self.assertIn(f'<a href="{reverse("products")}">Products</a>', footer)
+		self.assertIn(f'<a href="{reverse("faq")}">FAQ</a>', footer)
+		self.assertEqual(self.client.get(reverse("products")).status_code, 200)
+		self.assertEqual(self.client.get(reverse("faq")).status_code, 200)
+
+	def test_shared_mobile_menu_hooks_remain_available(self):
+		response = self.client.get(reverse("home"))
+
+		self.assertContains(response, 'id="nav-menu"', html=False)
+		self.assertContains(response, 'id="nav-hamburger"', html=False)
+		self.assertContains(response, 'aria-controls="nav-menu"', html=False)
+		self.assertContains(response, 'aria-expanded="false"', html=False)
+		self.assertContains(response, 'id="nav-overlay"', html=False)
 
 	def test_about_page_renders_approved_sections_in_order(self):
 		response = self.client.get(reverse("about"))
@@ -150,17 +231,435 @@ class PublicPageTests(TestCase):
 		self.assertNotContains(home_response, about_stylesheet)
 		self.assertNotContains(services_response, about_stylesheet)
 
-	def test_services_page_lists_deliverable_examples(self):
+	def test_operational_partnership_route_and_sections(self):
+		self.assertEqual(reverse("operational_partnership"), "/operational-partnership/")
+
+		response = self.client.get(reverse("operational_partnership"))
+
+		self.assertEqual(response.status_code, 200)
+		content = response.content.decode()
+		section_headings = [
+			"Build better systems through an ongoing partnership.",
+			"What is an Operational Partnership?",
+			"Who Can Benefit?",
+			"What Your Partnership May Include",
+			"Choose the Partnership That Fits Your Goals",
+			"Why Continue the Partnership?",
+			"Frequently Asked Questions",
+			"Let’s Grow Together",
+		]
+		section_positions = [content.index(heading) for heading in section_headings]
+		self.assertEqual(section_positions, sorted(section_positions))
+
+	def test_operational_partnership_renders_approved_cards_and_benefits(self):
+		response = self.client.get(reverse("operational_partnership"))
+
+		for audience in (
+			"Individuals",
+			"Entrepreneurs",
+			"Small Businesses",
+			"Schools &amp; Educational Organizations",
+			"Community Organizations &amp; Nonprofits",
+			"Returning Clients",
+		):
+			self.assertContains(response, audience)
+
+		for benefit in (
+			"Goal Planning &amp; Accountability",
+			"Strategic Guidance",
+			"Operational Consulting",
+			"Workflow &amp; Process Improvement",
+			"Project Planning",
+			"Digital Organization",
+			"Website &amp; Technology Support",
+			"Research &amp; Problem Solving",
+			"System Maintenance",
+			"Document Development",
+			"Resource Recommendations",
+			"Ongoing Communication",
+			"Progress Reviews",
+			"Implementation Support",
+		):
+			self.assertContains(response, benefit)
+
+		for level in (
+			"Essential Partnership",
+			"Growth Partnership",
+			"Professional Partnership",
+			"Executive Partnership",
+		):
+			self.assertContains(response, level)
+		for monthly_time in ("Up to 2 hours", "Up to 4 hours", "Up to 8 hours"):
+			self.assertContains(response, monthly_time)
+
+		for reason in (
+			"Consistent Accountability",
+			"Trusted Guidance",
+			"Flexible Support",
+			"Continued Improvement",
+			"Organized Progress",
+			"Long-Term Relationship",
+		):
+			self.assertContains(response, reason)
+
+	def test_operational_partnership_presents_two_flexible_paths(self):
+		response = self.client.get(reverse("operational_partnership"))
+
+		self.assertContains(response, "Flexible Ways to Work")
+		self.assertContains(response, "Project-Based Support")
+		self.assertContains(response, "Ongoing Partnership")
+		self.assertContains(response, "Begin with either path and move between them as your goals evolve.")
+		self.assertContains(response, f'href="{reverse("services")}"', html=False)
+		self.assertContains(response, 'href="#partnership-levels"', html=False)
+		self.assertNotContains(response, "Start with a Project")
+		self.assertNotContains(response, "Continue with an Operational Partnership")
+
+	def test_operational_partnership_uses_approved_ctas_and_semantic_faq(self):
+		response = self.client.get(reverse("operational_partnership"))
+
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
+		self.assertContains(response, 'target="_blank"', count=2, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=2, html=False)
+		self.assertContains(
+			response,
+			f'<a class="btn btn-ghost" href="{reverse("contact_support")}">Contact Miranda Insights</a>',
+			html=False,
+		)
+		self.assertContains(response, "<details", count=4, html=False)
+		self.assertContains(response, "Operational Partnership Agreement")
+		self.assertNotContains(response, "retainer")
+		self.assertNotContains(response, "subscription")
+
+	def test_operational_partnership_styles_are_isolated_and_products_remain(self):
+		partnership_response = self.client.get(reverse("operational_partnership"))
+		home_response = self.client.get(reverse("home"))
+		products_response = self.client.get(reverse("products"))
+		partnership_stylesheet = static("css/operational-partnership.css")
+
+		self.assertContains(partnership_response, partnership_stylesheet)
+		self.assertContains(partnership_response, 'class="dark-mode operational-partnership-page"', html=False)
+		self.assertNotContains(home_response, partnership_stylesheet)
+		self.assertNotContains(products_response, partnership_stylesheet)
+		self.assertContains(products_response, "Current assessment and framework IDs")
+		self.assertContains(products_response, "CaliSchools Insights")
+
+	def test_operational_partnership_renders_in_mobile_webview_context(self):
+		response = self.client.get(reverse("operational_partnership"), {"mobile_app": "1"})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, "Build better systems through an ongoing partnership.")
+		self.assertContains(response, static("css/operational-partnership.css"))
+
+	def test_services_page_route_and_sections_render_in_order(self):
+		self.assertEqual(reverse("services"), "/services/")
+
 		response = self.client.get(reverse("services"))
 
 		self.assertEqual(response.status_code, 200)
-		self.assertContains(response, "Deliverable Examples")
-		self.assertContains(response, "Student Dashboard")
-		self.assertContains(response, static("deliverables/student-dashboard.html"))
-		self.assertContains(response, static("deliverables/student-data-analysis.png"))
-		self.assertContains(response, static("deliverables/student-data-analysis.xlsx"))
-		self.assertContains(response, static("deliverables/student-dashboard-presentation.pdf"))
-		self.assertContains(response, static("deliverables/deliverable-documentation.pdf"))
+		content = response.content.decode()
+		section_headings = [
+			"Operational Services",
+			"Our Service Areas",
+			"Our Process",
+			"Possible Deliverables",
+			"Frequently Asked Questions",
+			"Let’s Build a Solution Together",
+		]
+		section_positions = [content.index(heading) for heading in section_headings]
+		self.assertEqual(section_positions, sorted(section_positions))
+		self.assertContains(response, "Project-Based Professional Services")
+		self.assertContains(
+			response,
+			"Miranda Insights provides professional consulting and systems development services designed to help individuals, businesses, schools, nonprofits, and community organizations operate more effectively.",
+		)
+		self.assertContains(
+			response,
+			"Whether you’re looking to organize operations, analyze information, improve digital infrastructure, or develop a custom solution",
+		)
+
+	def test_services_page_renders_four_formal_service_areas(self):
+		response = self.client.get(reverse("services"))
+
+		for service_code, service_name in (
+			("INT-001", "Operational Intelligence"),
+			("INT-002", "Operational Services"),
+			("DGT-001", "Digital Presence Systems"),
+			("DGT-002", "Intelligence Application Development"),
+		):
+			self.assertContains(response, service_code)
+			self.assertContains(response, service_name)
+
+		for example_service in (
+			"Research &amp; Analysis",
+			"Standard Operating Procedures (SOPs)",
+			"Cloud Storage Organization",
+			"Professional Websites",
+			"Business Information Systems",
+			"Custom Web Applications",
+			"API Integrations",
+		):
+			self.assertContains(response, example_service, html=False)
+		self.assertContains(response, "Ideal For", count=4)
+
+	def test_services_page_renders_approved_process_and_partnership_path(self):
+		response = self.client.get(reverse("services"))
+		content = response.content.decode()
+		steps = ["Discovery", "Planning", "Development", "Review", "Ongoing Support"]
+		step_positions = [content.index(f">{step}<") for step in steps]
+
+		self.assertEqual(step_positions, sorted(step_positions))
+		self.assertContains(response, "Clients may conclude the project or continue through an")
+		self.assertContains(response, f'href="{reverse("operational_partnership")}"', count=4, html=False)
+
+	def test_services_page_features_exactly_four_real_deliverables(self):
+		response = self.client.get(reverse("services"))
+
+		self.assertContains(response, 'class="services-deliverable-card"', count=4, html=False)
+		for title in (
+			"Dashboard",
+			"Data Analysis Workbook",
+			"Dashboard Presentation",
+			"Project Documentation",
+		):
+			self.assertContains(response, title)
+		self.assertContains(
+			response,
+			"Interactive HTML dashboard example showing how processed data can be delivered in a browser-ready format.",
+		)
+		self.assertNotContains(response, ">Student Dashboard<", html=False)
+		self.assertNotContains(response, ">Student Data Analysis Workbook<", html=False)
+		self.assertNotContains(response, ">Student Dashboard Presentation<", html=False)
+		self.assertContains(response, 'alt="Cover page of the Project Documentation technical report"', html=False)
+
+		for asset_path in (
+			"deliverables/student-dashboard.html",
+			"deliverables/student-data-analysis.png",
+			"deliverables/student-data-analysis.xlsx",
+			"deliverables/student-dashboard-presentation.pdf",
+			"deliverables/deliverable-documentation.pdf",
+			"img/services/student-dashboard-preview.png",
+			"img/services/student-data-analysis-preview.png",
+			"img/services/student-dashboard-presentation-preview.png",
+			"img/services/project-documentation-preview.png",
+		):
+			self.assertContains(response, static(asset_path))
+
+		self.assertContains(
+			response,
+			"Other possible deliverables include SOPs, workflow diagrams, websites, client portals, and digital organization systems.",
+			count=1,
+		)
+		self.assertNotContains(response, "services-deliverables__additional-card")
+
+	def test_services_page_uses_approved_faq_and_calls_to_action(self):
+		response = self.client.get(reverse("services"))
+
+		self.assertContains(response, "<details", count=5, html=False)
+		self.assertContains(response, '<details class="faq-item services-faq__item" open>', count=1, html=False)
+		for question in (
+			"Do you offer standardized service packages?",
+			"Can multiple services be combined?",
+			"Do you work with individuals as well as organizations?",
+			"How are projects priced?",
+			"Do you provide ongoing support?",
+		):
+			self.assertContains(response, question)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
+		self.assertContains(response, 'target="_blank"', count=10, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=10, html=False)
+		self.assertContains(response, 'href="#service-areas"', html=False)
+		self.assertContains(response, ">Learn About Operational Partnership</a>", html=False)
+
+	def test_services_page_removes_legacy_catalog_and_keeps_separate_concepts_out(self):
+		response = self.client.get(reverse("services"))
+
+		for retired_text in (
+			"S-001",
+			"S-002",
+			"S-003",
+			"S-004",
+			"S-005",
+			"S-006",
+			"S-007",
+			"S-008",
+			"R-001",
+			"Retainer",
+			"InsightSurveys",
+			"SurveyHQ",
+			"Personal Development",
+			"Professional Development",
+			"Physical Development",
+			"Academic Development",
+			"Operational Development",
+		):
+			self.assertNotContains(response, retired_text)
+
+	def test_services_stylesheet_is_isolated_and_page_supports_mobile_context(self):
+		services_response = self.client.get(reverse("services"), {"mobile_app": "1"})
+		home_response = self.client.get(reverse("home"))
+		products_response = self.client.get(reverse("products"))
+		partnership_response = self.client.get(reverse("operational_partnership"))
+		services_stylesheet = static("css/services.css")
+
+		self.assertEqual(services_response.status_code, 200)
+		self.assertContains(services_response, services_stylesheet)
+		self.assertContains(services_response, 'class="dark-mode services-page"', html=False)
+		self.assertNotContains(home_response, services_stylesheet)
+		self.assertNotContains(products_response, services_stylesheet)
+		self.assertNotContains(partnership_response, services_stylesheet)
+		self.assertContains(products_response, "Current assessment and framework IDs")
+		self.assertContains(partnership_response, "Build better systems through an ongoing partnership.")
+
+	def test_individual_services_route_and_sections_render_in_order(self):
+		self.assertEqual(reverse("individual_services"), "/individual-services/")
+
+		response = self.client.get(reverse("individual_services"))
+
+		self.assertEqual(response.status_code, 200)
+		content = response.content.decode()
+		section_markers = [
+			"Focused Individual Support",
+			"Focused Support. Built Around Your Goals.",
+			"Three Ways to Work Together",
+			"Support That Meets You Where You Are",
+			"What Kind of Support Fits Your Goal?",
+			"Simple, Focused, Personal",
+			"Frequently Asked Questions",
+			"Let’s Build Support Around Your Goals.",
+		]
+		section_positions = [content.index(marker) for marker in section_markers]
+		self.assertEqual(section_positions, sorted(section_positions))
+		self.assertContains(
+			response,
+			"Sometimes you don’t need a complete operational system. You need focused support in one area.",
+		)
+		self.assertContains(response, "The right support should fit the goal.")
+
+	def test_individual_services_renders_three_unified_service_panels(self):
+		response = self.client.get(reverse("individual_services"))
+
+		self.assertContains(response, 'class="individual-service-card individual-service-card--', count=3, html=False)
+		self.assertContains(response, "<svg", count=3, html=False)
+		for service, area, description in (
+			(
+				"Academic Tutoring",
+				"Academic Development",
+				"Personalized academic support designed to strengthen understanding, organization, confidence, and independent learning.",
+			),
+			(
+				"Fitness Coaching",
+				"Physical Development",
+				"Structured fitness support designed around consistency, performance, sustainable habits, and individual goals.",
+			),
+			(
+				"Mentorship &amp; Accountability",
+				"Personal · Professional · Operational",
+				"Practical guidance and accountability for people working toward goals that benefit from greater structure, organization, and consistent follow-through.",
+			),
+		):
+			self.assertContains(response, service, html=False)
+			self.assertContains(response, area, html=False)
+			self.assertContains(response, description)
+		self.assertContains(response, "Direction · Structure · Accountability")
+
+	def test_individual_services_renders_approved_support_areas_and_audiences(self):
+		response = self.client.get(reverse("individual_services"))
+
+		for support_area in (
+			"Mathematics &amp; Quantitative Subjects",
+			"Homework &amp; Assignment Support within Agreed Subject Areas",
+			"Study Planning",
+			"Test Preparation",
+			"Training Structure",
+			"Strength Development",
+			"Performance Development",
+			"Progress Tracking",
+			"Personal Organization",
+			"Professional Development",
+			"Routine Development",
+			"Resource Organization",
+			"Digital Organization",
+		):
+			self.assertContains(response, support_area, html=False)
+		self.assertContains(response, "Subject availability is confirmed during Discovery")
+
+		for audience in (
+			"Students",
+			"Athletes",
+			"Professionals",
+			"Entrepreneurs",
+			"Individuals",
+			"People Navigating New Goals or Projects",
+		):
+			self.assertContains(response, audience)
+		self.assertContains(response, "If you have a goal and believe greater structure, support, or accountability could help you move it forward, we can start there.")
+
+	def test_individual_services_uses_approved_links_comparison_and_process(self):
+		response = self.client.get(reverse("individual_services"))
+		content = response.content.decode()
+		steps = ["Connect", "Define the Goal", "Work Together", "Adjust as You Grow"]
+		step_positions = [content.index(f">{step}<") for step in steps]
+
+		self.assertEqual(step_positions, sorted(step_positions))
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=5, html=False)
+		self.assertContains(response, 'target="_blank"', count=5, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=5, html=False)
+		self.assertContains(response, 'href="#individual-services"', count=2, html=False)
+		self.assertContains(response, "Either model can be your starting point.")
+		self.assertContains(response, f'href="{reverse("operational_partnership")}"', html=False)
+		self.assertContains(response, ">Explore Operational Partnership</a>", count=2, html=False)
+
+	def test_individual_services_uses_semantic_faq_and_pricing_fallback(self):
+		response = self.client.get(reverse("individual_services"))
+
+		self.assertContains(response, "<details", count=6, html=False)
+		self.assertContains(response, '<details class="faq-item individual-faq__item" open>', count=1, html=False)
+		for question in (
+			"Who can use Individual Services?",
+			"Do I need an Operational Partnership first?",
+			"Can I use more than one Individual Service?",
+			"How are sessions scheduled?",
+			"Are Individual Services customized?",
+			"Where can I find current pricing?",
+		):
+			self.assertContains(response, question)
+		self.assertContains(response, "Current service pricing and engagement details can be discussed during a Discovery Session.")
+		self.assertNotContains(response, "/resources/", html=False)
+
+	def test_individual_services_excludes_unapproved_and_regulated_offerings(self):
+		response = self.client.get(reverse("individual_services"))
+
+		for excluded_text in (
+			"SurveyHQ",
+			"InsightSurveys",
+			"A-001",
+			"A-002",
+			"F-001",
+			"F-002",
+			"Therapy",
+			"Medical Advice",
+			"Physical Therapy",
+			"Injury Diagnosis",
+			"Financial Advising",
+			"Nutrition Treatment",
+			"Clinical Services",
+			"Add to Cart",
+			"Checkout",
+		):
+			self.assertNotContains(response, excluded_text)
+
+	def test_individual_services_stylesheet_is_isolated_and_mobile_context_renders(self):
+		individual_response = self.client.get(reverse("individual_services"), {"mobile_app": "1"})
+		individual_stylesheet = static("css/individual-services.css")
+
+		self.assertEqual(individual_response.status_code, 200)
+		self.assertContains(individual_response, individual_stylesheet)
+		self.assertContains(individual_response, 'class="dark-mode individual-services-page"', html=False)
+		for route_name in ("home", "about", "services", "operational_partnership", "products"):
+			with self.subTest(route_name=route_name):
+				response = self.client.get(reverse(route_name))
+				self.assertEqual(response.status_code, 200)
+				self.assertNotContains(response, individual_stylesheet)
 
 
 @override_settings(

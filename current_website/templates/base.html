@@ -36,13 +36,12 @@
 
         <div class="nav-center" id="nav-menu">
           <a href="{% url 'about' %}">About</a>
+          <a href="{% url 'operational_partnership' %}">Partnerships</a>
           <a href="{% url 'services' %}">Services</a>
-          <a href="{% url 'products' %}">Products</a>
-          <a href="{% url 'faq' %}">FAQ</a>
+          <a href="{% url 'dashboard' %}">Client Portal</a>
         </div>
 
         <div class="nav-right">
-          <a class="client-portal" href="{% url 'dashboard' %}">Client Portal</a>
           {% if request.user.is_authenticated %}
             <form class="auth-action-form" action="{% url 'logout' %}" method="post">
               {% csrf_token %}

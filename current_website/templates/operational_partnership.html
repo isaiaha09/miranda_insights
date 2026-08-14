@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Operational Partnership | Miranda Insights{% endblock %}
+
+{% block body_class %}operational-partnership-page{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/marketing-pages.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/operational-partnership.css' %}" />
+{% endblock %}
+
+{% block content %}
+  <div class="partnership-shell">
+    <section class="partnership-hero" aria-labelledby="partnership-hero-heading">
+      <div class="partnership-container partnership-hero__inner">
+        <p class="partnership-eyebrow">Operational Partnership</p>
+        <h1 id="partnership-hero-heading">Build better systems through an ongoing partnership.</h1>
+        <p class="partnership-hero__lead">Miranda Insights provides continued guidance, accountability, and operational support for individuals and organizations that want to keep learning, adapting, and growing over time.</p>
+        <div class="partnership-actions">
+          <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+          <a class="btn btn-ghost" href="{% url 'services' %}">View Operational Services</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-introduction" aria-labelledby="partnership-introduction-heading">
+      <div class="partnership-container">
+        <div class="partnership-editorial-layout">
+          <header class="partnership-section-heading partnership-editorial-layout__heading">
+            <p class="partnership-eyebrow">A Relationship Built to Evolve</p>
+            <h2 id="partnership-introduction-heading">What is an Operational Partnership?</h2>
+          </header>
+          <div class="partnership-editorial-copy">
+            <p>An Operational Partnership is an ongoing professional relationship focused on continuous growth, accountability, and operational improvement. Rather than providing a one-time solution, Miranda Insights works alongside clients to help them adapt, solve problems, and build sustainable systems over time.</p>
+            <p>Every partnership is personalized to the client’s goals and may include strategic planning, operational guidance, project support, digital organization, accountability, or continued development of previously completed projects.</p>
+            <p>As your goals evolve, your Operational Partnership evolves with you.</p>
+          </div>
+        </div>
+
+        <aside class="partnership-pathways" aria-labelledby="partnership-pathways-heading">
+          <div class="partnership-pathways__heading">
+            <p class="partnership-card-label">Flexible Ways to Work</p>
+            <h3 id="partnership-pathways-heading">Begin with either path and move between them as your goals evolve.</h3>
+          </div>
+          <div class="partnership-pathways__options" aria-label="Project-Based Support and Ongoing Partnership are equally valid ways to work with Miranda Insights">
+            <a href="{% url 'services' %}">Project-Based Support</a>
+            <span class="partnership-pathways__connector" aria-hidden="true">&#8596;</span>
+            <a href="#partnership-levels">Ongoing Partnership</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-audiences" aria-labelledby="partnership-audiences-heading">
+      <div class="partnership-container">
+        <header class="partnership-section-heading partnership-section-heading--centered">
+          <p class="partnership-eyebrow">Who We Support</p>
+          <h2 id="partnership-audiences-heading">Who Can Benefit?</h2>
+          <p>Operational Partnerships are designed for individuals and organizations that value consistent guidance, structured planning, and continuous improvement.</p>
+        </header>
+        <div class="partnership-card-grid partnership-card-grid--six">
+          <article class="partnership-card partnership-card--audience"><span class="partnership-card__marker" aria-hidden="true">01</span><h3>Individuals</h3><p>People working toward personal, educational, professional, or organizational goals.</p></article>
+          <article class="partnership-card partnership-card--audience"><span class="partnership-card__marker" aria-hidden="true">02</span><h3>Entrepreneurs</h3><p>Business owners seeking ongoing support while building and improving their business operations.</p></article>
+          <article class="partnership-card partnership-card--audience"><span class="partnership-card__marker" aria-hidden="true">03</span><h3>Small Businesses</h3><p>Organizations looking for continued assistance with systems, documentation, technology, and operational planning.</p></article>
+          <article class="partnership-card partnership-card--audience"><span class="partnership-card__marker" aria-hidden="true">04</span><h3>Schools &amp; Educational Organizations</h3><p>Schools seeking long-term collaboration for research, operational support, strategic initiatives, or educational development.</p></article>
+          <article class="partnership-card partnership-card--audience"><span class="partnership-card__marker" aria-hidden="true">05</span><h3>Community Organizations &amp; Nonprofits</h3><p>Organizations working to improve programs, strengthen operations, and increase community impact.</p></article>
+          <article class="partnership-card partnership-card--audience"><span class="partnership-card__marker" aria-hidden="true">06</span><h3>Returning Clients</h3><p>Clients who have completed an Operational Services project and wish to continue developing, maintaining, or expanding their systems.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-inclusions" aria-labelledby="partnership-inclusions-heading">
+      <div class="partnership-container">
+        <header class="partnership-section-heading">
+          <p class="partnership-eyebrow">Personalized Support</p>
+          <h2 id="partnership-inclusions-heading">What Your Partnership May Include</h2>
+          <p>Every Operational Partnership is customized based on individual goals and priorities. Depending on your needs, partnerships may include:</p>
+        </header>
+        <ul class="partnership-benefits-grid">
+          <li>Goal Planning &amp; Accountability</li>
+          <li>Strategic Guidance</li>
+          <li>Operational Consulting</li>
+          <li>Workflow &amp; Process Improvement</li>
+          <li>Project Planning</li>
+          <li>Digital Organization</li>
+          <li>Website &amp; Technology Support</li>
+          <li>Research &amp; Problem Solving</li>
+          <li>System Maintenance</li>
+          <li>Document Development</li>
+          <li>Resource Recommendations</li>
+          <li>Ongoing Communication</li>
+          <li>Progress Reviews</li>
+          <li>Implementation Support</li>
+        </ul>
+        <p class="partnership-inclusions__note">Services are tailored to each partnership and may evolve as your goals and priorities change.</p>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-levels" id="partnership-levels" aria-labelledby="partnership-levels-heading">
+      <div class="partnership-container">
+        <header class="partnership-section-heading partnership-section-heading--centered">
+          <p class="partnership-eyebrow">Partnership Levels</p>
+          <h2 id="partnership-levels-heading">Choose the Partnership That Fits Your Goals</h2>
+          <p>Each level provides space for continued guidance and shared progress. The right fit depends on the goals, projects, and level of collaboration you want to support.</p>
+        </header>
+        <div class="partnership-level-grid">
+          <article class="partnership-card partnership-level-card">
+            <p class="partnership-card-label">Essential Partnership</p>
+            <h3>Consistent guidance for focused goals.</h3>
+            <div class="partnership-level-card__fit"><h4>Designed For</h4><p>Individuals seeking consistent guidance while working toward personal, educational, or professional goals.</p></div>
+            <div class="partnership-level-card__includes"><h4>Includes</h4><ul><li>Up to 2 hours of partnership time per month</li><li>Monthly planning and accountability</li><li>Email support</li><li>Client Portal access</li><li>Progress tracking</li></ul></div>
+          </article>
+          <article class="partnership-card partnership-level-card">
+            <p class="partnership-card-label">Growth Partnership</p>
+            <h3>More frequent collaboration across multiple priorities.</h3>
+            <div class="partnership-level-card__fit"><h4>Designed For</h4><p>Clients managing multiple goals or projects that benefit from more frequent collaboration.</p></div>
+            <div class="partnership-level-card__includes"><h4>Includes</h4><ul><li>Up to 4 hours of partnership time per month</li><li>Everything included in Essential</li><li>Increased planning support</li><li>Priority scheduling</li><li>Greater implementation support</li></ul></div>
+          </article>
+          <article class="partnership-card partnership-level-card">
+            <p class="partnership-card-label">Professional Partnership</p>
+            <h3>Expanded support for larger ongoing initiatives.</h3>
+            <div class="partnership-level-card__fit"><h4>Designed For</h4><p>Businesses, organizations, and individuals managing larger or ongoing initiatives.</p></div>
+            <div class="partnership-level-card__includes"><h4>Includes</h4><ul><li>Up to 8 hours of partnership time per month</li><li>Everything included in Growth</li><li>Strategic planning support</li><li>Expanded consulting availability</li><li>Long-term project collaboration</li></ul></div>
+          </article>
+          <article class="partnership-card partnership-level-card partnership-level-card--custom">
+            <p class="partnership-card-label">Executive Partnership</p>
+            <h3>Custom Engagement</h3>
+            <div class="partnership-level-card__fit"><h4>Designed For</h4><p>Organizations or individuals requiring customized operational support beyond the standard partnership levels.</p></div>
+            <div class="partnership-level-card__contact"><p>Contact Miranda Insights to discuss a customized Operational Partnership.</p><a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Miranda Insights</a></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-reasons" aria-labelledby="partnership-reasons-heading">
+      <div class="partnership-container">
+        <header class="partnership-section-heading partnership-section-heading--centered">
+          <p class="partnership-eyebrow">Long-Term Value</p>
+          <h2 id="partnership-reasons-heading">Why Continue the Partnership?</h2>
+        </header>
+        <div class="partnership-card-grid partnership-card-grid--six">
+          <article class="partnership-card partnership-card--feature"><h3>Consistent Accountability</h3><p>Stay focused on your goals through regular check-ins and structured planning.</p></article>
+          <article class="partnership-card partnership-card--feature"><h3>Trusted Guidance</h3><p>Work with someone who understands your systems, projects, and long-term vision.</p></article>
+          <article class="partnership-card partnership-card--feature"><h3>Flexible Support</h3><p>As your priorities change, your partnership can adapt to meet new challenges.</p></article>
+          <article class="partnership-card partnership-card--feature"><h3>Continued Improvement</h3><p>Rather than stopping after implementation, continue refining and strengthening your systems over time.</p></article>
+          <article class="partnership-card partnership-card--feature"><h3>Organized Progress</h3><p>Track projects, milestones, documents, and communication through the Client Portal.</p></article>
+          <article class="partnership-card partnership-card--feature"><h3>Long-Term Relationship</h3><p>Build a professional relationship centered on collaboration, growth, and continuous improvement.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-faq" aria-labelledby="partnership-faq-heading">
+      <div class="partnership-container partnership-faq__layout">
+        <header class="partnership-section-heading">
+          <p class="partnership-eyebrow">Questions &amp; Answers</p>
+          <h2 id="partnership-faq-heading">Frequently Asked Questions</h2>
+        </header>
+        <div class="faq-list partnership-faq__list">
+          <details class="faq-item partnership-faq__item" open>
+            <summary>Do I need to complete a project before joining an Operational Partnership?</summary>
+            <p>No. While many partnerships begin after an Operational Services engagement, new clients are welcome to begin with an Operational Partnership if it aligns with their goals.</p>
+          </details>
+          <details class="faq-item partnership-faq__item">
+            <summary>Can my partnership change over time?</summary>
+            <p>Yes. Partnership levels may be adjusted as your goals, projects, or support needs evolve.</p>
+          </details>
+          <details class="faq-item partnership-faq__item">
+            <summary>What happens if I don’t use all of my partnership time?</summary>
+            <p>Complete terms and policies for unused partnership time are defined in the Operational Partnership Agreement and reviewed before an engagement begins.</p>
+          </details>
+          <details class="faq-item partnership-faq__item">
+            <summary>Can I request additional project work?</summary>
+            <p>Yes. Larger projects outside the scope of your partnership may be quoted separately through <a href="{% url 'services' %}">Operational Services</a>.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="partnership-section partnership-final-cta" aria-labelledby="partnership-final-cta-heading">
+      <div class="partnership-container">
+        <div class="partnership-final-cta__panel">
+          <p class="partnership-eyebrow">Ready to Build Something Long-Term?</p>
+          <h2 id="partnership-final-cta-heading">Let’s Grow Together</h2>
+          <p>Whether you’re pursuing personal goals, building a business, improving an organization, or developing new systems, an Operational Partnership provides the guidance, structure, and collaboration needed to support long-term success.</p>
+          <div class="partnership-actions">
+            <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+            <a class="btn btn-ghost" href="{% url 'services' %}">View Operational Services</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
