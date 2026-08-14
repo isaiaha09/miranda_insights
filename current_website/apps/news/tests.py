@@ -82,6 +82,74 @@ class PublicPageTests(TestCase):
 		self.assertNotContains(response, ">Client Access<", html=False)
 		self.assertNotContains(response, ">What We Do<", html=False)
 
+	def test_about_page_renders_approved_sections_in_order(self):
+		response = self.client.get(reverse("about"))
+
+		self.assertEqual(response.status_code, 200)
+		content = response.content.decode()
+		section_headings = [
+			"About Miranda Insights",
+			"Our Story",
+			"Mission, Vision &amp; Core Values",
+			"Meet the Founder",
+			"How We Work",
+			"Let’s Start the Conversation",
+		]
+		section_positions = [content.index(heading) for heading in section_headings]
+
+		self.assertEqual(section_positions, sorted(section_positions))
+		self.assertContains(
+			response,
+			"Miranda Insights is a purpose-driven Operational Intelligence and Systems Development firm focused on creating practical, sustainable solutions that help individuals and organizations learn, build, and grow.",
+		)
+
+	def test_about_page_contains_approved_content_and_founder_profile(self):
+		response = self.client.get(reverse("about"))
+
+		for value in (
+			"Integrity",
+			"Service",
+			"Continuous Improvement",
+			"Collaboration",
+			"Practical Innovation",
+			"Stewardship",
+		):
+			self.assertContains(response, value)
+		for step in ("Discover", "Design", "Develop", "Grow"):
+			self.assertContains(response, step)
+		for credential in (
+			"B.A. in Psychology",
+			"B.S. in Mathematics (Applied Mathematics &amp; Statistics)",
+			"Founder of Miranda Insights",
+			"Operational Intelligence &amp; Systems Development",
+			"Research &amp; Program Evaluation",
+			"Digital Systems &amp; Process Improvement",
+		):
+			self.assertContains(response, credential)
+		self.assertContains(response, static("img/kyle-adam-miranda-founder.jpg"))
+		self.assertContains(response, 'alt="Kyle-Adam Miranda, founder of Miranda Insights"', html=False)
+
+	def test_about_page_uses_approved_ctas_and_removes_retired_content(self):
+		response = self.client.get(reverse("about"))
+
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=1, html=False)
+		self.assertContains(response, 'target="_blank"', html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', html=False)
+		self.assertContains(response, f'href="{reverse("services")}"', html=False)
+		self.assertNotContains(response, "What the work is built around")
+		self.assertNotContains(response, "Best aligned with mission-driven teams")
+		self.assertNotContains(response, "What Makes Us Different")
+
+	def test_about_stylesheet_is_isolated_to_about_page(self):
+		about_response = self.client.get(reverse("about"))
+		home_response = self.client.get(reverse("home"))
+		services_response = self.client.get(reverse("services"))
+		about_stylesheet = static("css/about.css")
+
+		self.assertContains(about_response, about_stylesheet)
+		self.assertNotContains(home_response, about_stylesheet)
+		self.assertNotContains(services_response, about_stylesheet)
+
 	def test_services_page_lists_deliverable_examples(self):
 		response = self.client.get(reverse("services"))
 
