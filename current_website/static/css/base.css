@@ -232,9 +232,13 @@ body.is-scrolling .site-footer {
     width: 2.5rem;
     height: 2.5rem;
     flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: 50%;
+    background-color: #ffffff;
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
     pointer-events: none;
     user-select: none;
 }

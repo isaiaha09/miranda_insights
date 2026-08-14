@@ -26,6 +26,62 @@ User = get_user_model()
 
 
 class PublicPageTests(TestCase):
+	DISCOVERY_URL = "https://calendar.notion.so/meet/mirandalegacy/discovery"
+
+	def test_homepage_renders_redesign_sections_in_order(self):
+		response = self.client.get(reverse("home"))
+
+		self.assertEqual(response.status_code, 200)
+		content = response.content.decode()
+		section_headings = [
+			"Operational Intelligence for People, Organizations, and Communities",
+			"Our Five Pillars",
+			"Who We Work With",
+			"Why Miranda Insights",
+			"Let&rsquo;s Build Something Better Together",
+			"Subscribe to Miranda Insights Newsletter",
+		]
+		section_positions = [content.index(heading) for heading in section_headings]
+
+		self.assertEqual(section_positions, sorted(section_positions))
+		for pillar in (
+			"Personal Development",
+			"Professional Development",
+			"Physical Development",
+			"Academic Development",
+			"Operational Development",
+		):
+			self.assertContains(response, pillar)
+		self.assertContains(response, "The right support should fit the goal.")
+		self.assertContains(response, "Building stronger habits, organization, accountability, confidence")
+		self.assertContains(response, "Improving the systems, processes, technology, data, documentation")
+		self.assertContains(response, "Students &amp; Athletes", html=False)
+		self.assertContains(response, "Professional &amp; Transparent", html=False)
+		self.assertNotContains(response, ">Operational Services<", html=False)
+		self.assertNotContains(response, ">Digital Presence<", html=False)
+		self.assertNotContains(response, ">Intelligence Application Development<", html=False)
+		self.assertNotContains(response, ">Operational Partnership<", html=False)
+
+	def test_homepage_uses_existing_routes_and_approved_discovery_link(self):
+		response = self.client.get(reverse("home"))
+
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
+		self.assertContains(response, f'href="{reverse("services")}"', html=False)
+		self.assertContains(response, f'href="{reverse("contact_support")}"', html=False)
+		self.assertContains(response, "Download Miranda Insights Mobile on the App Store")
+
+	def test_homepage_preserves_newsletter_hooks_and_removes_retired_sections(self):
+		response = self.client.get(reverse("home"))
+
+		self.assertContains(response, 'id="newsletter-signup"', html=False)
+		self.assertContains(response, "data-subscribe-form", html=False)
+		self.assertContains(response, "data-subscribe-messages", html=False)
+		self.assertContains(response, f'action="{reverse("newsletter_subscribe")}"', html=False)
+		self.assertNotContains(response, "miranda-insights.circlecal.app", html=False)
+		self.assertNotContains(response, ">Our Process<", html=False)
+		self.assertNotContains(response, ">Client Access<", html=False)
+		self.assertNotContains(response, ">What We Do<", html=False)
+
 	def test_services_page_lists_deliverable_examples(self):
 		response = self.client.get(reverse("services"))
 

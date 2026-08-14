@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Welcome to Miranda Insights{% endblock %}
+{% block title %}Miranda Insights | Operational Intelligence{% endblock %}
 
 {% block body_class %}landing{% endblock %}
 
@@ -11,58 +11,128 @@
 
 {% block content %}
   <div class="hero-block">
-    <section class="hero-landing">
+    <section class="hero-landing" aria-labelledby="home-hero-heading">
       <div class="hero-inner">
         <div class="hero-left">
-          <h1>Welcome to Miranda Insights</h1>
-
+          <h1 id="home-hero-heading">Operational Intelligence for People, Organizations, and Communities</h1>
           <div class="hero-summary">
-            <p class="hero-summary-lead">Data Insights that drive better decisions</p>
-            <p class="hero-summary-copy">We help school districts, organizations, and agencies turn complex data into clear, actionable insights.</p>
-            <p class="hero-summary-copy">Have we already discussed your project? If not, book a free consultation meeting with us below. That way, 
-              we can learn more about your goals and how we can assist you. For any additional questions, please fill out the contact form or email us directly at <a href="mailto:info@mirandainsights.com">support@mirandainsights.com</a>.
-            </p>
+            <p class="hero-summary-copy">Miranda Insights helps individuals, organizations, and communities improve decision-making through operational services, data-informed solutions, digital systems, and long-term partnerships. We build practical solutions that create sustainable growth and continuous improvement.</p>
           </div>
-
-          <p class="hero-cta">
-            <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact us</a>
-            <a class="btn btn-ghost" href="{% url 'signup' %}">Sign Up</a>
-              <a
-                class="hero-app-store-link"
-                href="https://apps.apple.com/us/app/miranda-insights-mobile/id6762920274?uo=4"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Download Miranda Insights Mobile on the iOS App Store"
-              >
-                <img
-                  class="hero-app-store-badge"
-                  src="{% static 'img/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg' %}"
-                  alt="Download Miranda Insights Mobile on the App Store"
-                />
-              </a>
-          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+            <a class="btn btn-ghost" href="{% url 'services' %}">Explore Our Services</a>
+            <a class="hero-app-store-link" href="https://apps.apple.com/us/app/miranda-insights-mobile/id6762920274?uo=4" target="_blank" rel="noopener noreferrer" aria-label="Download Miranda Insights Mobile on the iOS App Store">
+              <img class="hero-app-store-badge" src="{% static 'img/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg' %}" alt="Download Miranda Insights Mobile on the App Store" />
+            </a>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="booking-section" aria-labelledby="booking-heading">
-      <div class="booking-shell">
-        <div class="booking-copy">
-          <p class="booking-eyebrow">Consultation Scheduling</p>
-          <h2 id="booking-heading" class="booking-heading">Book time with the Miranda Insights team</h2>
-          <p class="booking-description">Choose a time that works for your team to discuss goals, project planning, or the next step in your data strategy.</p>
+    <section class="home-section home-section-pillars" aria-labelledby="five-pillars-heading">
+      <div class="home-section-shell">
+        <div class="home-section-heading">
+          <h2 id="five-pillars-heading">Our Five Pillars</h2>
+          <p class="home-framework-statement">The right support should fit the goal.</p>
         </div>
-        <div class="booking-embed-frame">
-          <iframe class="booking-embed" src="https://miranda-insights.circlecal.app/bus/miranda-insights/?embed=1&amp;key=AQuZAHZhDIvPpruyyHZCUpdYB3O2txvV" title="Miranda Insights booking calendar" loading="lazy"></iframe>
+        <div class="home-card-grid home-card-grid-pillars">
+          <article class="home-card home-card-pillar">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="7" r="3" /><path d="M3.5 20v-2.5A5.5 5.5 0 0 1 9 12h1m4 8v-8m-3 3 3-3 3 3m1-7.5c1.8-.1 3-1.3 3.5-3.5-2.2.2-3.7 1.3-4.2 3.4" /></svg></span>
+            <h3>Personal Development</h3>
+            <p>Building stronger habits, organization, accountability, confidence, and systems that support individual growth.</p>
+          </article>
+          <article class="home-card home-card-pillar">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-13 5h18m-11 0v2h4v-2" /></svg></span>
+            <h3>Professional Development</h3>
+            <p>Supporting career growth, professional organization, leadership, planning, communication, and long-term development.</p>
+          </article>
+          <article class="home-card home-card-pillar">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 9v6m3-8v10m12-10v10m3-8v6M6 12h12" /></svg></span>
+            <h3>Physical Development</h3>
+            <p>Creating structured approaches to fitness, performance, training, accountability, and sustainable physical improvement.</p>
+          </article>
+          <article class="home-card home-card-pillar">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 5.5A3.5 3.5 0 0 1 6.5 2H11v17H6.5A3.5 3.5 0 0 0 3 22V5.5Zm18 0A3.5 3.5 0 0 0 17.5 2H13v17h4.5A3.5 3.5 0 0 1 21 22V5.5Z" /></svg></span>
+            <h3>Academic Development</h3>
+            <p>Supporting learning, tutoring, study systems, planning, organization, research, and academic progress.</p>
+          </article>
+          <article class="home-card home-card-pillar">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="3" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9 7 7m10 10 2.1 2.1m0-14.2L17 7M7 17l-2.1 2.1M8.5 3.2l1 2.7m5 12.2 1 2.7m5.3-12.3-2.7 1m-12.2 5-2.7 1" /></svg></span>
+            <h3>Operational Development</h3>
+            <p>Improving the systems, processes, technology, data, documentation, and structure that help people and organizations operate more effectively.</p>
+          </article>
         </div>
       </div>
     </section>
 
-    <!-- Subscribe / Newsletter -->
+    <section class="home-section" aria-labelledby="who-we-work-with-heading">
+      <div class="home-section-shell">
+        <div class="home-section-heading">
+          <h2 id="who-we-work-with-heading">Who We Work With</h2>
+          <p>Miranda Insights partners with individuals, professionals, entrepreneurs, businesses, schools, nonprofits, and organizations that are committed to learning, improving, and leveraging data, technology, and operational systems to support meaningful growth.</p>
+        </div>
+        <div class="home-card-grid home-card-grid-six">
+          <article class="home-card home-card-audience"><h3>Students &amp; Athletes</h3><p>Academic support, planning, organization, and personal development.</p></article>
+          <article class="home-card home-card-audience"><h3>Individuals &amp; Families</h3><p>Personal organization, goal planning, coaching, education, and operational support.</p></article>
+          <article class="home-card home-card-audience"><h3>Entrepreneurs</h3><p>Business systems, operational strategy, digital presence, and workflow development.</p></article>
+          <article class="home-card home-card-audience"><h3>Small Businesses</h3><p>Documentation, websites, internal systems, analytics, and operational improvement.</p></article>
+          <article class="home-card home-card-audience"><h3>Schools &amp; Educational Organizations</h3><p>Program evaluation, research, operational services, educational frameworks, and strategic planning.</p></article>
+          <article class="home-card home-card-audience"><h3>Community Organizations &amp; Nonprofits</h3><p>Data-informed planning, organizational systems, reporting, research, and community initiatives.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-section home-section-why" aria-labelledby="why-miranda-insights-heading">
+      <div class="home-section-shell">
+        <div class="home-section-heading">
+          <h2 id="why-miranda-insights-heading">Why Miranda Insights</h2>
+        </div>
+        <div class="home-card-grid home-card-grid-six">
+          <article class="home-card home-card-feature">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></svg></span>
+            <h3>Personalized Solutions</h3><p>Every client has unique goals. Our services are designed around your needs rather than forcing you into a predefined process.</p>
+          </article>
+          <article class="home-card home-card-feature">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 7h16M7 3v4m10-4v4M5 11h4v4H5zm6 0h4v4h-4zm6 0h2v4h-2zM5 17h4v2H5zm6 0h8v2h-8z" /></svg></span>
+            <h3>Practical Systems</h3><p>We focus on building solutions that are simple, sustainable, and easy to maintain long after implementation.</p>
+          </article>
+          <article class="home-card home-card-feature">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 12h10M12 7v10M4 4h16v16H4z" /></svg></span>
+            <h3>Collaborative Approach</h3><p>We work alongside our clients throughout the project, emphasizing communication, transparency, and shared problem-solving.</p>
+          </article>
+          <article class="home-card home-card-feature">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 20h18M5 17l4-5 3 2 6-8 2 2" /></svg></span>
+            <h3>Data-Informed Decisions</h3><p>We combine operational experience with thoughtful analysis to support informed decision-making rather than relying on assumptions.</p>
+          </article>
+          <article class="home-card home-card-feature">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 19 10 13l4 3 6-9M15 7h5v5" /></svg></span>
+            <h3>Long-Term Growth</h3><p>Whether through projects or ongoing partnerships, our goal is to help clients continue improving over time.</p>
+          </article>
+          <article class="home-card home-card-feature">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7l-8-4Z" /><path d="m8.5 12 2.2 2.2 4.8-4.8" /></svg></span>
+            <h3>Professional &amp; Transparent</h3><p>Clear communication, defined expectations, and organized project management remain central to every engagement.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-section home-final-cta" aria-labelledby="get-started-heading">
+      <div class="home-final-cta-panel">
+        <p class="home-section-eyebrow">Ready to Get Started?</p>
+        <h2 id="get-started-heading">Let&rsquo;s Build Something Better Together</h2>
+        <p>Whether you&rsquo;re looking to improve operations, organize your systems, develop a digital solution, or simply explore what&rsquo;s possible, we&rsquo;d love to learn more about your goals.</p>
+        <div class="home-final-cta-actions">
+          <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
+          <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Miranda Insights</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Existing newsletter functionality is intentionally retained below the five homepage sections. -->
     <section class="subscribe" id="{{ newsletter_section_id|default:'newsletter-signup' }}" tabindex="-1">
       <div class="subscribe-shell container">
         <div class="subscribe-inner">
-          <h3>Subscribe to Miranda Insights Newsletter</h3>
+          <h2>Subscribe to Miranda Insights Newsletter</h2>
           <p>Get monthly insights and product updates delivered to your inbox.</p>
           <div class="subscribe-messages" aria-live="polite" data-subscribe-messages {% if not messages %}hidden{% endif %}>
             {% for message in messages %}
@@ -84,58 +154,6 @@
         </div>
       </div>
     </section>
-
-    <section class="features-section" aria-labelledby="what-we-do-heading">
-      <h2 id="what-we-do-heading" class="features-heading">What We Do</h2>
-      <div class="features">
-        <a class="card feature-card" href="{% url 'services' %}">Data Analytics</a>
-        <a class="card feature-card" href="{% url 'services' %}">Dashboard Development</a>
-        <a class="card feature-card" href="{% url 'services' %}">Program Evaluation</a>
-        <a class="card feature-card" href="{% url 'services' %}">Data Systems</a>
-      </div>
-    </section>
-
-    <section class="features-section" aria-labelledby="who-we-work-with-heading">
-      <h2 id="who-we-work-with-heading" class="features-heading">Who We Work With</h2>
-      <div class="features features-audience">
-        <div class="card feature-card feature-card-static">School Districts</div>
-        <div class="card feature-card feature-card-static">Government and Public Agencies</div>
-        <div class="card feature-card feature-card-static">Organizations and Nonprofits</div>
-      </div>
-    </section>
-
-    <section class="features-section" aria-labelledby="our-process-heading">
-      <h2 id="our-process-heading" class="features-heading">Our Process</h2>
-      <div class="features features-process">
-        <div class="card feature-card feature-card-static">1. Discovery</div>
-        <div class="card feature-card feature-card-static">2. Data Analysis</div>
-        <div class="card feature-card feature-card-static">3. Insight Development</div>
-        <div class="card feature-card feature-card-static">4. Reporting and Communication</div>
-      </div>
-    </section>
-
-    <div class="cta-grid">
-      <section class="cta-section" aria-labelledby="client-access-heading">
-        <div class="cta-panel">
-          <h2 id="client-access-heading" class="cta-heading">Client Access</h2>
-          <p class="cta-copy">Our clients receive secure access to a project dashboard where they can monitor progress, download reports, and much more.</p>
-          <p class="cta-actions">
-            <a class="btn btn-ghost" href="{% url 'dashboard' %}">Client Portal</a>
-            <a class="btn btn-primary" href="{% url 'signup' %}">Sign Up</a>
-          </p>
-        </div>
-      </section>
-
-      <section class="cta-section" aria-labelledby="contact-us-heading">
-        <div class="cta-panel cta-panel-contact">
-          <h2 id="contact-us-heading" class="cta-heading">Contact Us</h2>
-          <p class="cta-copy">Have a project in mind?</p>
-          <p class="cta-actions">
-            <a class="btn btn-primary" href="{% url 'contact_support' %}">Fill out this form</a>
-          </p>
-        </div>
-      </section>
-    </div>
 
     {% if not request.GET.mobile_app and not request.COOKIES.insights_mobile_app %}
       <aside class="cookie-banner" id="cookie-banner" hidden aria-live="polite" aria-labelledby="cookie-banner-title">
