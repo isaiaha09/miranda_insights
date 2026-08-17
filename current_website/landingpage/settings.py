@@ -298,8 +298,8 @@ NEWSLETTER_FROM_EMAIL = os.getenv('NEWSLETTER_FROM_EMAIL', DEFAULT_FROM_EMAIL)
 NEWSLETTER_TIME_ZONE = os.getenv('NEWSLETTER_TIME_ZONE', 'America/Los_Angeles')
 
 # Contact / support
-CONTACT_RECIPIENT = os.getenv('CONTACT_RECIPIENT')
-SUPPORT_EMAIL = os.getenv('SUPPORT_EMAIL', CONTACT_RECIPIENT)
+CONTACT_RECIPIENT = (os.getenv('CONTACT_RECIPIENT') or 'support@mirandainsights.com').strip()
+SUPPORT_EMAIL = (os.getenv('SUPPORT_EMAIL') or CONTACT_RECIPIENT).strip()
 COMPANY_NOTIFICATION_EMAIL = os.getenv('COMPANY_NOTIFICATION_EMAIL', 'company@mirandainsights.com')
 SERVER_EMAIL = os.getenv('SERVER_EMAIL', DEFAULT_FROM_EMAIL or 'server@localhost')
 EMAIL_SUBJECT_PREFIX = os.getenv('EMAIL_SUBJECT_PREFIX', '[Miranda Insights] ')

@@ -9,9 +9,9 @@ from django.views.decorators.http import require_GET
 @require_GET
 def manifest(request):
     data = {
-        "name": "Insights Website",
-        "short_name": "Insights",
-        "description": "Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions.",
+        "name": "Miranda Insights",
+        "short_name": "Miranda Insights",
+        "description": "Miranda Insights provides operational intelligence, project-based services, individual support, and ongoing partnerships for people and organizations.",
         "start_url": reverse("home"),
         "scope": "/",
         "display": "standalone",
@@ -24,13 +24,25 @@ def manifest(request):
                 "src": static("pwa/icon-192.png"),
                 "sizes": "192x192",
                 "type": "image/png",
-                "purpose": "any maskable",
+                "purpose": "any",
             },
             {
                 "src": static("pwa/icon-512.png"),
                 "sizes": "512x512",
                 "type": "image/png",
-                "purpose": "any maskable",
+                "purpose": "any",
+            },
+            {
+                "src": static("pwa/icon-maskable-192.png"),
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "maskable",
+            },
+            {
+                "src": static("pwa/icon-maskable-512.png"),
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable",
             },
         ],
         "shortcuts": [
@@ -40,14 +52,19 @@ def manifest(request):
                 "url": reverse("services"),
             },
             {
-                "name": "Contact Support",
-                "short_name": "Contact",
+                "name": "Individual Support",
+                "short_name": "Support",
+                "url": reverse("individual_services"),
+            },
+            {
+                "name": "Resources",
+                "short_name": "Resources",
                 "url": reverse("contact_support"),
             },
             {
                 "name": "Client Portal",
                 "short_name": "Portal",
-                "url": reverse("login"),
+                "url": reverse("dashboard"),
             },
         ],
     }
@@ -61,7 +78,7 @@ def service_worker(request):
         request,
         "service-worker.js",
         {
-            "cache_name": "insights-pwa-v3",
+            "cache_name": "insights-pwa-v5",
         },
         content_type="application/javascript; charset=utf-8",
     )

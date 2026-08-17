@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Insights Mobile",
+    "name": "Miranda Insights",
     "slug": "insights-mobile",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0c111b"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
@@ -24,9 +24,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0c111b",
-        "foregroundImage": "./assets/icon.png",
-        "monochromeImage": "./assets/icon.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "package": "com.mirandainsights.mobile",
       "predictiveBackGestureEnabled": false

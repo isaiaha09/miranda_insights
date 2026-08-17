@@ -66,7 +66,7 @@ DJANGO_ADMIN_URL=admin
 
 DEFAULT_FROM_EMAIL=no-reply@example.com
 NEWSLETTER_FROM_EMAIL=news@example.com
-CONTACT_RECIPIENT=company@mirandainsights.com
+CONTACT_RECIPIENT=support@mirandainsights.com
 SUPPORT_EMAIL=support@mirandainsights.com
 COMPANY_NOTIFICATION_EMAIL=company@mirandainsights.com
 
@@ -265,5 +265,4 @@ If a new teammate is setting this up from scratch, the shortest successful order
 
 
     
-
 

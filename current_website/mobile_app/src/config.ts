@@ -79,51 +79,55 @@ export const BASE_URL_LABEL = BASE_URL.replace(/^https?:\/\//, '');
 
 export const PRIMARY_ROUTES: AppRoute[] = [
   {
-    key: 'dashboard',
-    label: 'Dashboard',
-    path: '/dashboard/',
-    keywords: ['portal', 'overview', 'account', 'projects', 'updates', 'activity'],
+    key: 'about',
+    label: 'About',
+    path: '/about/',
+    keywords: ['company', 'team', 'story', 'mission', 'founder', 'values'],
+  },
+  {
+    key: 'partnerships',
+    label: 'Partnerships',
+    path: '/operational-partnership/',
+    keywords: ['ongoing support', 'accountability', 'collaboration', 'guidance', 'growth'],
   },
   {
     key: 'services',
     label: 'Services',
     path: '/services/',
-    keywords: ['offerings', 'consulting', 'strategy', 'analysis', 'support', 'solutions'],
+    keywords: ['operational services', 'projects', 'consulting', 'systems', 'analysis', 'solutions'],
   },
   {
-    key: 'products',
-    label: 'Products',
-    path: '/products/',
-    keywords: ['tools', 'platform', 'software', 'solutions', 'features', 'packages'],
+    key: 'individual-services',
+    label: 'Individual Support',
+    path: '/individual-services/',
+    keywords: ['tutoring', 'fitness coaching', 'mentorship', 'accountability', 'personal goals'],
+  },
+  {
+    key: 'resources',
+    label: 'Resources',
+    path: '/contact/',
+    keywords: ['contact', 'email', 'message', 'support', 'questions', 'client process'],
+  },
+  {
+    key: 'dashboard',
+    label: 'Client Portal',
+    path: '/dashboard/',
+    keywords: ['portal', 'overview', 'account', 'projects', 'updates', 'activity'],
   },
 ];
 
 export const BOTTOM_NAV_ROUTES: AppRoute[] = [
-  PRIMARY_ROUTES[0],
+  PRIMARY_ROUTES[5],
   PRIMARY_ROUTES[2],
-  PRIMARY_ROUTES[1],
-  {
-    key: 'contact',
-    label: 'Contact',
-    path: '/contact/',
-    keywords: ['email', 'phone', 'message', 'reach us', 'support', 'inquiry'],
-  },
+  PRIMARY_ROUTES[3],
+  PRIMARY_ROUTES[4],
 ];
 
 export const DRAWER_ROUTES: AppRoute[] = [
   ...PRIMARY_ROUTES,
-  {
-    key: 'about',
-    label: 'About',
-    path: '/about/',
-    keywords: ['company', 'team', 'story', 'mission', 'background', 'insights'],
-  },
-  {
-    key: 'faq',
-    label: 'FAQ',
-    path: '/faq/',
-    keywords: ['questions', 'answers', 'help', 'support', 'common issues', 'guide'],
-  },
+];
+
+export const LEGAL_ROUTES: AppRoute[] = [
   {
     key: 'privacy',
     label: 'Privacy Policy',
@@ -136,11 +140,10 @@ export const DRAWER_ROUTES: AppRoute[] = [
     path: '/terms/',
     keywords: ['terms', 'service', 'agreement', 'legal', 'rules', 'conditions'],
   },
-  BOTTOM_NAV_ROUTES[3],
 ];
 
 export const SEARCH_ROUTES: AppRoute[] = Array.from(
-  new Map([...DRAWER_ROUTES, ...BOTTOM_NAV_ROUTES].map((route) => [route.path, route])).values()
+  new Map([...DRAWER_ROUTES, ...LEGAL_ROUTES, ...BOTTOM_NAV_ROUTES].map((route) => [route.path, route])).values()
 );
 
 export function markMobileAppUrl(url: string) {
@@ -176,7 +179,7 @@ export function getRouteForUrl(url: string) {
     pathname = '/';
   }
 
-  const sortedRoutes = [...DRAWER_ROUTES, ...BOTTOM_NAV_ROUTES].sort(function (left, right) {
+  const sortedRoutes = [...DRAWER_ROUTES, ...LEGAL_ROUTES, ...BOTTOM_NAV_ROUTES].sort(function (left, right) {
     return right.path.length - left.path.length;
   });
 

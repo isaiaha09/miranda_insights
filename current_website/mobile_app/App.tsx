@@ -33,6 +33,7 @@ import {
   DEFAULT_BASE_URL,
   DRAWER_ROUTES,
   EXPO_PUSH_PROJECT_ID,
+  LEGAL_ROUTES,
   SEARCH_ROUTES,
   buildRouteUrl,
   getRouteForUrl,
@@ -640,14 +641,12 @@ export default function App() {
   const previousNativeScreenTranslate = useRef(new Animated.Value(0)).current;
   const previousNativeScreenOpacity = useRef(new Animated.Value(1)).current;
   const nativeScreenTransitionRef = useRef<Animated.CompositeAnimation | null>(null);
-  const landingDataMotion = useRef(new Animated.Value(0)).current;
-  const landingAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const searchIndexRequestedRef = useRef(false);
   const [nativeScreen, setNativeScreen] = useState<NativeScreen>('landing');
   const [transitioningFromScreen, setTransitioningFromScreen] = useState<NativeAppScreen | null>(null);
   const [transitioningToScreen, setTransitioningToScreen] = useState<NativeAppScreen | null>(null);
   const [currentUrl, setCurrentUrl] = useState(buildRouteUrl('/'));
-  const [currentTitle, setCurrentTitle] = useState('Insights');
+  const [currentTitle, setCurrentTitle] = useState('Miranda Insights');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pageReady, setPageReady] = useState(false);
   const [showWebLoader, setShowWebLoader] = useState(false);
@@ -668,7 +667,6 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [searchContentIndex, setSearchContentIndex] = useState<SearchContentIndex>({});
-  const shouldAnimateBrandIcon = nativeScreen === 'landing' || (nativeScreen === 'web' && !pageReady && !webError);
   const activeRoute = getRouteForUrl(currentUrl);
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const searchResults = SEARCH_ROUTES.map(function (route) {
@@ -704,39 +702,6 @@ export default function App() {
       useNativeDriver: true,
     }).start();
   }, [drawerOffset, drawerOpen]);
-
-  useEffect(() => {
-    if (!shouldAnimateBrandIcon) {
-      landingAnimationRef.current?.stop();
-      landingAnimationRef.current = null;
-      return;
-    }
-
-    landingAnimationRef.current?.stop();
-    landingDataMotion.setValue(0);
-    landingAnimationRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(landingDataMotion, {
-          toValue: 1,
-          duration: 3600,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: false,
-        }),
-        Animated.timing(landingDataMotion, {
-          toValue: 0,
-          duration: 3600,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: false,
-        }),
-      ])
-    );
-
-    landingAnimationRef.current.start();
-
-    return () => {
-      landingAnimationRef.current?.stop();
-    };
-  }, [landingDataMotion, shouldAnimateBrandIcon]);
 
   useEffect(() => {
     return () => {
@@ -1009,13 +974,13 @@ export default function App() {
 
   function openRoute(path: string, highlightPhrase?: string) {
     const nextUrl = buildRouteUrl(path);
-    const nextRoute = [...BOTTOM_NAV_ROUTES, ...DRAWER_ROUTES].find((route) => route.path === path);
+    const nextRoute = [...BOTTOM_NAV_ROUTES, ...DRAWER_ROUTES, ...LEGAL_ROUTES].find((route) => route.path === path);
     const currentPath = getRouteForUrl(currentUrl)?.path;
     const normalizedHighlightPhrase = highlightPhrase?.trim() || '';
 
     pendingSearchHighlightRef.current = normalizedHighlightPhrase || null;
     setCurrentUrl(nextUrl);
-    setCurrentTitle(nextRoute?.label || getRouteForUrl(nextUrl)?.label || 'Insights');
+    setCurrentTitle(nextRoute?.label || getRouteForUrl(nextUrl)?.label || 'Miranda Insights');
     setWebError(null);
     closeDrawer();
     closeSearchSheet();
@@ -1081,7 +1046,7 @@ export default function App() {
     setRecoveryEmail('');
     setPasswordResetEmail('');
     setCurrentUrl(buildRouteUrl('/'));
-    setCurrentTitle('Insights');
+    setCurrentTitle('Miranda Insights');
     setWebError(null);
     setPageReady(false);
     setShowWebLoader(false);
@@ -1536,7 +1501,7 @@ export default function App() {
       closeDrawer();
       closeSearchSheet();
       setNativeScreen(authScreen);
-      setCurrentTitle('Insights');
+      setCurrentTitle('Miranda Insights');
       setWebError(null);
       setPageReady(false);
       setShowWebLoader(false);
@@ -1551,7 +1516,7 @@ export default function App() {
       return;
     }
 
-    setCurrentTitle(getRouteForUrl(navigationState.url)?.label || 'Insights');
+    setCurrentTitle(getRouteForUrl(navigationState.url)?.label || 'Miranda Insights');
   }
 
   function handleShouldStartLoad(request: {
@@ -1599,7 +1564,7 @@ export default function App() {
           setOtpCode('');
           closeDrawer();
           closeSearchSheet();
-          setCurrentTitle('Insights');
+          setCurrentTitle('Miranda Insights');
           setWebError(null);
           setPageReady(false);
           setShowWebLoader(false);
@@ -1641,7 +1606,7 @@ export default function App() {
     return true;
   }
 
-  const headerLabel = currentTitle || getRouteForUrl(currentUrl)?.label || 'Insights';
+  const headerLabel = currentTitle || getRouteForUrl(currentUrl)?.label || 'Miranda Insights';
 
   function renderAuthMessage() {
     if (!authError && !authNotice) {
@@ -1730,31 +1695,13 @@ export default function App() {
     );
   }
 
-  function renderDynamicBrandIcon(variant: 'landing' | 'loading' = 'landing') {
-    const barOneHeight = landingDataMotion.interpolate({
-      inputRange: [0, 0.35, 0.7, 1],
-      outputRange: variant === 'landing' ? [46, 86, 58, 72] : [20, 38, 26, 32],
-    });
-    const barTwoHeight = landingDataMotion.interpolate({
-      inputRange: [0, 0.3, 0.65, 1],
-      outputRange: variant === 'landing' ? [22, 56, 30, 44] : [10, 24, 14, 20],
-    });
-    const barThreeHeight = landingDataMotion.interpolate({
-      inputRange: [0, 0.25, 0.75, 1],
-      outputRange: variant === 'landing' ? [38, 72, 52, 64] : [16, 32, 22, 28],
-    });
-
+  function renderBrandIcon(variant: 'landing' | 'loading' = 'landing') {
     const wrapperStyle = variant === 'landing' ? styles.landingIconWrap : styles.loadingIconWrap;
-    const iconStyle = variant === 'landing' ? styles.landingDynamicIcon : styles.loadingDynamicIcon;
-    const barStyle = variant === 'landing' ? styles.landingDynamicBar : styles.loadingDynamicBar;
+    const imageStyle = variant === 'landing' ? styles.landingBrandImage : styles.loadingBrandImage;
 
     return (
       <View style={wrapperStyle}>
-        <View style={iconStyle}>
-          <Animated.View style={[barStyle, styles.landingDynamicBarLeft, { height: barOneHeight }]} />
-          <Animated.View style={[barStyle, styles.landingDynamicBarCenter, { height: barTwoHeight }]} />
-          <Animated.View style={[barStyle, styles.landingDynamicBarRight, { height: barThreeHeight }]} />
-        </View>
+        <Image accessible={false} source={require('./assets/drawer-logo.png')} style={imageStyle} />
       </View>
     );
   }
@@ -1779,12 +1726,12 @@ export default function App() {
     switch (routeKey) {
       case 'dashboard':
         return isActive ? 'home' : 'home-outline';
-      case 'products':
-        return isActive ? 'bag-handle' : 'bag-handle-outline';
       case 'services':
         return isActive ? 'construct' : 'construct-outline';
-      case 'contact':
-        return isActive ? 'call' : 'call-outline';
+      case 'individual-services':
+        return isActive ? 'person' : 'person-outline';
+      case 'resources':
+        return isActive ? 'library' : 'library-outline';
       default:
         return isActive ? 'ellipse' : 'ellipse-outline';
     }
@@ -1908,7 +1855,7 @@ export default function App() {
       copy:
         "Log in to access your Miranda Insights client portal. New clients can book a consultation to get started.",
       topContent: (
-        <View style={styles.landingVisualStage}>{renderDynamicBrandIcon('landing')}</View>
+        <View style={styles.landingVisualStage}>{renderBrandIcon('landing')}</View>
       ),
       topSectionStyle: styles.landingTopSection,
       eyebrowStyle: styles.landingTextCentered,
@@ -2213,8 +2160,8 @@ export default function App() {
           {showWebLoader && !webError ? (
             <View pointerEvents="none" style={styles.loadingScreenOverlay}>
               <View style={styles.loadingState}>
-                {renderDynamicBrandIcon('loading')}
-                <Text style={styles.loadingStateText}>Loading Insights...</Text>
+                {renderBrandIcon('loading')}
+                <Text style={styles.loadingStateText}>Loading Miranda Insights...</Text>
               </View>
             </View>
           ) : null}
@@ -2226,13 +2173,22 @@ export default function App() {
           <Animated.View style={[styles.drawer, { transform: [{ translateX: drawerOffset }] }]}> 
             <ScrollView contentContainerStyle={styles.drawerContent}>
               <View style={styles.drawerHeader}>
-                <Text style={styles.drawerEyebrow}>Miranda Insights Mobile</Text>
+                <Text style={styles.drawerEyebrow}>Miranda Insights</Text>
                 <Text style={styles.drawerTitle}>Menu</Text>
               </View>
 
               <View style={styles.drawerSection}>
                 <Text style={styles.drawerSectionTitle}>Navigate</Text>
                 {DRAWER_ROUTES.map((route) => (
+                  <Pressable key={route.key} onPress={() => openRoute(route.path)} style={styles.drawerLinkRow}>
+                    <Text style={styles.drawerLinkText}>{route.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={[styles.drawerSection, styles.drawerSectionSeparated]}>
+                <Text style={styles.drawerSectionTitle}>Legal</Text>
+                {LEGAL_ROUTES.map((route) => (
                   <Pressable key={route.key} onPress={() => openRoute(route.path)} style={styles.drawerLinkRow}>
                     <Text style={styles.drawerLinkText}>{route.label}</Text>
                   </Pressable>
@@ -2347,17 +2303,10 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     elevation: 14,
   },
-  landingDynamicIcon: {
-    width: 92,
-    height: 96,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 18,
-  },
-  landingDynamicBar: {
-    width: 18,
-    borderRadius: 4,
+  landingBrandImage: {
+    width: 132,
+    height: 132,
+    borderRadius: 32,
   },
   loadingIconWrap: {
     width: 74,
@@ -2369,26 +2318,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(116, 149, 228, 0.36)',
   },
-  loadingDynamicIcon: {
-    width: 44,
-    height: 40,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  loadingDynamicBar: {
-    width: 8,
-    borderRadius: 3,
-  },
-  landingDynamicBarLeft: {
-    backgroundColor: '#6797ea',
-  },
-  landingDynamicBarCenter: {
-    backgroundColor: '#8d93f3',
-  },
-  landingDynamicBarRight: {
-    backgroundColor: '#8d93f3',
+  loadingBrandImage: {
+    width: 62,
+    height: 62,
+    borderRadius: 17,
   },
   authBodySpacer: {
     flex: 1,

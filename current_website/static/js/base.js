@@ -117,7 +117,7 @@ function setupPwaInstallExperience() {
   window.addEventListener('beforeinstallprompt', function (event) {
     event.preventDefault();
     deferredPrompt = event;
-    title.textContent = 'Install Insights on this device.';
+    title.textContent = 'Install Miranda Insights on this device.';
     copy.textContent = 'Get faster launch access and a full-screen app experience right from your home screen.';
     steps.hidden = true;
     action.hidden = false;
@@ -142,7 +142,7 @@ function setupPwaInstallExperience() {
 
   if (isIOS) {
     setManualMode(
-      'Add Insights to your home screen.',
+      'Add Miranda Insights to your home screen.',
       'On iPhone and iPad, installation happens from the browser share sheet rather than a browser popup.',
       'Show install steps',
       'Tap Share in your browser, then choose Add to Home Screen.'
@@ -154,7 +154,7 @@ function setupPwaInstallExperience() {
     window.setTimeout(function () {
       if (!deferredPrompt) {
         setManualMode(
-          'Install Insights on Android.',
+          'Install Miranda Insights on Android.',
           'If your browser does not show the native install prompt, you can still install the app from the browser menu.',
           'Show install steps',
           'Open the browser menu, then choose Install app or Add to Home screen.'
@@ -165,7 +165,7 @@ function setupPwaInstallExperience() {
   }
 
   setManualMode(
-    'Save Insights for quick access.',
+    'Save Miranda Insights for quick access.',
     'This browser may not offer a native install popup, but you can usually save the site from the browser menu.',
     'Show install steps',
     'Open your browser menu and look for Install app, Add to Home screen, or a similar save-to-device option.'
@@ -650,28 +650,62 @@ document.addEventListener('DOMContentLoaded', function(){
     var hamburger = document.getElementById('nav-hamburger');
     var menu = document.getElementById('nav-menu');
     var overlay = document.getElementById('nav-overlay');
-    var MOBILE_BREAKPOINT = 800;
+    var MOBILE_BREAKPOINT = 1180;
 
-    function setMenuOpen(isOpen) {
+    function usesDrawerLayout() {
+      return window.innerWidth <= MOBILE_BREAKPOINT;
+    }
+
+    function syncMenuAvailability() {
+      if (!menu) return;
+      var isDrawer = usesDrawerLayout();
+      var isOpen = Boolean(nav && nav.classList.contains('menu-open'));
+
+      if (isDrawer && !isOpen) {
+        menu.setAttribute('inert', '');
+        menu.setAttribute('aria-hidden', 'true');
+        return;
+      }
+
+      menu.removeAttribute('inert');
+      menu.removeAttribute('aria-hidden');
+    }
+
+    function setMenuOpen(isOpen, shouldReturnFocus) {
       if (!nav || !hamburger || !menu) return;
-      nav.classList.toggle('menu-open', isOpen);
-      document.body.classList.toggle('nav-open', isOpen);
-      hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      var nextOpen = usesDrawerLayout() && isOpen;
+      nav.classList.toggle('menu-open', nextOpen);
+      document.body.classList.toggle('nav-open', nextOpen);
+      hamburger.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+      hamburger.setAttribute('aria-label', nextOpen ? 'Close menu' : 'Open menu');
 
       if (overlay) {
-        overlay.hidden = !isOpen;
+        overlay.hidden = !nextOpen;
+      }
+
+      syncMenuAvailability();
+
+      if (nextOpen) {
+        window.requestAnimationFrame(function () {
+          var firstLink = menu.querySelector('a');
+          if (firstLink) firstLink.focus();
+        });
+      } else if (shouldReturnFocus) {
+        hamburger.focus();
       }
     }
 
     if (hamburger && nav && menu) {
+      syncMenuAvailability();
+
       hamburger.addEventListener('click', function () {
         var isOpen = nav.classList.contains('menu-open');
-        setMenuOpen(!isOpen);
+        setMenuOpen(!isOpen, false);
       });
 
       if (overlay) {
         overlay.addEventListener('click', function () {
-          setMenuOpen(false);
+          setMenuOpen(false, true);
         });
       }
 
@@ -679,23 +713,27 @@ document.addEventListener('DOMContentLoaded', function(){
         if (!nav.classList.contains('menu-open')) return;
         var target = evt.target;
         if (target && (nav.contains(target))) return;
-        setMenuOpen(false);
+        setMenuOpen(false, true);
       });
 
       document.addEventListener('keydown', function (evt) {
-        if (evt.key === 'Escape') setMenuOpen(false);
+        if (evt.key === 'Escape' && nav.classList.contains('menu-open')) {
+          setMenuOpen(false, true);
+        }
       });
 
       // Close menu when a link is clicked
       menu.addEventListener('click', function (evt) {
         var el = evt.target;
-        if (el && el.tagName === 'A') setMenuOpen(false);
+        if (el && el.tagName === 'A') setMenuOpen(false, true);
       });
 
-      // Ensure menu doesn't stay open when resizing to desktop
+      // Ensure the menu state and keyboard availability follow the CSS breakpoint.
       window.addEventListener('resize', function () {
         if (window.innerWidth > MOBILE_BREAKPOINT) {
-          setMenuOpen(false);
+          setMenuOpen(false, false);
+        } else {
+          syncMenuAvailability();
         }
       });
     }
