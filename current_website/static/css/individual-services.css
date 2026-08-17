@@ -27,8 +27,7 @@ body.individual-services-page .site-main {
     isolation: isolate;
     background:
         radial-gradient(850px circle at 7% 8%, rgba(31, 91, 137, 0.16), transparent 58%),
-        radial-gradient(700px circle at 96% 33%, rgba(216, 164, 58, 0.07), transparent 60%),
-        linear-gradient(180deg, #071526, #061224 48%, #050f1e);
+        radial-gradient(700px circle at 96% 33%, rgba(216, 164, 58, 0.07), transparent 60%);
 }
 
 .individual-services-page .individual-container {
@@ -50,7 +49,7 @@ body.individual-services-page .site-main {
 
 .individual-services-page .individual-hero {
     position: relative;
-    min-height: clamp(38rem, 74vh, 48rem);
+    min-height: clamp(39rem, 76vh, 50rem);
     display: grid;
     align-items: center;
     padding: clamp(6.25rem, 11vw, 9.5rem) 0 clamp(5rem, 9vw, 8rem);
@@ -98,20 +97,19 @@ body.individual-services-page .site-main {
 }
 
 .individual-services-page .individual-hero h1 {
-    max-width: 12ch;
-    margin: 0.8rem 0 0;
+    max-width: 13ch;
+    margin: 0.7rem 0 0;
     color: var(--individual-white);
-    font-size: clamp(3.1rem, 8vw, 7rem);
-    letter-spacing: -0.05em;
-    line-height: 0.94;
+    font-size: clamp(3.4rem, 8vw, 7rem);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1;
 }
 
 .individual-services-page .individual-hero__copy {
-    max-width: 61rem;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(1.2rem, 3vw, 2.5rem);
-    margin-top: clamp(1.8rem, 4vw, 2.8rem);
+    display: block;
+    max-width: 47rem;
+    margin-top: 1.6rem;
 }
 
 .individual-services-page .individual-hero__copy p,
@@ -127,15 +125,21 @@ body.individual-services-page .site-main {
 
 .individual-services-page .individual-hero__copy p {
     margin: 0;
-    font-size: clamp(1rem, 1.4vw, 1.14rem);
+    font-size: clamp(1.02rem, 1.5vw, 1.16rem);
+}
+
+.individual-services-page .individual-hero__copy p + p {
+    max-width: 44rem;
+    margin-top: 0.8rem;
+    font-size: clamp(0.98rem, 1.25vw, 1.08rem);
 }
 
 .individual-services-page .individual-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.8rem;
-    margin-top: 2rem;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
 }
 
 .individual-services-page .individual-actions .btn,
@@ -145,6 +149,11 @@ body.individual-services-page .site-main {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+
+.individual-services-page .individual-actions .btn {
+    padding: 0.78rem 1.25rem;
+    font-weight: 700;
 }
 
 .individual-services-page .btn-primary {

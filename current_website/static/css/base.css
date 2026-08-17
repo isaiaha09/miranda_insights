@@ -177,6 +177,12 @@ body.nav-open .nav-overlay {
     right: 0;
     z-index: 1300;
     will-change: top;
+    --chrome-accent: #d8a43a;
+    --chrome-accent-light: #f1d58b;
+    --chrome-text: #f5f0e6;
+    --chrome-muted: #c4c0b6;
+    --chrome-border: rgba(231, 211, 168, 0.2);
+    --chrome-border-soft: rgba(231, 211, 168, 0.12);
 }
 
 .nav {
@@ -185,9 +191,9 @@ body.nav-open .nav-overlay {
     align-items: center;
     column-gap: 1rem;
     padding: 0.95rem 1rem;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    background: var(--chrome-bg);
+    border-top: 1px solid var(--chrome-border);
+    border-bottom: 1px solid var(--chrome-border);
+    background: rgba(7, 20, 38, 0.96);
     min-height: var(--header-height);
     transition: background-color 180ms ease, border-color 180ms ease;
     box-shadow: var(--nav-shadow);
@@ -216,7 +222,7 @@ body.is-scrolling .site-footer {
     align-items: center;
     gap: 0.7rem;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--chrome-text);
     text-decoration: none;
     font-size: 1.25rem;
     line-height: 1;
@@ -235,26 +241,29 @@ body.is-scrolling .site-footer {
     overflow: hidden;
     border-radius: 50%;
     background-color: #ffffff;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
+    object-fit: contain;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--chrome-accent) 48%, transparent);
     pointer-events: none;
     user-select: none;
 }
 
 .nav a:hover {
-    color: var(--text);
+    color: var(--chrome-text);
 }
 
 .nav-right a {
     margin-left: 0;
-    color: var(--muted);
+    color: var(--chrome-muted);
     text-decoration: none;
 }
 
 .nav a:focus-visible,
-.nav button:focus-visible,
+.nav button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(216, 164, 58, 0.28);
+    border-radius: var(--radius-sm);
+}
+
 .btn:focus-visible,
 input:focus-visible {
     outline: none;
@@ -271,7 +280,7 @@ input:focus-visible {
 }
 
 .nav-center a {
-    color: var(--muted);
+    color: var(--chrome-muted);
     text-decoration: none;
     font-size: 0.9rem;
     padding: 0.35rem 0.6rem;
@@ -288,19 +297,26 @@ input:focus-visible {
     right: 0.6rem;
     bottom: 0.25rem;
     height: 1px;
-    background: color-mix(in srgb, var(--accent) 42%, transparent);
+    background: var(--chrome-accent);
     transform: scaleX(0);
     transform-origin: 0% 50%;
     transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .nav-center a:hover {
-    background: var(--surface);
-    border-color: var(--border-soft);
+    background: rgba(216, 164, 58, 0.08);
+    border-color: var(--chrome-border-soft);
 }
 
-.nav-center a:hover::after {
+.nav-center a:hover::after,
+.nav-center a[aria-current="page"]::after {
     transform: scaleX(1);
+}
+
+.nav-center a[aria-current="page"] {
+    color: var(--chrome-text);
+    background: rgba(216, 164, 58, 0.06);
+    border-color: var(--chrome-border-soft);
 }
 
 .nav-right {
@@ -331,10 +347,10 @@ input:focus-visible {
 }
 
 .nav-right .signup {
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    background: linear-gradient(90deg, var(--chrome-accent), var(--chrome-accent-light));
     background-size: 160% 160%;
     background-position: 0% 50%;
-    color: #fff;
+    color: #0b1728;
     padding: 0.4rem 0.75rem;
     border-radius: var(--radius-sm);
     text-decoration: none;
@@ -363,14 +379,14 @@ input:focus-visible {
     border-radius: var(--radius-sm);
     background: transparent;
     border: 1px solid transparent;
-    color: var(--text);
+    color: var(--chrome-text);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
 }
 
 .nav-hamburger:hover {
-    background: var(--surface);
-    border-color: var(--border-soft);
+    background: rgba(216, 164, 58, 0.08);
+    border-color: var(--chrome-border-soft);
 }
 
 /* Desktop: hamburger hidden */
@@ -591,11 +607,15 @@ input:focus-visible {
 
 /* Footer */
 .site-footer {
-    border-top: 1px solid var(--border);
-    background: var(--chrome-bg);
+    --footer-accent: #d8a43a;
+    --footer-text: #f5f0e6;
+    --footer-muted: #c4c0b6;
+    --footer-border: rgba(231, 211, 168, 0.18);
+    border-top: 1px solid var(--footer-border);
+    background: rgba(7, 20, 38, 0.97);
     padding: 1rem;
-    text-align: center;
-    color: var(--muted);
+    text-align: left;
+    color: var(--footer-muted);
     transition: background-color 180ms ease, border-color 180ms ease;
     box-shadow: var(--footer-shadow);
     backdrop-filter: blur(12px) saturate(1.02);
@@ -603,7 +623,7 @@ input:focus-visible {
 
 /* Let the footer breathe on wide screens */
 .site-footer .container {
-    max-width: none;
+    max-width: 1200px;
     padding-left: clamp(1rem, 5vw, 4rem);
     padding-right: clamp(1rem, 5vw, 4rem);
 }
@@ -611,22 +631,24 @@ input:focus-visible {
 /* Footer grid and columns */
 .footer-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1.25rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 2.75rem);
     align-items: start;
     padding: 1.25rem 0;
 }
 
-.footer-col h4 {
+.footer-col h2 {
     margin: 0 0 0.5rem 0;
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--footer-accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
 }
 
 .footer-col p {
     margin: 0 0 0.5rem 0;
-    color: var(--muted);
+    color: var(--footer-muted);
     font-size: 0.95rem;
 }
 
@@ -636,21 +658,12 @@ input:focus-visible {
     margin: 0;
 }
 
-/* Quick Links: 2x2 */
-.footer-links ul {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, max-content));
-    justify-content: center;
-    column-gap: 2.25rem;
-    row-gap: 0.35rem;
-}
-
 .footer-col li {
-    margin: 0.35rem 0;
+    margin: 0.2rem 0;
 }
 
 .footer-col a {
-    color: var(--muted);
+    color: var(--footer-muted);
     text-decoration: none;
     display: inline-block;
     padding: 0.25rem 0.5rem;
@@ -660,36 +673,91 @@ input:focus-visible {
 }
 
 .footer-col a:hover {
-    color: var(--text);
-    background: var(--surface);
-    border-color: var(--border-soft);
+    color: var(--footer-text);
+    background: rgba(216, 164, 58, 0.08);
+    border-color: var(--footer-border);
+}
+
+.footer-col a:focus-visible {
+    outline: none;
+    color: var(--footer-text);
+    box-shadow: 0 0 0 3px rgba(216, 164, 58, 0.28);
 }
 
 .footer-bottom {
-    border-top: 1px solid var(--divider);
+    border-top: 1px solid var(--footer-border);
     padding-top: 0.75rem;
     margin-top: 0.75rem;
 }
 
-/* Align footer columns: About left, Quick Links center, Contact right */
-.footer-our-goal {
-    text-align: left;
+.footer-bottom p {
+    margin: 0;
+    color: var(--footer-muted);
+    font-size: 0.88rem;
 }
 
-.footer-links {
-    text-align: center;
+/* Switch to the existing drawer before the six-link navigation can collide. */
+@media (max-width: 1180px) {
+    .nav {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+    }
+
+    .nav-hamburger {
+        display: inline-flex;
+    }
+
+    .nav-center {
+        display: flex;
+        position: fixed;
+        top: var(--header-height);
+        right: 0;
+        height: calc(100dvh - var(--header-height));
+        width: clamp(240px, 50vw, 420px);
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 0.25rem;
+        padding: 0.9rem 0.75rem;
+        background: #071426;
+        border-left: 1px solid var(--chrome-border);
+        transform: translateX(110%);
+        transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        z-index: 1050;
+    }
+
+    #site-nav.menu-open .nav-center {
+        transform: translateX(0);
+    }
+
+    #site-nav.menu-anchor-bottom .nav-center {
+        top: auto;
+        bottom: var(--header-height);
+        height: calc(100dvh - var(--header-height));
+        justify-content: flex-end;
+        padding-top: 0.9rem;
+        padding-bottom: 0.55rem;
+    }
+
+    .nav-center a {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        text-align: left;
+        border-radius: 10px;
+    }
+
+    .nav-center a:hover {
+        background: rgba(216, 164, 58, 0.08);
+    }
 }
 
-.footer-contact {
-    text-align: right;
+@media (max-width: 1040px) {
+    .footer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
-/* Keep "Our Goal" on the left, but avoid overly wide lines */
-.footer-our-goal p {
-    max-width: 24rem;
-}
-
-/* Responsive: stack the columns on narrow screens */
 @media (max-width: 800px) {
     .container,
     .site-footer .container {
@@ -697,13 +765,6 @@ input:focus-visible {
         max-width: none;
         padding-left: 0;
         padding-right: 0;
-    }
-
-    /* Mobile nav: right-side drawer */
-    .nav {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: nowrap;
     }
 
     .brand {
@@ -726,51 +787,8 @@ input:focus-visible {
         text-align: center;
     }
 
-    .nav-hamburger {
-        display: inline-flex;
-    }
-
-    .nav-center {
-        display: flex;
-        position: fixed;
-        top: var(--header-height);
-        right: 0;
-        height: calc(100dvh - var(--header-height));
-        width: clamp(240px, 50vw, 420px);
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: flex-start;
-        gap: 0.25rem;
-        padding: 0.9rem 0.75rem;
-        background: var(--bg);
-        border-left: 1px solid var(--border);
-        transform: translateX(110%);
-        transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
-        z-index: 1050;
-    }
-
-    #site-nav.menu-open .nav-center {
-        transform: translateX(0);
-    }
-
-    .nav-center a {
-        width: 100%;
-        padding: 0.65rem 0.75rem;
-        text-align: left;
-        border-radius: 10px;
-    }
-
-    .nav-center a:hover {
-        background: var(--surface);
-    }
-
     .client-portal {
         padding: 0;
-    }
-
-    .footer-grid {
-        grid-template-columns: 1fr;
-        text-align: left;
     }
 
     .pwa-install-banner {
@@ -805,15 +823,11 @@ input:focus-visible {
         text-align: left;
     }
 
-    /* reset column alignment on small screens */
-    .footer-our-goal,
-    .footer-links,
-    .footer-contact {
-        text-align: left;
-    }
+}
 
-    .footer-links ul {
-        justify-content: start;
+@media (max-width: 640px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
     }
 }
 

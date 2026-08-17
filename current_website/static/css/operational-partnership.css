@@ -42,15 +42,15 @@ body.operational-partnership-page .site-main {
 .operational-partnership-page .partnership-hero {
     position: relative;
     display: grid;
-    min-height: min(48rem, 78vh);
+    min-height: clamp(39rem, 76vh, 50rem);
     place-items: center;
-    padding: clamp(5rem, 10vw, 8.5rem) 0;
+    padding: clamp(6.25rem, 11vw, 9.5rem) 0 clamp(5rem, 9vw, 8rem);
     overflow: hidden;
     border-bottom: 1px solid rgba(231, 211, 168, 0.13);
     background:
-        radial-gradient(680px circle at 14% 24%, rgba(216, 164, 58, 0.15), transparent 62%),
+        radial-gradient(680px circle at 18% 28%, rgba(216, 164, 58, 0.1), transparent 62%),
         radial-gradient(760px circle at 88% 76%, rgba(241, 213, 139, 0.07), transparent 66%),
-        linear-gradient(135deg, rgba(6, 18, 36, 0.96), rgba(9, 23, 42, 0.92));
+        linear-gradient(135deg, rgba(6, 18, 36, 0.38), rgba(9, 23, 42, 0.16));
 }
 
 .operational-partnership-page .partnership-hero::before {
@@ -82,23 +82,24 @@ body.operational-partnership-page .site-main {
 .operational-partnership-page .partnership-hero__inner {
     position: relative;
     z-index: 1;
-    text-align: center;
+    width: min(1180px, calc(100% - 2.5rem));
+    text-align: left;
 }
 
 .operational-partnership-page .partnership-hero h1 {
-    max-width: 18ch;
-    margin: 0.8rem auto 0;
+    max-width: 14ch;
+    margin: 0.7rem 0 0;
     color: var(--text);
-    font-size: clamp(2.65rem, 6.2vw, 5.4rem);
+    font-size: clamp(3.4rem, 6.8vw, 6.4rem);
     font-weight: 700;
     letter-spacing: -0.045em;
-    line-height: 1.01;
+    line-height: 0.98;
     text-wrap: balance;
 }
 
 .operational-partnership-page .partnership-hero__lead {
-    max-width: 58rem;
-    margin: 1.5rem auto 0;
+    max-width: 47rem;
+    margin: 1.6rem 0 0;
     color: var(--muted);
     font-size: clamp(1.02rem, 1.7vw, 1.22rem);
     line-height: 1.75;
@@ -108,7 +109,7 @@ body.operational-partnership-page .site-main {
 .operational-partnership-page .partnership-actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.75rem;
     margin-top: 1.75rem;
 }
@@ -124,7 +125,25 @@ body.operational-partnership-page .site-main {
 }
 
 .operational-partnership-page .partnership-actions .btn-primary {
-    box-shadow: 0 14px 34px rgba(216, 164, 58, 0.24);
+    color: #07111f;
+    border-color: rgba(241, 213, 139, 0.74);
+    background: linear-gradient(135deg, var(--partnership-gold-light), var(--partnership-gold));
+    box-shadow: 0 14px 34px rgba(216, 164, 58, 0.22);
+}
+
+.operational-partnership-page .partnership-actions .btn-primary:hover {
+    box-shadow: 0 16px 38px rgba(216, 164, 58, 0.25);
+}
+
+.operational-partnership-page .partnership-actions .btn-ghost {
+    color: var(--text);
+    border-color: rgba(231, 211, 168, 0.32);
+    background: rgba(5, 15, 30, 0.3);
+}
+
+.operational-partnership-page .partnership-actions .btn-ghost:hover {
+    border-color: rgba(216, 164, 58, 0.62);
+    background: rgba(216, 164, 58, 0.08);
 }
 
 .operational-partnership-page .partnership-actions .btn:focus-visible,
@@ -598,6 +617,14 @@ body.operational-partnership-page .site-main {
 @media (max-width: 760px) {
     .operational-partnership-page .partnership-hero {
         min-height: auto;
+        padding: 5.5rem 0 4.75rem;
+    }
+
+    .operational-partnership-page .partnership-hero::before {
+        right: -15rem;
+        bottom: -50%;
+        width: 31rem;
+        opacity: 0.72;
     }
 
     .operational-partnership-page .partnership-editorial-layout,
@@ -656,6 +683,14 @@ body.operational-partnership-page .site-main {
     .operational-partnership-page .partnership-actions {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .operational-partnership-page .partnership-hero h1 {
+        font-size: clamp(2.75rem, 14vw, 4.1rem);
+    }
+
+    .operational-partnership-page .partnership-actions .btn {
+        width: 100%;
     }
 }
 

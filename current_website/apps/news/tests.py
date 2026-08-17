@@ -79,7 +79,7 @@ class PublicPageTests(TestCase):
 	def test_homepage_uses_existing_routes_and_approved_discovery_link(self):
 		response = self.client.get(reverse("home"))
 
-		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=3, html=False)
 		self.assertContains(response, f'href="{reverse("services")}"', html=False)
 		self.assertContains(response, f'href="{reverse("contact_support")}"', html=False)
 		self.assertContains(response, "Download Miranda Insights Mobile on the App Store")
@@ -98,13 +98,24 @@ class PublicPageTests(TestCase):
 
 	def test_shared_primary_navigation_uses_current_public_destinations(self):
 		expected_links = [
-			f'<a href="{reverse("about")}">About</a>',
-			f'<a href="{reverse("operational_partnership")}">Partnerships</a>',
-			f'<a href="{reverse("services")}">Services</a>',
-			f'<a href="{reverse("dashboard")}">Client Portal</a>',
+			f'href="{reverse("about")}"',
+			f'href="{reverse("operational_partnership")}"',
+			f'href="{reverse("services")}"',
+			f'href="{reverse("individual_services")}"',
+			f'href="{reverse("contact_support")}"',
+			f'href="{reverse("dashboard")}"',
 		]
 
-		for route_name in ("home", "about", "operational_partnership"):
+		for route_name in (
+			"home",
+			"about",
+			"operational_partnership",
+			"services",
+			"individual_services",
+			"contact_support",
+			"login",
+			"signup",
+		):
 			with self.subTest(route_name=route_name):
 				response = self.client.get(reverse(route_name))
 				primary_nav, navigation_actions, _footer = self._shared_navigation_blocks(response)
@@ -143,16 +154,58 @@ class PublicPageTests(TestCase):
 		self.assertIn(">Logout</button>", navigation_actions)
 		self.assertNotIn(">Sign Up</a>", navigation_actions)
 
-	def test_products_and_faq_remain_available_outside_primary_navigation(self):
+	def test_shared_navigation_marks_the_current_public_page(self):
+		for route_name, label in (
+			("about", "About"),
+			("operational_partnership", "Partnerships"),
+			("services", "Services"),
+			("individual_services", "Individual Support"),
+			("contact_support", "Resources"),
+		):
+			with self.subTest(route_name=route_name):
+				response = self.client.get(reverse(route_name))
+				primary_nav, _navigation_actions, _footer = self._shared_navigation_blocks(response)
+
+				self.assertIn(
+					f'<a href="{reverse(route_name)}" aria-current="page">{label}</a>',
+					primary_nav,
+				)
+				self.assertEqual(primary_nav.count('aria-current="page"'), 1)
+
+	def test_shared_footer_uses_current_architecture(self):
 		response = self.client.get(reverse("home"))
 		primary_nav, _navigation_actions, footer = self._shared_navigation_blocks(response)
 
 		self.assertNotIn(f'href="{reverse("products")}"', primary_nav)
 		self.assertNotIn(f'href="{reverse("faq")}"', primary_nav)
-		self.assertIn(f'<a href="{reverse("products")}">Products</a>', footer)
-		self.assertIn(f'<a href="{reverse("faq")}">FAQ</a>', footer)
+		self.assertNotIn(f'href="{reverse("products")}"', footer)
+		self.assertNotIn(f'href="{reverse("faq")}"', footer)
+		for heading in ("Explore", "Client", "Support / Contact", "Legal"):
+			self.assertIn(f">{heading}</h2>", footer)
+		for route_name in (
+			"about",
+			"operational_partnership",
+			"services",
+			"individual_services",
+			"contact_support",
+			"dashboard",
+			"privacy",
+			"terms",
+		):
+			self.assertIn(f'href="{reverse(route_name)}"', footer)
+		self.assertIn(f'href="{self.DISCOVERY_URL}"', footer)
+		self.assertIn('target="_blank" rel="noopener noreferrer"', footer)
+		self.assertIn("Miranda Insights LLC. All rights reserved.", footer)
 		self.assertEqual(self.client.get(reverse("products")).status_code, 200)
 		self.assertEqual(self.client.get(reverse("faq")).status_code, 200)
+
+	def test_shared_branding_uses_current_logo_and_favicon(self):
+		response = self.client.get(reverse("home"))
+
+		self.assertContains(response, f'href="{static("pwa/icon-32.png")}"', html=False)
+		self.assertContains(response, f'src="{static("img/miranda-logo.png")}"', html=False)
+		self.assertContains(response, 'alt="" width="40" height="40"', html=False)
+		self.assertNotContains(response, f'href="{static("favicon.svg")}"', html=False)
 
 	def test_shared_mobile_menu_hooks_remain_available(self):
 		response = self.client.get(reverse("home"))
@@ -213,7 +266,7 @@ class PublicPageTests(TestCase):
 	def test_about_page_uses_approved_ctas_and_removes_retired_content(self):
 		response = self.client.get(reverse("about"))
 
-		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=1, html=False)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
 		self.assertContains(response, 'target="_blank"', html=False)
 		self.assertContains(response, 'rel="noopener noreferrer"', html=False)
 		self.assertContains(response, f'href="{reverse("services")}"', html=False)
@@ -317,9 +370,9 @@ class PublicPageTests(TestCase):
 	def test_operational_partnership_uses_approved_ctas_and_semantic_faq(self):
 		response = self.client.get(reverse("operational_partnership"))
 
-		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
-		self.assertContains(response, 'target="_blank"', count=2, html=False)
-		self.assertContains(response, 'rel="noopener noreferrer"', count=2, html=False)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=3, html=False)
+		self.assertContains(response, 'target="_blank"', count=3, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=3, html=False)
 		self.assertContains(
 			response,
 			f'<a class="btn btn-ghost" href="{reverse("contact_support")}">Contact Miranda Insights</a>',
@@ -409,7 +462,7 @@ class PublicPageTests(TestCase):
 
 		self.assertEqual(step_positions, sorted(step_positions))
 		self.assertContains(response, "Clients may conclude the project or continue through an")
-		self.assertContains(response, f'href="{reverse("operational_partnership")}"', count=4, html=False)
+		self.assertContains(response, f'href="{reverse("operational_partnership")}"', count=5, html=False)
 
 	def test_services_page_features_exactly_four_real_deliverables(self):
 		response = self.client.get(reverse("services"))
@@ -464,9 +517,9 @@ class PublicPageTests(TestCase):
 			"Do you provide ongoing support?",
 		):
 			self.assertContains(response, question)
-		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=2, html=False)
-		self.assertContains(response, 'target="_blank"', count=10, html=False)
-		self.assertContains(response, 'rel="noopener noreferrer"', count=10, html=False)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=3, html=False)
+		self.assertContains(response, 'target="_blank"', count=11, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=11, html=False)
 		self.assertContains(response, 'href="#service-areas"', html=False)
 		self.assertContains(response, ">Learn About Operational Partnership</a>", html=False)
 
@@ -601,9 +654,9 @@ class PublicPageTests(TestCase):
 		step_positions = [content.index(f">{step}<") for step in steps]
 
 		self.assertEqual(step_positions, sorted(step_positions))
-		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=5, html=False)
-		self.assertContains(response, 'target="_blank"', count=5, html=False)
-		self.assertContains(response, 'rel="noopener noreferrer"', count=5, html=False)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=6, html=False)
+		self.assertContains(response, 'target="_blank"', count=6, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=6, html=False)
 		self.assertContains(response, 'href="#individual-services"', count=2, html=False)
 		self.assertContains(response, "Either model can be your starting point.")
 		self.assertContains(response, f'href="{reverse("operational_partnership")}"', html=False)
@@ -661,6 +714,158 @@ class PublicPageTests(TestCase):
 				self.assertEqual(response.status_code, 200)
 				self.assertNotContains(response, individual_stylesheet)
 
+	def test_resources_page_keeps_contact_route_and_renders_sections_in_order(self):
+		self.assertEqual(reverse("contact_support"), "/contact/")
+
+		response = self.client.get(reverse("contact_support"))
+
+		self.assertEqual(response.status_code, 200)
+		content = response.content.decode()
+		section_markers = [
+			'class="resources-hero"',
+			'id="resources-library-heading"',
+			'id="client-process"',
+			'id="resources-faq"',
+			'id="resources-connect-heading"',
+			'id="contact-form"',
+			'id="resources-final-cta-heading"',
+		]
+		positions = [content.index(marker) for marker in section_markers]
+		self.assertEqual(positions, sorted(positions))
+		self.assertContains(response, '<h1 id="resources-hero-heading">Resources</h1>', html=False)
+		self.assertContains(
+			response,
+			"Miranda Insights provides useful information, practical answers, and direct ways to connect",
+		)
+
+	def test_resources_page_has_only_current_public_resources(self):
+		response = self.client.get(reverse("contact_support"))
+
+		self.assertContains(response, 'class="resource-card"', count=2, html=False)
+		self.assertContains(response, 'href="#resources-faq"', count=1, html=False)
+		self.assertContains(response, 'href="#client-process"', count=1, html=False)
+		self.assertContains(response, "Frequently Asked Questions")
+		self.assertContains(response, "Client Process")
+		for unavailable_resource in (
+			"Pricing Catalog",
+			"Service Overview PDF",
+			"Client Documents",
+			"Coming Soon",
+		):
+			self.assertNotContains(response, unavailable_resource)
+
+	def test_resources_client_process_links_each_engagement_model(self):
+		response = self.client.get(reverse("contact_support"))
+		content = response.content.decode()
+		steps = ["Connect", "Clarify", "Choose the Fit", "Move Forward"]
+		positions = [content.index(f">{step}<") for step in steps]
+
+		self.assertEqual(positions, sorted(positions))
+		self.assertContains(response, 'class="resources-process-card"', count=4, html=False)
+		self.assertContains(response, f'href="{reverse("individual_services")}"', html=False)
+		self.assertContains(response, f'href="{reverse("services")}"', html=False)
+		self.assertContains(response, f'href="{reverse("operational_partnership")}"', html=False)
+
+	def test_resources_page_uses_current_semantic_faq(self):
+		response = self.client.get(reverse("contact_support"))
+
+		self.assertContains(response, "<details", count=7, html=False)
+		self.assertContains(response, '<details class="faq-item resources-faq__item" open>', count=1, html=False)
+		for question in (
+			"What types of clients do you work with?",
+			"How do I get started?",
+			"Are services customized?",
+			"What is the difference between Operational Services, Individual Services, and Operational Partnership?",
+			"Can multiple services be combined?",
+			"Where will I track my project?",
+			"How is pricing determined?",
+		):
+			self.assertContains(response, question)
+		for retired_text in ("R-001", "Retainer Agreement", "InsightSurveys"):
+			self.assertNotContains(response, retired_text)
+
+	def test_resources_page_uses_approved_calls_to_action_and_anchors(self):
+		response = self.client.get(reverse("contact_support"))
+
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=4, html=False)
+		self.assertContains(response, 'target="_blank"', count=4, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=4, html=False)
+		self.assertContains(response, 'href="#contact-form"', count=2, html=False)
+		self.assertContains(response, f'href="{reverse("dashboard")}"', html=False)
+		self.assertContains(response, 'id="client-process"', html=False)
+		self.assertContains(response, 'id="resources-faq"', html=False)
+		self.assertContains(response, 'id="contact-form"', html=False)
+
+	def test_resources_page_preserves_contact_form_and_turnstile_hooks(self):
+		with override_settings(TURNSTILE_SITE_KEY="site-key", TURNSTILE_SECRET_KEY="secret-key"):
+			response = self.client.get(reverse("contact_support"))
+
+		for field_id in (
+			"id_name",
+			"id_organization",
+			"id_email",
+			"id_phone",
+			"id_business_location",
+			"id_subject_choice",
+			"id_subject_other",
+			"id_message",
+		):
+			self.assertContains(response, f'id="{field_id}"', html=False)
+		self.assertContains(response, 'name="csrfmiddlewaretoken"', html=False)
+		self.assertContains(response, "data-loading-form", html=False)
+		self.assertContains(response, "data-submit-button", html=False)
+		self.assertContains(response, "data-subject-other-row", html=False)
+		self.assertContains(response, 'class="cf-turnstile"', html=False)
+		self.assertContains(response, 'data-sitekey="site-key"', html=False)
+		self.assertContains(response, "challenges.cloudflare.com/turnstile/v0/api.js", html=False)
+
+	@override_settings(SUPPORT_EMAIL="support@example.com", CONTACT_RECIPIENT="support@example.com")
+	def test_resources_page_displays_configured_support_email(self):
+		response = self.client.get(reverse("contact_support"))
+
+		self.assertContains(response, "support@example.com", count=3)
+		self.assertContains(response, 'href="mailto:support%40example.com"', count=3, html=False)
+
+	@override_settings(SUPPORT_EMAIL="", CONTACT_RECIPIENT=None)
+	def test_resources_page_omits_unconfigured_support_email_from_page_content(self):
+		response = self.client.get(reverse("contact_support"))
+		content = response.content.decode()
+		page_start = content.index('<div class="resources-shell">')
+		page_end = content.index("</main>", page_start)
+		resources_content = content[page_start:page_end]
+
+		self.assertNotIn("mailto:", resources_content)
+		self.assertNotIn("None", resources_content)
+
+	def test_resources_stylesheet_is_isolated_and_mobile_context_renders(self):
+		resources_response = self.client.get(reverse("contact_support"), {"mobile_app": "1"})
+		resources_stylesheet = static("css/contact.css")
+
+		self.assertEqual(resources_response.status_code, 200)
+		self.assertContains(resources_response, f'{resources_stylesheet}?v=4', html=False)
+		self.assertContains(resources_response, static("css/marketing-pages.css"))
+		self.assertContains(resources_response, 'class="dark-mode contact-page"', html=False)
+		for route_name in (
+			"home",
+			"about",
+			"services",
+			"operational_partnership",
+			"individual_services",
+			"products",
+			"faq",
+		):
+			with self.subTest(route_name=route_name):
+				response = self.client.get(reverse(route_name))
+				self.assertEqual(response.status_code, 200)
+				self.assertNotContains(response, resources_stylesheet)
+
+	def test_homepage_contact_action_still_resolves_to_resources_page(self):
+		home_response = self.client.get(reverse("home"))
+		resources_response = self.client.get(reverse("contact_support"))
+
+		self.assertContains(home_response, f'href="{reverse("contact_support")}"', html=False)
+		self.assertEqual(resources_response.status_code, 200)
+
 
 @override_settings(
 	EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -687,6 +892,10 @@ class ContactSupportFlowTests(TestCase):
 
 		self.assertRedirects(response, reverse("contact_support"))
 		self.assertEqual(len(mail.outbox), 2)
+		self.assertEqual(mail.outbox[0].to, ["support@example.com"])
+		self.assertEqual(mail.outbox[0].reply_to, ["taylor@example.com"])
+		self.assertEqual(mail.outbox[1].to, ["taylor@example.com"])
+		self.assertEqual(mail.outbox[1].reply_to, ["support@mirandainsights.com"])
 		messages = list(get_messages(response.wsgi_request))
 		self.assertEqual(len(messages), 1)
 		self.assertEqual(
@@ -712,6 +921,15 @@ class ContactSupportFlowTests(TestCase):
 			"Thanks, your support request has been received. A confirmation message has been sent to your email.",
 		)
 		self.assertContains(response, "Welcome back, Taylor")
+
+	def test_contact_support_preserves_accessible_validation_errors(self):
+		response = self.client.post(reverse("contact_support"), {})
+
+		self.assertEqual(response.status_code, 200)
+		for field_name in ("name", "organization", "email", "subject_choice", "message"):
+			self.assertContains(response, f'id="id_{field_name}_error"', html=False)
+			self.assertContains(response, f'aria-describedby="id_{field_name}_error"', html=False)
+		self.assertContains(response, 'aria-live="polite"', html=False)
 
 
 @override_settings(

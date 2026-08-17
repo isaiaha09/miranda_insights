@@ -4,16 +4,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="application-name" content="Insights" />
+    <meta name="application-name" content="Miranda Insights" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="msapplication-navbutton-color" content="#0c111b" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Insights" />
-    <meta name="description" content="Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions." />
+    <meta name="apple-mobile-web-app-title" content="Miranda Insights" />
+    <meta name="description" content="Miranda Insights provides operational intelligence, project-based services, individual support, and ongoing partnerships for people and organizations." />
     <meta name="theme-color" content="#0c111b" />
 
-    <title>{% block title %}Insights Website{% endblock %}</title>
-    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}" />
+    <title>{% block title %}Miranda Insights{% endblock %}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'pwa/icon-32.png' %}" />
     <link rel="manifest" href="{% url 'webmanifest' %}" />
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'pwa/icon-180.png' %}" />
     <link rel="icon" sizes="192x192" href="{% static 'pwa/icon-192.png' %}" />
@@ -30,16 +30,20 @@
         <div class="nav-left">
           <a class="brand" href="{% url 'home' %}" aria-label="Miranda Insights home">
             <span class="brand__text">Miranda Insights</span>
-            <span class="brand__logo" aria-hidden="true" style="background-image: url('{% static 'img/miranda-logo.png' %}');"></span>
+            <img class="brand__logo" src="{% static 'img/miranda-logo.png' %}" alt="" width="40" height="40" />
           </a>
         </div>
 
+        {% with current_route=request.resolver_match.url_name %}
         <div class="nav-center" id="nav-menu">
-          <a href="{% url 'about' %}">About</a>
-          <a href="{% url 'operational_partnership' %}">Partnerships</a>
-          <a href="{% url 'services' %}">Services</a>
-          <a href="{% url 'dashboard' %}">Client Portal</a>
+          <a href="{% url 'about' %}"{% if current_route == 'about' %} aria-current="page"{% endif %}>About</a>
+          <a href="{% url 'operational_partnership' %}"{% if current_route == 'operational_partnership' %} aria-current="page"{% endif %}>Partnerships</a>
+          <a href="{% url 'services' %}"{% if current_route == 'services' %} aria-current="page"{% endif %}>Services</a>
+          <a href="{% url 'individual_services' %}"{% if current_route == 'individual_services' %} aria-current="page"{% endif %}>Individual Support</a>
+          <a href="{% url 'contact_support' %}"{% if current_route == 'contact_support' %} aria-current="page"{% endif %}>Resources</a>
+          <a href="{% url 'dashboard' %}"{% if current_route == 'dashboard' %} aria-current="page"{% endif %}>Client Portal</a>
         </div>
+        {% endwith %}
 
         <div class="nav-right">
           {% if request.user.is_authenticated %}
@@ -75,8 +79,8 @@
         <img src="{% static 'pwa/icon-192.png' %}" alt="" />
       </div>
       <div class="pwa-install-banner__content">
-        <p class="pwa-install-banner__eyebrow">Install Insights</p>
-        <h2 class="pwa-install-banner__title" id="pwa-install-title">Keep Insights one tap away.</h2>
+        <p class="pwa-install-banner__eyebrow">Install Miranda Insights</p>
+        <h2 class="pwa-install-banner__title" id="pwa-install-title">Keep Miranda Insights one tap away.</h2>
         <p class="pwa-install-banner__copy" id="pwa-install-copy">Install the web app for faster access to dashboards, updates, and support.</p>
         <p class="pwa-install-banner__steps" id="pwa-install-steps" hidden></p>
       </div>
@@ -88,34 +92,44 @@
 
     <footer class="site-footer">
       <div class="container footer-grid">
-        <div class="footer-col footer-our-goal">
-          <h4>Our Goal</h4>
-          <p>Miranda Insights delivers analytics and collaboration tools to help teams make data-driven decisions.</p>
-        </div>
-
-        <div class="footer-col footer-links">
-          <h4>Quick Links</h4>
+        <nav class="footer-col" aria-labelledby="footer-explore-heading">
+          <h2 id="footer-explore-heading">Explore</h2>
           <ul>
-            <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'about' %}">About</a></li>
+            <li><a href="{% url 'operational_partnership' %}">Partnerships</a></li>
             <li><a href="{% url 'services' %}">Services</a></li>
-            <li><a href="{% url 'products' %}">Products</a></li>
+            <li><a href="{% url 'individual_services' %}">Individual Support</a></li>
+            <li><a href="{% url 'contact_support' %}">Resources</a></li>
+          </ul>
+        </nav>
+
+        <nav class="footer-col" aria-labelledby="footer-client-heading">
+          <h2 id="footer-client-heading">Client</h2>
+          <ul>
             <li><a href="{% url 'dashboard' %}">Client Portal</a></li>
-            <li><a href="{% url 'faq' %}">FAQ</a></li>
-            <li><a href="{% url 'privacy' %}">Privacy Policy</a></li>
-            <li><a href="{% url 'terms' %}">Terms of Service</a></li>
+            <li><a href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a></li>
+          </ul>
+        </nav>
+
+        <div class="footer-col" aria-labelledby="footer-support-heading">
+          <h2 id="footer-support-heading">Support / Contact</h2>
+          <ul>
+            {% if footer_contact_label %}<li><a href="mailto:{{ footer_contact_email|urlencode }}">{{ footer_contact_label }}</a></li>{% endif %}
+            <li><a href="{% url 'contact_support' %}">Resources / Contact</a></li>
           </ul>
         </div>
 
-        <div class="footer-col footer-contact">
-          <h4>Contact</h4>
-          <p><a href="mailto:{{ footer_contact_email|urlencode }}">{{ footer_contact_label }}</a></p>
-          <p><a href="{% url 'contact_support' %}">Contact us</a></p>
-        </div>
+        <nav class="footer-col" aria-labelledby="footer-legal-heading">
+          <h2 id="footer-legal-heading">Legal</h2>
+          <ul>
+            <li><a href="{% url 'privacy' %}">Privacy</a></li>
+            <li><a href="{% url 'terms' %}">Terms</a></li>
+          </ul>
+        </nav>
       </div>
 
       <div class="container footer-bottom">
-        <p>Copyright &copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC - All Rights Reserved</p>
+        <p>&copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC. All rights reserved.</p>
       </div>
     </footer>
 

@@ -15,15 +15,17 @@ const APP_SHELL = [
   '{% static "css/base.css" %}',
   '{% static "css/home.css" %}',
   '{% static "css/services.css" %}',
-  '{% static "css/contact.css" %}',
+  '{% static "css/contact.css" %}?v=4',
   '{% static "css/auth.css" %}',
   '{% static "css/offline.css" %}',
   '{% static "js/base.js" %}',
   '{% static "js/home.js" %}',
-  '{% static "favicon.svg" %}',
+  '{% static "pwa/icon-32.png" %}',
   '{% static "pwa/icon-180.png" %}',
   '{% static "pwa/icon-192.png" %}',
   '{% static "pwa/icon-512.png" %}',
+  '{% static "pwa/icon-maskable-192.png" %}',
+  '{% static "pwa/icon-maskable-512.png" %}',
 ];
 
 self.addEventListener('install', function (event) {
