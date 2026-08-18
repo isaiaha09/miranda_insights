@@ -44,7 +44,10 @@ This is optional. If you want richer observability than email alerts, create a f
 
 6. Confirm the Render worker and newsletter scheduler services are created and healthy.
 
-7. Run the live production smoke test.
+7. Configure persistent media storage before relying on Client Portal attachments.
+The current default storage writes chat attachments to `MEDIA_ROOT`, while [render.yaml](render.yaml) does not declare a persistent disk. Configure a Render persistent disk mounted at the deployed `MEDIA_ROOT` and verify that an authenticated attachment remains available after both a service restart and a deployment. Without this step, Render may remove an attachment before the intended seven-day chat-retention window ends.
+
+8. Run the live production smoke test.
 After the site is live, manually verify the key flows listed below.
 
 ## Live Production Smoke Test
@@ -64,6 +67,7 @@ Run these checks on the live Render deployment:
 11. Trigger one real project/client notification flow and confirm the worker delivers it.
 12. Trigger one newsletter send and confirm the worker delivers it.
 13. Confirm the mobile app points to the production site URL before any production mobile build is distributed.
+14. Upload a test project-chat attachment and confirm its protected download survives a service restart and deployment.
 
 ## UptimeRobot Setup
 
@@ -87,8 +91,8 @@ These are valid later-phase items and are not required for the first launch base
 1. Redis-backed shared throttling and cache.
 The current local-memory cache is acceptable for a single web instance. Move to Redis when you scale horizontally.
 
-2. Persistent media/static storage strategy such as Supabase storage.
-Planned for later.
+2. Object storage, backups, and malware inspection beyond the initial persistent Render disk.
+These become important if attachment volume, horizontal scaling, or retention requirements grow. They are not required for the current seven-day workflow once persistent media storage is verified.
 
 ## Recommendation
 
@@ -98,7 +102,8 @@ If launching now, the next concrete sequence is:
 2. Deploy.
 3. Confirm Render picks up the `preDeployCommand` in [render.yaml](render.yaml) and runs migrations successfully.
 4. Confirm the worker and cron services from [render.yaml](render.yaml) are running.
-5. Create the first superuser.
-6. Set up UptimeRobot on `/health/`.
-7. Optionally enable Sentry.
-8. Run the live smoke test.
+5. Configure and verify the persistent media disk.
+6. Create the first superuser.
+7. Set up UptimeRobot on `/health/`.
+8. Optionally enable Sentry.
+9. Run the live smoke test.
