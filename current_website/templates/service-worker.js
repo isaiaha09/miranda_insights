@@ -1,5 +1,32 @@
 {% load static %}
 
+{% if debug_mode %}
+const CACHE_PREFIX = 'insights-pwa-';
+
+self.addEventListener('install', function (event) {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', function (event) {
+  event.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(keys.filter(function (key) {
+        return key.indexOf(CACHE_PREFIX) === 0;
+      }).map(function (key) {
+        return caches.delete(key);
+      }));
+    }).then(function () {
+      return self.clients.claim();
+    }).then(function () {
+      return self.registration.unregister();
+    })
+  );
+});
+
+self.addEventListener('fetch', function (event) {
+  event.respondWith(fetch(event.request));
+});
+{% else %}
 const CACHE_NAME = '{{ cache_name }}';
 const OFFLINE_URL = '{% url "offline" %}';
 
@@ -113,3 +140,4 @@ self.addEventListener('fetch', function (event) {
     })
   );
 });
+{% endif %}

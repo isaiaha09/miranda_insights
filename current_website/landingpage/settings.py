@@ -150,6 +150,7 @@ INSTALLED_APPS = [
     'apps.clients',
     'apps.news',
     'apps.operations',
+    'apps.surveyhq',
    
 
 ]

@@ -85,20 +85,27 @@
     padding: clamp(1.2rem, 2.4vw, 1.5rem);
 }
 
-.dashboard-booking-embed-wrap {
-    border-radius: calc(var(--radius-lg) - 0.1rem);
-    overflow: hidden;
+.dashboard-booking-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.25rem;
     border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border-soft));
+    border-radius: calc(var(--radius-lg) - 0.1rem);
     background: color-mix(in srgb, var(--surface) 60%, #07101d);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-.dashboard-booking-embed {
-    display: block;
-    width: 100%;
-    min-height: 700px;
-    border: 0;
-    background: #ffffff;
+.dashboard-booking-action p {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.dashboard-booking-action .btn {
+    flex: 0 0 auto;
 }
 
 .dashboard-project-layout {
@@ -857,8 +864,9 @@
         grid-template-columns: 1fr;
     }
 
-    .dashboard-booking-embed {
-        min-height: 760px;
+    .dashboard-booking-action {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .dashboard-project-layout {
@@ -877,7 +885,787 @@
         padding-bottom: 1.8rem;
     }
 
-    .dashboard-booking-embed {
-        min-height: 680px;
+    .dashboard-booking-action .btn {
+        width: 100%;
+    }
+}
+
+/* Branded client-portal experience. Kept off the account-deletion review page. */
+body.dashboard-page:not(.delete-account-page) {
+    --bg: #061224;
+    --text: #f5f0e6;
+    --muted: #b8b6ae;
+    --accent: #d8a43a;
+    --accent-2: #f1d58b;
+    --surface: rgba(12, 25, 42, 0.88);
+    --border: rgba(231, 211, 168, 0.2);
+    --border-soft: rgba(231, 211, 168, 0.12);
+    --input-bg: rgba(7, 20, 36, 0.86);
+    --input-border: rgba(231, 211, 168, 0.22);
+    --ring: rgba(241, 213, 139, 0.3);
+    color: var(--text);
+    background: #061224;
+}
+
+.dashboard-page:not(.delete-account-page) .site-main {
+    overflow: hidden;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-shell {
+    position: relative;
+    width: min(1180px, calc(100% - 2.5rem));
+    max-width: none;
+    padding: clamp(2rem, 4vw, 3.5rem) 0 clamp(3.5rem, 6vw, 5.5rem);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-shell::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -8rem;
+    right: -18rem;
+    width: 40rem;
+    height: 40rem;
+    border: 1px solid rgba(216, 164, 58, 0.12);
+    border-radius: 50%;
+    box-shadow: 0 0 0 5rem rgba(216, 164, 58, 0.012), 0 0 90px rgba(216, 164, 58, 0.04);
+    pointer-events: none;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-messages {
+    position: relative;
+    z-index: 2;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-message {
+    color: var(--text);
+    border-color: rgba(231, 211, 168, 0.22);
+    background: rgba(10, 25, 43, 0.94);
+    box-shadow: 0 14px 36px rgba(1, 7, 16, 0.24);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero,
+.dashboard-page:not(.delete-account-page) .dashboard-panel,
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card {
+    border: 1px solid rgba(231, 211, 168, 0.17);
+    background:
+        radial-gradient(520px circle at 100% 0%, rgba(216, 164, 58, 0.055), transparent 52%),
+        linear-gradient(145deg, rgba(13, 29, 48, 0.93), rgba(7, 19, 34, 0.94));
+    box-shadow: 0 22px 58px rgba(1, 7, 16, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero {
+    position: relative;
+    min-height: 18rem;
+    align-items: flex-end;
+    margin-bottom: 1rem;
+    padding: clamp(1.65rem, 3.4vw, 2.75rem);
+    overflow: hidden;
+    border-radius: 1.5rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero::before,
+.dashboard-page:not(.delete-account-page) .dashboard-hero::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero::before {
+    width: 18rem;
+    height: 18rem;
+    right: -4rem;
+    top: -8rem;
+    border: 1px solid rgba(216, 164, 58, 0.2);
+    border-radius: 50%;
+    box-shadow: inset 0 0 54px rgba(216, 164, 58, 0.025);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero::after {
+    right: 4%;
+    bottom: 22%;
+    width: 19rem;
+    height: 1px;
+    opacity: 0.7;
+    background: linear-gradient(90deg, transparent, rgba(241, 213, 139, 0.7), transparent);
+    transform: rotate(-16deg);
+    box-shadow: 0 0 18px rgba(216, 164, 58, 0.18);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero__copy,
+.dashboard-page:not(.delete-account-page) .dashboard-actions {
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-eyebrow,
+.dashboard-page:not(.delete-account-page) .dashboard-section-label {
+    margin: 0 0 0.45rem;
+    color: #f1d58b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero h1 {
+    max-width: 18ch;
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.04;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-hero__copy > p:not(.dashboard-eyebrow) {
+    max-width: 42rem;
+    margin-top: 0.9rem;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-identity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.75rem;
+    margin-top: 1.35rem;
+    color: var(--muted);
+    font-size: 0.84rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-identity__label {
+    padding: 0.32rem 0.58rem;
+    border: 1px solid rgba(216, 164, 58, 0.28);
+    border-radius: 999px;
+    color: #f1d58b;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-identity strong {
+    color: var(--text);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.7rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-actions .btn,
+.dashboard-page:not(.delete-account-page) .dashboard-settings .btn {
+    min-height: 2.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.72rem 1.1rem;
+    font-weight: 700;
+}
+
+.dashboard-page:not(.delete-account-page) .btn-primary {
+    color: #07111f;
+    border-color: rgba(241, 213, 139, 0.72);
+    background: linear-gradient(135deg, #f1d58b, #d8a43a);
+    box-shadow: 0 12px 30px rgba(216, 164, 58, 0.17);
+}
+
+.dashboard-page:not(.delete-account-page) .btn-primary:hover,
+.dashboard-page:not(.delete-account-page) .btn-primary:focus-visible {
+    color: #061224;
+    border-color: #f5dfaa;
+    background: linear-gradient(135deg, #f5dfaa, #dfa940);
+}
+
+.dashboard-page:not(.delete-account-page) .btn-ghost {
+    color: var(--text);
+    border-color: rgba(231, 211, 168, 0.22);
+    background: rgba(7, 20, 36, 0.66);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card {
+    position: relative;
+    min-height: 10.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto 1fr;
+    gap: 0.35rem 0.75rem;
+    padding: 1.15rem;
+    overflow: hidden;
+    border-radius: 1.15rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card::after {
+    content: "";
+    position: absolute;
+    right: -2.2rem;
+    bottom: -2.2rem;
+    width: 6rem;
+    height: 6rem;
+    border: 1px solid rgba(216, 164, 58, 0.12);
+    border-radius: 50%;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card__icon {
+    grid-row: 1 / 3;
+    width: 2.3rem;
+    height: 2.3rem;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(216, 164, 58, 0.28);
+    border-radius: 0.75rem;
+    color: #f1d58b;
+    background: rgba(216, 164, 58, 0.055);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card__icon svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.65;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card__label {
+    align-self: end;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 650;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card > strong {
+    color: var(--text);
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-summary-card__meta {
+    grid-column: 1 / -1;
+    align-self: end;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-grid,
+.dashboard-page:not(.delete-account-page) .dashboard-project-layout {
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-project-layout {
+    grid-template-columns: minmax(0, 1.45fr) minmax(19rem, 0.72fr);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-project-sidebar {
+    gap: 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-panel {
+    padding: clamp(1.1rem, 2vw, 1.4rem);
+    border-radius: 1.25rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-panel-head {
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-panel-head h2,
+.dashboard-page:not(.delete-account-page) .dashboard-panel-head h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-panel-head > span {
+    padding: 0.3rem 0.58rem;
+    border: 1px solid rgba(231, 211, 168, 0.13);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-panel-head-stack > span {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    white-space: normal;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-project-list-active {
+    max-height: 48rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-project-list-completed {
+    max-height: 18rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-project-list {
+    scrollbar-color: rgba(216, 164, 58, 0.35) rgba(7, 20, 36, 0.4);
+}
+
+.dashboard-page:not(.delete-account-page) .project-card,
+.dashboard-page:not(.delete-account-page) .deliverable-card,
+.dashboard-page:not(.delete-account-page) .dashboard-update-card {
+    border-color: rgba(231, 211, 168, 0.13);
+    background: linear-gradient(145deg, rgba(15, 32, 52, 0.78), rgba(7, 19, 34, 0.84));
+}
+
+.dashboard-page:not(.delete-account-page) .project-card {
+    padding: clamp(1rem, 2vw, 1.3rem);
+    border-radius: 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .project-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.dashboard-page:not(.delete-account-page) .project-card__consultant {
+    margin: 0 0 0.3rem;
+    color: #f1d58b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .project-card h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.08rem;
+    line-height: 1.35;
+}
+
+.dashboard-page:not(.delete-account-page) .project-status {
+    display: inline-flex;
+    flex: 0 0 auto;
+    padding: 0.36rem 0.62rem;
+    border: 1px solid rgba(216, 164, 58, 0.34);
+    border-radius: 999px;
+    color: #f1d58b;
+    background: rgba(216, 164, 58, 0.075);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .project-status--pending {
+    border-color: rgba(118, 167, 204, 0.35);
+    color: #b9d9ef;
+    background: rgba(57, 116, 158, 0.12);
+}
+
+.dashboard-page:not(.delete-account-page) .project-status--completed {
+    border-color: rgba(109, 184, 139, 0.36);
+    color: #bce4c8;
+    background: rgba(52, 133, 85, 0.12);
+}
+
+.dashboard-page:not(.delete-account-page) .project-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 1.15rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.dashboard-page:not(.delete-account-page) .project-progress-labels strong {
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.dashboard-page:not(.delete-account-page) .progress-row {
+    display: block;
+    margin: 0.45rem 0 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .progress-track {
+    height: 0.45rem;
+    background: rgba(3, 12, 23, 0.72);
+}
+
+.dashboard-page:not(.delete-account-page) .progress-fill {
+    background: linear-gradient(90deg, #b77c18, #f1d58b);
+    box-shadow: 0 0 16px rgba(216, 164, 58, 0.24);
+}
+
+.dashboard-page:not(.delete-account-page) .project-next-step {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.9rem 1rem;
+    border-left: 2px solid #d8a43a;
+    background: rgba(216, 164, 58, 0.045);
+}
+
+.dashboard-page:not(.delete-account-page) .project-next-step > span {
+    color: #f1d58b;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .project-next-step strong {
+    color: var(--text);
+    font-size: 0.92rem;
+}
+
+.dashboard-page:not(.delete-account-page) .project-next-step p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.dashboard-page:not(.delete-account-page) .project-subtasks-block {
+    border-color: rgba(231, 211, 168, 0.11);
+}
+
+.dashboard-page:not(.delete-account-page) .project-subtask-item {
+    padding: 0.7rem 0.8rem;
+    border-color: rgba(231, 211, 168, 0.1);
+    background: rgba(5, 16, 29, 0.55);
+}
+
+.dashboard-page:not(.delete-account-page) .project-subtask-item.is-complete {
+    border-color: rgba(109, 184, 139, 0.2);
+}
+
+.dashboard-page:not(.delete-account-page) .project-card-complete {
+    position: relative;
+    padding-top: 2.75rem;
+}
+
+.dashboard-page:not(.delete-account-page) .project-card-complete .project-status {
+    position: absolute;
+    top: 0.9rem;
+    right: 0.9rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-update-project {
+    margin: 0.4rem 0 0;
+    color: #f1d58b;
+    font-size: 0.72rem;
+    font-weight: 650;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-update-head strong {
+    color: #f1d58b;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-empty-state--featured {
+    padding: 2rem;
+    border: 1px dashed rgba(216, 164, 58, 0.25);
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-empty-state--featured strong {
+    color: var(--text);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-empty-state--featured p {
+    margin: 0.45rem 0 0;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-notes-panel .deliverable-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-page:not(.delete-account-page) .deliverable-card {
+    min-height: 9rem;
+    padding: 1.05rem;
+}
+
+.dashboard-page:not(.delete-account-page) .deliverable-card:hover {
+    border-color: rgba(216, 164, 58, 0.3);
+    background: linear-gradient(145deg, rgba(18, 37, 58, 0.84), rgba(8, 21, 37, 0.9));
+}
+
+.dashboard-page:not(.delete-account-page) .deliverable-history summary {
+    color: #f1d58b;
+}
+
+/* Dashboard-only chat refinements; Admin keeps the shared chat stylesheet unchanged. */
+.dashboard-page:not(.delete-account-page) .project-chat-widget {
+    border-color: rgba(231, 211, 168, 0.17);
+    border-radius: 1.25rem;
+    background:
+        radial-gradient(560px circle at 100% 0%, rgba(216, 164, 58, 0.05), transparent 54%),
+        linear-gradient(145deg, rgba(13, 29, 48, 0.95), rgba(7, 19, 34, 0.97));
+    box-shadow: 0 22px 58px rgba(1, 7, 16, 0.26);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__eyebrow,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__attachment-link {
+    color: #f1d58b;
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__header h2,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__field label,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__link-popover-label {
+    color: var(--text);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__channel {
+    border-color: rgba(231, 211, 168, 0.12);
+    background:
+        linear-gradient(180deg, rgba(3, 12, 23, 0.45), rgba(3, 12, 23, 0.68)),
+        linear-gradient(rgba(216, 164, 58, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(74, 135, 178, 0.04) 1px, transparent 1px);
+    background-size: auto, 56px 56px, 56px 56px;
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__bubble-client {
+    background: rgba(12, 30, 49, 0.88);
+    border-color: rgba(231, 211, 168, 0.13);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__bubble-staff {
+    background: linear-gradient(135deg, rgba(154, 103, 24, 0.38), rgba(216, 164, 58, 0.24));
+    border-color: rgba(216, 164, 58, 0.35);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__field select,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__field textarea,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__link-input,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__link-popover {
+    border-color: rgba(231, 211, 168, 0.2);
+    background: rgba(5, 17, 31, 0.9);
+    color: var(--text);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__field select:focus,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__field textarea:focus,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__link-input:focus {
+    border-color: rgba(241, 213, 139, 0.68);
+    box-shadow: 0 0 0 3px rgba(216, 164, 58, 0.14);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__send-button,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__icon-button,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__icon-button-send-inline {
+    color: #07111f;
+    border-color: rgba(241, 213, 139, 0.72);
+    background: linear-gradient(135deg, #f1d58b, #d8a43a);
+}
+
+.dashboard-page:not(.delete-account-page) .project-chat-widget__icon-button-attachment svg,
+.dashboard-page:not(.delete-account-page) .project-chat-widget__icon-button-attachment svg path {
+    stroke: #07111f;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-booking-panel {
+    scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-booking-action {
+    border-color: rgba(216, 164, 58, 0.2);
+    background: #071426;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings {
+    margin-top: clamp(2.25rem, 5vw, 4rem);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings__heading {
+    max-width: 42rem;
+    margin-bottom: 1.15rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings__heading h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(1.65rem, 3vw, 2.2rem);
+    letter-spacing: -0.035em;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings__heading > p:last-child {
+    margin: 0.55rem 0 0;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings-panel {
+    text-align: left;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings-panel--profile,
+.dashboard-page:not(.delete-account-page) .dashboard-settings-panel--danger {
+    grid-column: 1 / -1;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings-panel--danger {
+    border-color: rgba(185, 85, 71, 0.24);
+    background: linear-gradient(145deg, rgba(45, 27, 31, 0.88), rgba(18, 20, 31, 0.94));
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings-form {
+    align-items: flex-start;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-settings-form-wide {
+    align-items: stretch;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-checkbox-row,
+.dashboard-page:not(.delete-account-page) .dashboard-contact-actions {
+    justify-content: flex-start;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-contact-copy {
+    margin: 0;
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-code-field input,
+.dashboard-page:not(.delete-account-page) .dashboard-code-field select,
+.dashboard-page:not(.delete-account-page) .dashboard-code-field textarea {
+    border-color: rgba(231, 211, 168, 0.2);
+    background: rgba(5, 17, 31, 0.88);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-code-field input:focus,
+.dashboard-page:not(.delete-account-page) .dashboard-code-field select:focus,
+.dashboard-page:not(.delete-account-page) .dashboard-code-field textarea:focus {
+    border-color: rgba(241, 213, 139, 0.68);
+    box-shadow: 0 0 0 3px rgba(216, 164, 58, 0.14);
+}
+
+.dashboard-page:not(.delete-account-page) .dashboard-danger-button {
+    border-color: rgba(214, 116, 103, 0.5);
+    color: #f8d4cf;
+    background: rgba(110, 36, 35, 0.25);
+}
+
+@media (max-width: 980px) {
+    .dashboard-page:not(.delete-account-page) .dashboard-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-project-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-project-list-active,
+    .dashboard-page:not(.delete-account-page) .dashboard-project-list-completed {
+        max-height: none;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-project-sidebar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .dashboard-page:not(.delete-account-page) .dashboard-shell {
+        width: min(100% - 1.25rem, 1180px);
+        padding-top: 1.25rem;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-hero {
+        min-height: 0;
+        align-items: flex-start;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-hero::after {
+        display: none;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-actions,
+    .dashboard-page:not(.delete-account-page) .dashboard-actions .btn {
+        width: 100%;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-summary,
+    .dashboard-page:not(.delete-account-page) .dashboard-project-sidebar,
+    .dashboard-page:not(.delete-account-page) .dashboard-settings-grid,
+    .dashboard-page:not(.delete-account-page) .dashboard-notes-panel .deliverable-list {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-settings-panel--profile,
+    .dashboard-page:not(.delete-account-page) .dashboard-settings-panel--danger {
+        grid-column: auto;
+    }
+
+    .dashboard-page:not(.delete-account-page) .project-card__head,
+    .dashboard-page:not(.delete-account-page) .dashboard-panel-head,
+    .dashboard-page:not(.delete-account-page) .dashboard-update-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .dashboard-page:not(.delete-account-page) .project-status {
+        align-self: flex-start;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-panel-head > span {
+        white-space: normal;
+    }
+
+}
+
+@media (max-width: 430px) {
+    .dashboard-page:not(.delete-account-page) .dashboard-summary-card {
+        min-height: 9.5rem;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-identity {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .dashboard-page:not(.delete-account-page) .dashboard-panel,
+    .dashboard-page:not(.delete-account-page) .dashboard-hero {
+        border-radius: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-page:not(.delete-account-page) .deliverable-card,
+    .dashboard-page:not(.delete-account-page) .btn,
+    .dashboard-page:not(.delete-account-page) .project-chat-widget__send-button,
+    .dashboard-page:not(.delete-account-page) .project-chat-widget__icon-button {
+        transition: none;
+    }
+
+    .dashboard-page:not(.delete-account-page) .deliverable-card:hover,
+    .dashboard-page:not(.delete-account-page) .btn:hover,
+    .dashboard-page:not(.delete-account-page) .project-chat-widget__send-button:hover,
+    .dashboard-page:not(.delete-account-page) .project-chat-widget__icon-button:hover {
+        transform: none;
     }
 }

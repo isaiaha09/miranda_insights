@@ -136,6 +136,7 @@
     <script>
       window.insightsPwaConfig = {
         serviceWorkerUrl: "{% url 'service_worker' %}",
+        serviceWorkerEnabled: {{ pwa_service_worker_enabled|yesno:"true,false" }},
       };
     </script>
     <script src="{% static 'js/base.js' %}"></script>

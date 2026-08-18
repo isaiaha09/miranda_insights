@@ -21,6 +21,25 @@ User = get_user_model()
 
 
 class LoginViewTests(TestCase):
+	def test_client_login_preserves_form_hooks_and_refined_link_groups(self):
+		response = self.client.get(f"{reverse('login')}?next={reverse('dashboard')}")
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTemplateUsed(response, "registration/login.html")
+		self.assertContains(response, 'class="auth-links auth-links-login"', html=False)
+		self.assertContains(response, 'class="auth-recovery-links"', html=False)
+		self.assertContains(response, 'class="auth-signup-prompt"', html=False)
+		self.assertContains(response, 'name="username"', html=False)
+		self.assertContains(response, 'name="password"', html=False)
+		self.assertContains(response, 'name="csrfmiddlewaretoken"', html=False)
+		self.assertContains(response, 'data-login-submit-form', html=False)
+		self.assertContains(response, 'data-login-submit-button', html=False)
+		self.assertContains(response, 'data-pwa-mode-input', html=False)
+		self.assertContains(response, reverse("recover_username"))
+		self.assertContains(response, reverse("password_reset"))
+		self.assertContains(response, reverse("signup"))
+		self.assertContains(response, 'css/auth.css')
+
 	def test_admin_login_uses_portal_style_template(self):
 		response = self.client.get(reverse("admin:login"))
 
@@ -433,6 +452,61 @@ class TwoFactorSecretStorageTests(TestCase):
 	SITE_URL="https://mirandainsights.com",
 )
 class DashboardNewsletterPreferenceTests(TestCase):
+	def test_dashboard_renders_branded_summary_and_preserves_portal_controls(self):
+		user = User.objects.create_user(
+			username="portalvisual",
+			email="portalvisual@example.com",
+			password="test-pass-123",
+			first_name="Jordan",
+		)
+		AccountProfile.objects.create(
+			user=user,
+			industry_type=AccountProfile.INDUSTRY_INDIVIDUAL,
+			phone_number="555-0110",
+		)
+		client_record = get_or_create_client_for_user(user)
+		client_record.organization_name = "Jordan Development"
+		client_record.save(update_fields=["organization_name"])
+		project = Project.objects.create(
+			client=client_record,
+			name="Personal Systems Project",
+			status=Project.STATUS_IN_PROGRESS,
+		)
+		ProjectSubtask.objects.create(
+			project=project,
+			title="Review the weekly plan",
+			details="Confirm priorities for the next working session.",
+		)
+
+		self.client.login(username="portalvisual", password="test-pass-123")
+		response = self.client.get(reverse("dashboard"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTemplateUsed(response, "accounts/dashboard.html")
+		self.assertContains(response, 'class="dashboard-summary"', html=False)
+		self.assertContains(response, "Active Projects")
+		self.assertContains(response, "Recent Updates")
+		self.assertContains(response, "Message Activity")
+		self.assertContains(response, "Jordan Development")
+		self.assertContains(response, "Personal Systems Project")
+		self.assertContains(response, "Review the weekly plan")
+		self.assertContains(response, 'role="progressbar"', html=False)
+		self.assertContains(response, 'id="dashboard-booking-section"', html=False)
+		self.assertContains(response, "Project Notes &amp; Updates", html=False)
+		self.assertContains(response, "Client-facing project notes, progress context, and shared updates.")
+		self.assertContains(response, "https://calendar.notion.so/meet/mirandalegacy/discovery", count=3)
+		self.assertContains(response, 'target="_blank" rel="noopener noreferrer"', count=3, html=False)
+		self.assertNotContains(response, "circlecal")
+		self.assertNotContains(response, "<iframe", html=False)
+		self.assertContains(response, 'id="dashboard-newsletter-section"', html=False)
+		self.assertContains(response, 'name="settings_action" value="client_profile"', html=False)
+		self.assertContains(response, 'name="settings_action" value="newsletter"', html=False)
+		self.assertContains(response, 'name="settings_action" value="start_2fa_setup"', html=False)
+		self.assertContains(response, 'data-project-chat-widget', html=False)
+		self.assertContains(response, 'css/dashboard.css')
+		self.assertContains(response, 'css/project-chat.css')
+		self.assertContains(response, 'js/project-chat.js')
+
 	def test_dashboard_get_handles_missing_account_profile(self):
 		user = User.objects.create_user(username="noprof", email="noprof@example.com", password="test-pass-123")
 

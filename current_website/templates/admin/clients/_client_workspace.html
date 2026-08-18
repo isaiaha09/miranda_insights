@@ -88,7 +88,8 @@
     <div class="client-workspace__header client-workspace__header-section">
       <div>
         <p class="client-workspace__eyebrow">Project Notes</p>
-        <h3>Add a note</h3>
+        <h3>Publish a client update</h3>
+        <p class="client-workspace__notice">New updates are visible in the Client Portal and notify the client by email and app push when available.</p>
       </div>
     </div>
     <div class="client-workspace__card client-workspace__card-form">
@@ -105,7 +106,7 @@
         {% endfor %}
       </div>
       <div class="client-workspace__actions">
-        <button class="btn btn-ghost client-workspace__button" type="button" data-client-workspace-submit>Add note</button>
+        <button class="btn btn-ghost client-workspace__button" type="button" data-client-workspace-submit>Publish client update</button>
       </div>
     </div>
     </div>
@@ -128,7 +129,7 @@
             <p>Status: {{ project.get_status_display }} | Start: {{ project.start_date|default:"-" }} | End: {{ project.end_date|default:"-" }}</p>
             <p>Consultant: {{ project.consultant_display }} | Progress: {{ project.progress_percentage }}%</p>
           </div>
-          <a class="btn btn-primary client-workspace__editor-button" href="{{ entry.edit_url }}">Open full project editor</a>
+          <a class="btn btn-primary client-workspace__editor-button" href="{{ entry.edit_url }}">Manage status and tasks</a>
         </div>
 
         <div class="client-workspace__columns">

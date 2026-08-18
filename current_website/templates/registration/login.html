@@ -56,10 +56,14 @@
         </button>
       </form>
 
-      <div class="auth-links">
-        <a href="{% url 'recover_username' %}">Forgot username?</a>
-        <a href="{% url 'password_reset' %}">Forgot password?</a>
-        <a href="{% url 'signup' %}">Don't have an account yet? Sign up here</a>
+      <div class="auth-links auth-links-login">
+        <div class="auth-recovery-links" aria-label="Account recovery">
+          <a href="{% url 'recover_username' %}">Forgot username?</a>
+          <a href="{% url 'password_reset' %}">Forgot password?</a>
+        </div>
+        <div class="auth-signup-prompt">
+          <a href="{% url 'signup' %}">Don't have an account yet? Sign up here</a>
+        </div>
       </div>
     </article>
   </section>

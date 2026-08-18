@@ -1,0 +1,10 @@
+{% extends 'emails/base.html' %}
+
+{% block email_content %}
+  <p style="margin:0 0 16px 0;">Miranda Insights shared a <strong>{{ activity_label|lower }}</strong> for <strong>{{ project_name }}</strong>.</p>
+  <div style="padding:18px 20px;border:1px solid rgba(230,238,246,0.12);border-radius:16px;background:rgba(255,255,255,0.03);margin:18px 0;">
+    <p style="margin:0 0 8px 0;color:#9aa6b2;font-size:13px;text-transform:uppercase;letter-spacing:0.1em;">{{ activity_label }}</p>
+    <p style="margin:0;white-space:pre-wrap;">{{ summary }}</p>
+  </div>
+  <p style="margin:0;">Open the Client Portal to review the latest project information: <a href="{{ portal_url }}" style="color:#e0b24f;text-decoration:none;">{{ portal_url }}</a></p>
+{% endblock %}

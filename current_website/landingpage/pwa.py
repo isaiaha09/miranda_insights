@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.conf import settings
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -79,6 +80,7 @@ def service_worker(request):
         "service-worker.js",
         {
             "cache_name": "insights-pwa-v5",
+            "debug_mode": settings.DEBUG,
         },
         content_type="application/javascript; charset=utf-8",
     )

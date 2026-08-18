@@ -22,6 +22,31 @@ function registerServiceWorker() {
   var config = window.insightsPwaConfig || {};
   var serviceWorkerUrl = config.serviceWorkerUrl || '/service-worker.js';
 
+  if (config.serviceWorkerEnabled === false) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        return Promise.all(registrations.map(function (registration) {
+          return registration.unregister();
+        }));
+      }).catch(function (error) {
+        console.warn('Service worker cleanup failed', error);
+      });
+
+      if ('caches' in window) {
+        window.caches.keys().then(function (keys) {
+          return Promise.all(keys.filter(function (key) {
+            return key.indexOf('insights-pwa-') === 0;
+          }).map(function (key) {
+            return window.caches.delete(key);
+          }));
+        }).catch(function (error) {
+          console.warn('PWA cache cleanup failed', error);
+        });
+      }
+    });
+    return;
+  }
+
   window.addEventListener('load', function () {
     navigator.serviceWorker.register(serviceWorkerUrl).catch(function (error) {
       console.warn('Service worker registration failed', error);

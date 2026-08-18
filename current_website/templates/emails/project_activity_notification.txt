@@ -1,0 +1,9 @@
+Miranda Insights shared a {{ activity_label|lower }} for {{ project_name }}.
+
+Client: {{ client_name }}
+Project: {{ project_name }}
+
+{{ summary }}
+
+Open the Client Portal to review the latest project information:
+{{ portal_url }}

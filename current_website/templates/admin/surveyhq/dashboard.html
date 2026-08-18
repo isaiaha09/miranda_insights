@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <div class="mx-auto max-w-5xl">
+    <div class="mb-8 rounded-default border border-base-200 bg-white p-6 shadow-xs dark:border-base-800 dark:bg-base-900">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-primary-600 dark:text-primary-400">Admin-only foundation</p>
+      <h1 class="mb-3 text-3xl font-semibold text-font-important-light dark:text-font-important-dark">SurveyHQ</h1>
+      <p class="max-w-3xl leading-7 text-font-subtle-light dark:text-font-subtle-dark">
+        This protected workspace establishes where Miranda Insights will manage SurveyHQ. Survey definitions, participant entry, responses, and reporting will be added only after the data architecture and permissions are approved.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <section class="rounded-default border border-base-200 bg-white p-6 dark:border-base-800 dark:bg-base-900">
+        <h2 class="mb-3 text-lg font-semibold text-font-important-light dark:text-font-important-dark">Current phase</h2>
+        <p class="leading-7 text-font-subtle-light dark:text-font-subtle-dark">Administrative entry point and access control only. No survey data models or public survey routes are active.</p>
+      </section>
+      <section class="rounded-default border border-base-200 bg-white p-6 dark:border-base-800 dark:bg-base-900">
+        <h2 class="mb-3 text-lg font-semibold text-font-important-light dark:text-font-important-dark">Next architecture review</h2>
+        <p class="leading-7 text-font-subtle-light dark:text-font-subtle-dark">Survey lifecycle, ordered questions, response storage, templates, audit history, and staff roles will be reviewed before migrations are created.</p>
+      </section>
+    </div>
+  </div>
+{% endblock %}

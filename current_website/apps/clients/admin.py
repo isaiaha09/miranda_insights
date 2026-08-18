@@ -159,11 +159,11 @@ class ClientAdmin(UnfoldModelAdmin):
 					project = form.cleaned_data["project"]
 					ProjectNote.objects.create(project=project, content=form.cleaned_data["content"], created_by=request.user)
 					client_updated = True
-					notice = f"Added a note to '{project.name}'."
+					notice = f"Published a client update for '{project.name}'."
 					messages.success(request, notice)
 					note_form = AdminProjectNoteForm(client=client, prefix="note")
 				else:
-					messages.error(request, "Please correct the note before saving.")
+					messages.error(request, "Please correct the client update before publishing.")
 
 		if client_updated:
 			client = Client.objects.get(pk=client.pk)

@@ -10,4 +10,5 @@ def site_contact(request):
     return {
         "footer_contact_email": support_mailto,
         "footer_contact_label": support_email,
+        "pwa_service_worker_enabled": not settings.DEBUG,
     }

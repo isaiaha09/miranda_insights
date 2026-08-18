@@ -9,8 +9,10 @@ from datetime import timedelta
 import os
 import re
 import tempfile
+from unittest.mock import patch
 
 from apps.accounts.models import AccountProfile
+from apps.operations.models import OutboundJob
 from .admin import ClientAdmin, ProjectAdmin, ProjectMessageAdmin, ProjectNoteInline, ProjectSubtaskInline
 from .forms import AdminProjectCreateForm, ProjectMessageForm
 from .models import Client, Project, ProjectMessage, ProjectNote, ProjectSubtask, get_or_create_client_for_user
@@ -63,6 +65,107 @@ class ClientProjectTests(TestCase):
 			ProjectSubtask.objects.create(project=self.project, title=f"Task {index + 1}", is_completed=index < 10)
 
 		self.assertEqual(self.project.progress_percentage, 66)
+
+	@patch("apps.clients.signals.notify_project_client")
+	def test_project_status_transition_sends_one_email_and_push_without_save_duplicates(self, mock_push):
+		mail.outbox.clear()
+		self.project.status = Project.STATUS_COMPLETED
+		self.project.description = "Description-only save while status differs in memory."
+		self.project.save(update_fields=["description"])
+		self.assertEqual(len(mail.outbox), 0)
+		mock_push.assert_not_called()
+
+		self.project.refresh_from_db()
+		self.assertEqual(self.project.status, Project.STATUS_IN_PROGRESS)
+		self.project.status = Project.STATUS_COMPLETED
+		self.project.save()
+
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["client@example.com"])
+		self.assertIn("Project status updated", mail.outbox[0].subject)
+		self.assertIn("District Performance Dashboard", mail.outbox[0].body)
+		self.assertIn("Completed", mail.outbox[0].body)
+		mock_push.assert_called_once()
+
+		self.project.save()
+		self.project.description = "A client-visible description update without a notification."
+		self.project.save()
+
+		self.assertEqual(len(mail.outbox), 1)
+		mock_push.assert_called_once()
+
+	@override_settings(OUTBOUND_DELIVERY_MODE="queue")
+	def test_project_status_transition_uses_existing_production_outbound_queue_once(self):
+		self.project.status = Project.STATUS_COMPLETED
+		self.project.save()
+
+		self.assertEqual(
+			list(OutboundJob.objects.order_by("job_type").values_list("job_type", flat=True)),
+			[OutboundJob.TYPE_EMAIL, OutboundJob.TYPE_PUSH],
+		)
+
+		self.project.save()
+		self.assertEqual(OutboundJob.objects.count(), 2)
+
+	@patch("apps.clients.signals.notify_project_client")
+	def test_new_project_note_sends_once_while_note_edits_remain_silent(self, mock_push):
+		mail.outbox.clear()
+		note = ProjectNote.objects.create(
+			project=self.project,
+			content="The revised dashboard is ready for client review.",
+			created_by=self.staff_user,
+		)
+
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(mail.outbox[0].to, ["client@example.com"])
+		self.assertIn("New project update", mail.outbox[0].subject)
+		self.assertIn("The revised dashboard is ready for client review.", mail.outbox[0].body)
+		mock_push.assert_called_once()
+
+		note.content = "The revised dashboard and workbook are ready for review."
+		note.save()
+		note.save()
+
+		self.assertEqual(len(mail.outbox), 1)
+		mock_push.assert_called_once()
+
+	@patch("apps.clients.signals.notify_project_client")
+	def test_only_incomplete_to_complete_subtask_transition_sends_push(self, mock_push):
+		subtask = ProjectSubtask.objects.create(
+			project=self.project,
+			title="Complete dashboard quality review",
+			is_completed=False,
+		)
+		mock_push.assert_not_called()
+
+		subtask.title = "Complete dashboard QA review"
+		subtask.is_completed = True
+		subtask.save(update_fields=["title"])
+		mock_push.assert_not_called()
+
+		subtask.refresh_from_db()
+		self.assertFalse(subtask.is_completed)
+		subtask.is_completed = True
+		subtask.save()
+		mock_push.assert_called_once()
+
+		subtask.save()
+		subtask.delete()
+		mock_push.assert_called_once()
+		self.assertEqual(len(mail.outbox), 0)
+
+	@patch("apps.clients.signals.notify_project_client")
+	def test_new_project_preserves_single_push_without_email(self, mock_push):
+		mail.outbox.clear()
+		Project.objects.create(
+			client=self.client_record,
+			name="New Operational Review",
+			status=Project.STATUS_PENDING,
+		)
+
+		mock_push.assert_called_once()
+		self.assertEqual(mock_push.call_args.kwargs["kind"], "project_created")
+		self.assertEqual(len(mail.outbox), 0)
 
 	def test_dashboard_project_message_sends_company_notification(self):
 		self.client.login(username="clientuser", password="client-pass-123")
@@ -350,7 +453,9 @@ class ClientProjectTests(TestCase):
 		self.assertIn("Other", workspace)
 		self.assertIn("North Valley School District", workspace)
 		self.assertIn("A public school district coordinating performance dashboards and reporting rollouts.", workspace)
-		self.assertIn("Open full project editor", workspace)
+		self.assertIn("Manage status and tasks", workspace)
+		self.assertIn("Publish a client update", workspace)
+		self.assertIn("visible in the Client Portal", workspace)
 		self.assertIn("Review export mappings", workspace)
 		self.assertIn("Can we update the filters on the dashboard?", chat_preview)
 
@@ -442,7 +547,7 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(project.consultant_display, "Avery Consultant")
 		self.assertContains(response, "Created project &#x27;Family Engagement Rollout&#x27;.")
 		self.assertContains(response, "Family Engagement Rollout")
-		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "Manage status and tasks")
 
 	def test_client_admin_workspace_can_create_project_with_miranda_insights_team_consultant(self):
 		self.client.force_login(self.staff_user)
@@ -467,7 +572,7 @@ class ClientProjectTests(TestCase):
 		self.assertIsNone(project.consultant)
 		self.assertEqual(project.consultant_name, Project.CONSULTANT_NAME_MIRANDA_INSIGHTS_TEAM)
 		self.assertContains(response, "Insights Team Rollout")
-		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "Manage status and tasks")
 		self.assertContains(response, "Miranda Insights Team")
 
 	def test_client_admin_workspace_can_create_project_with_custom_consultant_name(self):
@@ -493,7 +598,7 @@ class ClientProjectTests(TestCase):
 		self.assertIsNone(project.consultant)
 		self.assertEqual(project.consultant_name, "KMIR Success Lead")
 		self.assertContains(response, "Custom Consultant Rollout")
-		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "Manage status and tasks")
 		self.assertContains(response, "KMIR Success Lead")
 
 	def test_client_admin_workspace_can_add_subtask(self):
@@ -518,7 +623,7 @@ class ClientProjectTests(TestCase):
 		self.assertEqual(subtask.completed_by, self.staff_user)
 		self.assertContains(response, "Added a subtask to &#x27;District Performance Dashboard&#x27;.")
 		self.assertContains(response, "Finalize dashboard QA checklist")
-		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "Manage status and tasks")
 
 	def test_client_admin_workspace_can_add_note(self):
 		self.client.force_login(self.staff_user)
@@ -537,6 +642,6 @@ class ClientProjectTests(TestCase):
 		note = ProjectNote.objects.get(project=self.project)
 		self.assertEqual(note.created_by, self.staff_user)
 		self.assertEqual(note.content, "Client approved the revised scorecard summary copy.")
-		self.assertContains(response, "Added a note to &#x27;District Performance Dashboard&#x27;.")
+		self.assertContains(response, "Published a client update for &#x27;District Performance Dashboard&#x27;.")
 		self.assertContains(response, "Client approved the revised scorecard summary copy.")
-		self.assertContains(response, "Open full project editor")
+		self.assertContains(response, "Manage status and tasks")

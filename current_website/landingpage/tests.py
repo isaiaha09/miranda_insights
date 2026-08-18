@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.templatetags.static import static
 from django.urls import reverse
 from unittest.mock import patch
@@ -70,6 +70,7 @@ class PwaAssetTests(TestCase):
             ],
         )
 
+    @override_settings(DEBUG=False)
     def test_service_worker_rolls_brand_assets_cache_forward(self):
         response = self.client.get(reverse("service_worker"))
 
@@ -87,6 +88,29 @@ class PwaAssetTests(TestCase):
             self.assertContains(response, f"'{static(asset)}'")
         self.assertNotContains(response, static("favicon.svg"))
         self.assertEqual(response.headers["Cache-Control"], "max-age=0, no-cache, no-store, must-revalidate, private")
+
+    @override_settings(DEBUG=True)
+    def test_debug_service_worker_removes_persistent_pwa_caching(self):
+        response = self.client.get(reverse("service_worker"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "const CACHE_PREFIX = 'insights-pwa-';")
+        self.assertContains(response, "self.registration.unregister()")
+        self.assertContains(response, "event.respondWith(fetch(event.request));")
+        self.assertNotContains(response, "const CACHE_NAME")
+        self.assertNotContains(response, "cache.addAll(APP_SHELL)")
+
+    @override_settings(DEBUG=True)
+    def test_debug_pages_disable_service_worker_registration(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, "serviceWorkerEnabled: false")
+
+    @override_settings(DEBUG=False)
+    def test_production_pages_enable_service_worker_registration(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, "serviceWorkerEnabled: true")
 
     def test_brand_icon_derivatives_have_expected_dimensions(self):
         expected_dimensions = {

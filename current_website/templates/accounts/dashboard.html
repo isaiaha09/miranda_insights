@@ -2,7 +2,6 @@
 {% load static %}
 
 {% block title %}Client Dashboard{% endblock %}
-
 {% block body_class %}dashboard-page{% endblock %}
 
 {% block extra_css %}
@@ -21,52 +20,87 @@
     {% endif %}
 
     <header class="dashboard-hero">
-      <div>
+      <div class="dashboard-hero__copy">
         <p class="dashboard-eyebrow">Client Portal</p>
         <h1>Welcome back, {{ request.user.first_name|default:request.user.username }}</h1>
-        <p>Track project activity, review deliverables, and stay connected with the Insights team from one place.</p>
+        <p>Review project activity, follow current next steps, and stay connected with the Miranda Insights team.</p>
+        <div class="dashboard-identity" aria-label="Client account">
+          <span class="dashboard-identity__label">Account</span>
+          <strong>{{ client_record.display_name }}</strong>
+          {% if request.user.email %}<span>{{ request.user.email }}</span>{% endif %}
+        </div>
       </div>
       <div class="dashboard-actions">
-        <a class="btn btn-primary" href="{% url 'contact_support' %}">Contact our team</a>
+        <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a session</a>
+        <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact our team</a>
       </div>
     </header>
 
-    <section class="dashboard-grid dashboard-grid-single">
-      <article class="dashboard-panel dashboard-booking-panel" id="dashboard-booking-section" aria-labelledby="dashboard-booking-heading">
-        <div class="dashboard-panel-head dashboard-panel-head-stack">
-          <h2 id="dashboard-booking-heading">Schedule a working session</h2>
-          <span>Use the shared calendar to reserve time for project reviews, planning calls, or follow-up conversations.</span>
-        </div>
-        <div class="dashboard-booking-embed-wrap">
-          <iframe class="dashboard-booking-embed" src="https://miranda-insights.circlecal.app/bus/miranda-insights/?embed=1&amp;key=AQuZAHZhDIvPpruyyHZCUpdYB3O2txvV{% if is_native_mobile_app %}&amp;cc_embed_app=1{% endif %}" title="Miranda Insights client scheduling calendar" loading="lazy"></iframe>
-        </div>
+    <section class="dashboard-summary" aria-label="Portal summary">
+      <article class="dashboard-summary-card">
+        <span class="dashboard-summary-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 7.5h6l1.7 2H20v8.75A1.75 1.75 0 0 1 18.25 20H5.75A1.75 1.75 0 0 1 4 18.25V7.5Zm0 0V5.75A1.75 1.75 0 0 1 5.75 4h3.5L11 6h7.25A1.75 1.75 0 0 1 20 7.75V9.5"/></svg></span>
+        <span class="dashboard-summary-card__label">Active Projects</span>
+        <strong>{{ active_projects|length }}</strong>
+        <span class="dashboard-summary-card__meta">Currently in progress</span>
+      </article>
+      <article class="dashboard-summary-card">
+        <span class="dashboard-summary-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 12 3 3 7-7M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/></svg></span>
+        <span class="dashboard-summary-card__label">Completed Projects</span>
+        <strong>{{ completed_projects|length }}</strong>
+        <span class="dashboard-summary-card__meta">Recorded in your portal</span>
+      </article>
+      <article class="dashboard-summary-card">
+        <span class="dashboard-summary-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 17.5 9 13l3 2.5L19 7M15 7h4v4"/></svg></span>
+        <span class="dashboard-summary-card__label">Recent Updates</span>
+        <strong>{{ progress_updates|length }}</strong>
+        <span class="dashboard-summary-card__meta">Progress updates shown</span>
+      </article>
+      <article class="dashboard-summary-card">
+        <span class="dashboard-summary-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 5.5h14v10H9l-4 3v-13Zm3.5 4h7M8.5 12h4.5"/></svg></span>
+        <span class="dashboard-summary-card__label">Message Activity</span>
+        <strong>{{ message_logs|length }}</strong>
+        <span class="dashboard-summary-card__meta">Recent messages shown</span>
       </article>
     </section>
 
-    <section class="dashboard-project-layout">
+    <section class="dashboard-project-layout" aria-label="Project overview">
       <article class="dashboard-panel dashboard-project-panel dashboard-project-panel-active">
         <div class="dashboard-panel-head">
-          <h2>Active Projects</h2>
+          <div>
+            <p class="dashboard-section-label">Project Overview</p>
+            <h2>Active Projects</h2>
+          </div>
           <span>{{ active_projects|length }} active</span>
         </div>
         <div class="project-list dashboard-project-list dashboard-project-list-active">
           {% for project in active_projects %}
-            <div class="project-card">
-              <h3>{{ project.name }}</h3>
-              <p class="project-meta">{{ project.consultant }} | {{ project.status }}</p>
+            <article class="project-card">
+              <div class="project-card__head">
+                <div>
+                  <p class="project-card__consultant">{{ project.consultant }}</p>
+                  <h3>{{ project.name }}</h3>
+                </div>
+                <span class="project-status project-status--{{ project.status|slugify }}">{{ project.status }}</span>
+              </div>
+              <div class="project-progress-labels">
+                <span>Project progress</span>
+                <strong>{{ project.progress }}%</strong>
+              </div>
               <div class="progress-row">
-                <div class="progress-track" aria-hidden="true">
+                <div class="progress-track" role="progressbar" aria-label="{{ project.name }} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ project.progress }}">
                   <span class="progress-fill" style="width: {{ project.progress }}%"></span>
                 </div>
-                <span class="progress-value">{{ project.progress }}%</span>
               </div>
-              <p class="project-note">Next: {{ project.next_step }}</p>
-              <p class="project-subtask-summary">{{ project.next_step_details }}</p>
+              <div class="project-next-step">
+                <span>Next action</span>
+                <strong>{{ project.next_step }}</strong>
+                <p>{{ project.next_step_details }}</p>
+              </div>
               <div class="project-subtasks-block">
-                <strong class="project-subtasks-title">Subtasks</strong>
+                <strong class="project-subtasks-title">Shared tasks</strong>
                 <ul class="project-subtasks-list">
                   {% for subtask in project.subtasks %}
-                    <li class="project-subtask-item">
+                    <li class="project-subtask-item{% if subtask.is_completed %} is-complete{% endif %}">
                       <div class="project-subtask-head">
                         <span>{{ subtask.title }}</span>
                         <span>{% if subtask.is_completed %}Done{% else %}Due {{ subtask.due_date }}{% endif %}</span>
@@ -74,18 +108,21 @@
                       <p>{{ subtask.details }}</p>
                     </li>
                   {% empty %}
-                    <li class="project-subtask-item project-subtask-item-empty">
-                      <p>No subtasks shared yet.</p>
-                    </li>
+                    <li class="project-subtask-item project-subtask-item-empty"><p>No tasks have been shared yet.</p></li>
                   {% endfor %}
                 </ul>
               </div>
+            </article>
+          {% empty %}
+            <div class="dashboard-empty-state dashboard-empty-state--featured">
+              <strong>No active projects yet</strong>
+              <p>New projects and their next steps will appear here when they are added.</p>
             </div>
           {% endfor %}
         </div>
       </article>
 
-      <div class="dashboard-project-sidebar">
+      <aside class="dashboard-project-sidebar" aria-label="Project activity">
         <article class="dashboard-panel dashboard-project-panel dashboard-project-panel-completed">
           <div class="dashboard-panel-head">
             <h2>Completed Projects</h2>
@@ -93,11 +130,12 @@
           </div>
           <div class="project-list dashboard-project-list dashboard-project-list-completed">
             {% for project in completed_projects %}
-              <div class="project-card project-card-complete">
+              <article class="project-card project-card-complete">
+                <span class="project-status project-status--completed">Completed</span>
                 <h3>{{ project.name }}</h3>
                 <p class="project-meta">{{ project.client }}</p>
                 <p class="project-note">Completed {{ project.completed_on }}</p>
-              </div>
+              </article>
             {% empty %}
               <p class="dashboard-empty-state">No completed projects yet.</p>
             {% endfor %}
@@ -106,7 +144,7 @@
 
         <article class="dashboard-panel">
           <div class="dashboard-panel-head">
-            <h2>Project Progress Updates</h2>
+            <h2>Recent Progress</h2>
             <span>{{ progress_updates|length }} updates</span>
           </div>
           <div class="dashboard-update-list">
@@ -114,154 +152,176 @@
               <article class="dashboard-update-card dashboard-update-card-{{ update.kind }}">
                 <div class="dashboard-update-head">
                   <strong>{{ update.label }}</strong>
-                  <span>{{ update.project_name }} | {{ update.timestamp|date:"M j, Y g:i A" }}</span>
+                  <span>{{ update.timestamp|date:"M j, Y" }}</span>
                 </div>
+                <p class="dashboard-update-project">{{ update.project_name }}</p>
                 <h3>{{ update.title }}</h3>
                 <p>{{ update.body }}</p>
               </article>
             {% empty %}
-              <p class="dashboard-empty-state">No completed subtasks or project notes yet.</p>
+              <p class="dashboard-empty-state">No completed project tasks yet.</p>
             {% endfor %}
           </div>
         </article>
-
-        <article class="dashboard-panel">
-          <div class="dashboard-panel-head">
-            <h2>Reports &amp; Deliverables</h2>
-          </div>
-          <div class="deliverable-list">
-            {% for report in reports %}
-              <article class="deliverable-card">
-                <strong>{{ report.title }}</strong>
-                {% if report.latest_note %}
-                  <span>{{ report.latest_note.content }}</span>
-                  <small class="deliverable-note-time">Updated {{ report.latest_note.created_at|date:"M j, Y g:i A" }}</small>
-                {% else %}
-                  <span>{{ report.description }}</span>
-                {% endif %}
-                {% if report.past_notes %}
-                  <details class="deliverable-history">
-                    <summary>Show past notes</summary>
-                    <div class="deliverable-history-list">
-                      {% for note in report.past_notes %}
-                        <article class="deliverable-history-note">
-                          <small>{{ note.created_at|date:"M j, Y g:i A" }}</small>
-                          <p>{{ note.content }}</p>
-                        </article>
-                      {% endfor %}
-                    </div>
-                  </details>
-                {% endif %}
-              </article>
-            {% endfor %}
-          </div>
-        </article>
-      </div>
+      </aside>
     </section>
 
     <section class="dashboard-grid dashboard-grid-single">
+      <article class="dashboard-panel dashboard-notes-panel">
+        <div class="dashboard-panel-head">
+          <div>
+            <p class="dashboard-section-label">Shared Record</p>
+            <h2>Project Notes &amp; Updates</h2>
+          </div>
+          <span>Client-facing project notes, progress context, and shared updates.</span>
+        </div>
+        <div class="deliverable-list">
+          {% for report in reports %}
+            <article class="deliverable-card">
+              <strong>{{ report.title }}</strong>
+              {% if report.latest_note %}
+                <span>{{ report.latest_note.content }}</span>
+                <small class="deliverable-note-time">Updated {{ report.latest_note.created_at|date:"M j, Y g:i A" }}</small>
+              {% else %}
+                <span>{{ report.description }}</span>
+              {% endif %}
+              {% if report.past_notes %}
+                <details class="deliverable-history">
+                  <summary>Show past notes</summary>
+                  <div class="deliverable-history-list">
+                    {% for note in report.past_notes %}
+                      <article class="deliverable-history-note">
+                        <small>{{ note.created_at|date:"M j, Y g:i A" }}</small>
+                        <p>{{ note.content }}</p>
+                      </article>
+                    {% endfor %}
+                  </div>
+                </details>
+              {% endif %}
+            </article>
+          {% empty %}
+            <p class="dashboard-empty-state">No project notes have been shared yet.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid dashboard-grid-single dashboard-chat-section" aria-label="Project communication">
       {{ project_chat_widget_html|safe }}
     </section>
 
     <section class="dashboard-grid dashboard-grid-single">
-      <article class="dashboard-panel dashboard-settings-panel">
-        <div class="dashboard-panel-head">
-          <h2>Portal Settings</h2>
+      <article class="dashboard-panel dashboard-booking-panel" id="dashboard-booking-section" aria-labelledby="dashboard-booking-heading">
+        <div class="dashboard-panel-head dashboard-panel-head-stack">
+          <p class="dashboard-section-label">Support &amp; Scheduling</p>
+          <h2 id="dashboard-booking-heading">Schedule a Session</h2>
+          <span>Reserve time for a project review, planning conversation, or follow-up with Miranda Insights.</span>
         </div>
-        <p class="dashboard-contact-copy">Keep your business or organization details up to date for the client portal and admin workspace.</p>
-        <form method="post" class="dashboard-settings-form dashboard-settings-form-wide">
-          {% csrf_token %}
-          <input type="hidden" name="settings_action" value="client_profile" />
-          <div class="dashboard-form-grid">
-            <div class="dashboard-form-stack">
-              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
-                <label for="id_industry_type">Industry Type</label>
-                {{ client_profile_form.industry_type }}
-              </div>
-              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
-                <label for="id_organization_name">Business/Organization Name</label>
-                {{ client_profile_form.organization_name }}
-              </div>
-            </div>
-            <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-description">
-              <label for="id_organization_description">Business/Organization Description</label>
-              {{ client_profile_form.organization_description }}
-            </div>
-          </div>
-          {% if client_profile_form.industry_type.errors %}<small class="dashboard-field-error">{{ client_profile_form.industry_type.errors|striptags }}</small>{% endif %}
-          {% if client_profile_form.organization_name.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_name.errors|striptags }}</small>{% endif %}
-          {% if client_profile_form.organization_description.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_description.errors|striptags }}</small>{% endif %}
-          <div class="dashboard-form-actions dashboard-form-actions-right">
-            <button class="btn btn-primary" type="submit">Save business profile</button>
-          </div>
-        </form>
-
-        <div class="dashboard-settings-divider"></div>
-
-        <p class="dashboard-contact-copy">Manage your newsletter preference for account-related product updates and insights.</p>
-        <form method="post" class="dashboard-settings-form" id="dashboard-newsletter-section">
-          {% csrf_token %}
-          <input type="hidden" name="settings_action" value="newsletter" />
-          <div class="dashboard-checkbox-row" id="dashboard-newsletter-checkbox-row">
-            {{ newsletter_form.subscribe_to_newsletter }}
-            <label for="id_subscribe_to_newsletter">Keep me subscribed to newsletter updates.</label>
-          </div>
-          {% if newsletter_form.subscribe_to_newsletter.errors %}<small class="dashboard-field-error">{{ newsletter_form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
-          <button class="btn btn-primary" type="submit">Save settings</button>
-        </form>
-
-        <div class="dashboard-settings-divider"></div>
-
-        <p class="dashboard-contact-copy">Secure your client portal login with an authenticator app.</p>
-        {% if two_factor_enabled %}
-          <div class="dashboard-status-pill">2FA enabled</div>
-          <form method="post" class="dashboard-settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_action" value="disable_2fa" />
-            <button class="btn btn-ghost" type="submit">Disable 2FA</button>
-          </form>
-        {% elif two_factor_pending %}
-          <div class="dashboard-setup-box">
-            <p class="dashboard-contact-copy">Add this setup key to your authenticator app, then enter the current 6-digit code to finish setup.</p>
-            {% if two_factor_qr_data_uri %}
-              <div class="dashboard-qr-wrap">
-                <img class="dashboard-qr-image" src="{{ two_factor_qr_data_uri }}" alt="QR code for authenticator app setup" />
-              </div>
-            {% endif %}
-            <p class="dashboard-setup-key">{{ two_factor_setup_key }}</p>
-          </div>
-          <form method="post" class="dashboard-settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_action" value="confirm_2fa_setup" />
-            <div class="dashboard-code-field">
-              <label for="id_otp_code">Authentication Code</label>
-              {{ two_factor_setup_form.otp_code }}
-            </div>
-            {% if two_factor_setup_form.otp_code.errors %}<small class="dashboard-field-error">{{ two_factor_setup_form.otp_code.errors|striptags }}</small>{% endif %}
-            <div class="dashboard-contact-actions">
-              <button class="btn btn-primary" type="submit">Enable 2FA</button>
-            </div>
-          </form>
-        {% else %}
-          <div class="dashboard-status-pill dashboard-status-pill-muted">2FA not enabled</div>
-          <form method="post" class="dashboard-settings-form">
-            {% csrf_token %}
-            <input type="hidden" name="settings_action" value="start_2fa_setup" />
-            <button class="btn btn-primary" type="submit">Set up 2FA</button>
-          </form>
-        {% endif %}
-
-        <div class="dashboard-settings-divider"></div>
-
-        <p class="dashboard-contact-copy">Review the full deletion summary, including project progress and message history, before scheduling your account for removal.</p>
-        <div class="dashboard-contact-actions">
-          <a class="btn btn-ghost dashboard-danger-button" href="{% url 'delete_account' %}">Review account deletion</a>
+        <div class="dashboard-booking-action">
+          <p>Open the Miranda Insights scheduling calendar to choose an available session time.</p>
+          <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Session</a>
         </div>
       </article>
+    </section>
+
+    <section class="dashboard-settings" aria-labelledby="portal-settings-heading">
+      <div class="dashboard-settings__heading">
+        <p class="dashboard-section-label">Account Management</p>
+        <h2 id="portal-settings-heading">Portal Settings</h2>
+        <p>Manage your client details, communication preferences, and account security.</p>
+      </div>
+      <div class="dashboard-settings-grid">
+        <article class="dashboard-panel dashboard-settings-panel dashboard-settings-panel--profile">
+          <div class="dashboard-panel-head dashboard-panel-head-stack">
+            <h3>Client profile</h3>
+            <span>Keep your business or organization details current.</span>
+          </div>
+          <form method="post" class="dashboard-settings-form dashboard-settings-form-wide">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="client_profile" />
+            <div class="dashboard-form-grid">
+              <div class="dashboard-form-stack">
+                <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
+                  <label for="id_industry_type">Industry Type</label>
+                  {{ client_profile_form.industry_type }}
+                </div>
+                <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-compact">
+                  <label for="id_organization_name">Business/Organization Name</label>
+                  {{ client_profile_form.organization_name }}
+                </div>
+              </div>
+              <div class="dashboard-code-field dashboard-code-field-wide dashboard-code-field-description">
+                <label for="id_organization_description">Business/Organization Description</label>
+                {{ client_profile_form.organization_description }}
+              </div>
+            </div>
+            {% if client_profile_form.industry_type.errors %}<small class="dashboard-field-error">{{ client_profile_form.industry_type.errors|striptags }}</small>{% endif %}
+            {% if client_profile_form.organization_name.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_name.errors|striptags }}</small>{% endif %}
+            {% if client_profile_form.organization_description.errors %}<small class="dashboard-field-error">{{ client_profile_form.organization_description.errors|striptags }}</small>{% endif %}
+            <div class="dashboard-form-actions dashboard-form-actions-right"><button class="btn btn-primary" type="submit">Save business profile</button></div>
+          </form>
+        </article>
+
+        <article class="dashboard-panel dashboard-settings-panel">
+          <div class="dashboard-panel-head dashboard-panel-head-stack">
+            <h3>Newsletter preference</h3>
+            <span>Choose whether to receive Miranda Insights updates.</span>
+          </div>
+          <form method="post" class="dashboard-settings-form" id="dashboard-newsletter-section">
+            {% csrf_token %}
+            <input type="hidden" name="settings_action" value="newsletter" />
+            <div class="dashboard-checkbox-row" id="dashboard-newsletter-checkbox-row">
+              {{ newsletter_form.subscribe_to_newsletter }}
+              <label for="id_subscribe_to_newsletter">Keep me subscribed to newsletter updates.</label>
+            </div>
+            {% if newsletter_form.subscribe_to_newsletter.errors %}<small class="dashboard-field-error">{{ newsletter_form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
+            <button class="btn btn-primary" type="submit">Save preference</button>
+          </form>
+        </article>
+
+        <article class="dashboard-panel dashboard-settings-panel">
+          <div class="dashboard-panel-head dashboard-panel-head-stack">
+            <h3>Account security</h3>
+            <span>Secure your login with an authenticator app.</span>
+          </div>
+          {% if two_factor_enabled %}
+            <div class="dashboard-status-pill">2FA enabled</div>
+            <form method="post" class="dashboard-settings-form">
+              {% csrf_token %}<input type="hidden" name="settings_action" value="disable_2fa" />
+              <button class="btn btn-ghost" type="submit">Disable 2FA</button>
+            </form>
+          {% elif two_factor_pending %}
+            <div class="dashboard-setup-box">
+              <p class="dashboard-contact-copy">Add this setup key to your authenticator app, then enter the current 6-digit code to finish setup.</p>
+              {% if two_factor_qr_data_uri %}<div class="dashboard-qr-wrap"><img class="dashboard-qr-image" src="{{ two_factor_qr_data_uri }}" alt="QR code for authenticator app setup" /></div>{% endif %}
+              <p class="dashboard-setup-key">{{ two_factor_setup_key }}</p>
+            </div>
+            <form method="post" class="dashboard-settings-form">
+              {% csrf_token %}<input type="hidden" name="settings_action" value="confirm_2fa_setup" />
+              <div class="dashboard-code-field"><label for="id_otp_code">Authentication Code</label>{{ two_factor_setup_form.otp_code }}</div>
+              {% if two_factor_setup_form.otp_code.errors %}<small class="dashboard-field-error">{{ two_factor_setup_form.otp_code.errors|striptags }}</small>{% endif %}
+              <div class="dashboard-contact-actions"><button class="btn btn-primary" type="submit">Enable 2FA</button></div>
+            </form>
+          {% else %}
+            <div class="dashboard-status-pill dashboard-status-pill-muted">2FA not enabled</div>
+            <form method="post" class="dashboard-settings-form">
+              {% csrf_token %}<input type="hidden" name="settings_action" value="start_2fa_setup" />
+              <button class="btn btn-primary" type="submit">Set up 2FA</button>
+            </form>
+          {% endif %}
+        </article>
+
+        <article class="dashboard-panel dashboard-settings-panel dashboard-settings-panel--danger">
+          <div class="dashboard-panel-head dashboard-panel-head-stack">
+            <h3>Account deletion</h3>
+            <span>Review the full deletion summary before scheduling account removal.</span>
+          </div>
+          <p class="dashboard-contact-copy">Project progress and message history are included in the deletion review. A seven-day recovery window applies after confirmation.</p>
+          <div class="dashboard-contact-actions"><a class="btn btn-ghost dashboard-danger-button" href="{% url 'delete_account' %}">Review account deletion</a></div>
+        </article>
+      </div>
     </section>
   </section>
 {% endblock %}
 
-{% block extra_js %}
-  <script src="{% static 'js/project-chat.js' %}"></script>
-{% endblock %}
+{% block extra_js %}<script src="{% static 'js/project-chat.js' %}"></script>{% endblock %}

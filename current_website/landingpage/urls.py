@@ -21,12 +21,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from landingpage import health, pwa
 
-admin.site.login_template = "admin/login_portal.html"
+admin.site.login_template = "admin/login.html"
 admin.site.site_header = "Miranda Insights Admin"
 admin.site.site_title = "Miranda Insights Admin"
 admin.site.index_title = "Management Workspace"
 
 urlpatterns = [
+    path(f"{settings.DJANGO_ADMIN_URL}/surveyhq/", include(("apps.surveyhq.urls", "surveyhq"), namespace="surveyhq")),
     path(f"{settings.DJANGO_ADMIN_URL}/", admin.site.urls),
     path("manifest.webmanifest", pwa.manifest, name="webmanifest"),
     path("service-worker.js", pwa.service_worker, name="service_worker"),
