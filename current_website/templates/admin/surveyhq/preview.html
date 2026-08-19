@@ -1,0 +1,6 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header"><div><p class="svhq-eyebrow">Preview Mode</p><h1>{{ survey.title }}</h1><p>{{ survey.description|default:"Review the complete survey presentation before publication." }}</p></div><div class="svhq-actions"><a class="svhq-button svhq-button--secondary" href="{% if survey.status == 'draft' and perms.surveyhq.change_survey %}{% url 'surveyhq:survey_builder' survey.pk %}{% else %}{% url 'surveyhq:survey_detail' survey.pk %}{% endif %}">Exit Preview</a></div></header>
+<aside class="svhq-warning"><strong>Preview Mode:</strong> controls are disabled and no response can be created or submitted.</aside>
+<section class="svhq-preview" aria-label="Survey preview">{% for question in survey.questions.all %}{% include "admin/surveyhq/components/question_preview.html" with question=question %}{% empty %}<div class="svhq-panel svhq-empty">This Draft has no questions yet.</div>{% endfor %}</section>
+{% endblock %}

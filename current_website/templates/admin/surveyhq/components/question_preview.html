@@ -1,0 +1,14 @@
+<article class="svhq-preview-question svhq-preview-question--{{ question.question_type }}">
+{% if question.question_type == 'heading' %}<h2>{{ question.prompt }}</h2>{% elif question.question_type == 'description' %}<p>{{ question.prompt|linebreaksbr }}</p>{% elif question.question_type == 'page_break' %}<div class="svhq-page-break"><span>Page break</span></div>{% else %}
+  <h2>{{ question.prompt }}{% if question.required %} <span class="svhq-required" aria-label="required">*</span>{% endif %}</h2>{% if question.help_text %}<p class="svhq-muted">{{ question.help_text }}</p>{% endif %}
+  {% if question.question_type == 'short_text' or question.question_type == 'email' %}<input disabled placeholder="{{ question.configuration.placeholder|default:'Response' }}">
+  {% elif question.question_type == 'long_text' %}<textarea disabled placeholder="{{ question.configuration.placeholder|default:'Response' }}"></textarea>
+  {% elif question.question_type == 'number' %}<input type="number" disabled>
+  {% elif question.question_type == 'date' %}<input type="date" disabled>
+  {% elif question.question_type == 'rating' or question.question_type == 'linear_scale' %}<div class="svhq-scale"><span>{{ question.configuration.low_anchor|default:question.configuration.minimum }}</span><input type="range" disabled><span>{{ question.configuration.high_anchor|default:question.configuration.maximum }}</span></div>
+  {% elif question.question_type == 'dropdown' %}<select disabled><option>Select an option</option>{% for choice in question.choices.all %}<option>{{ choice.label }}</option>{% endfor %}</select>
+  {% elif question.question_type == 'matrix' %}<div class="svhq-matrix"><table><thead><tr><th></th>{% for choice in question.choices.all %}<th>{{ choice.label }}{% if choice.numeric_value != None %}<small>{{ choice.numeric_value }}</small>{% endif %}</th>{% endfor %}</tr></thead><tbody>{% for row in question.matrix_rows.all %}<tr><th>{{ row.label }}</th>{% for choice in question.choices.all %}<td><input type="radio" disabled aria-label="{{ row.label }}: {{ choice.label }}"></td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+  {% elif question.question_type == 'ranking' %}<ol class="svhq-ranking">{% for choice in question.choices.all %}<li>{{ choice.label }}</li>{% endfor %}</ol><small>Participants will order these options in Phase 3.</small>
+  {% else %}<div class="svhq-option-list">{% for choice in question.choices.all %}<label><input type="{% if question.question_type == 'multiple_choice' %}checkbox{% else %}radio{% endif %}" disabled> {{ choice.label }}{% if choice.numeric_value != None %}<small>{{ choice.numeric_value }}</small>{% endif %}</label>{% endfor %}</div>{% endif %}
+{% endif %}
+</article>

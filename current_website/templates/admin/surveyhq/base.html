@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/surveyhq-admin.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script defer src="{% static 'js/surveyhq-admin.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <main class="surveyhq-admin" data-project-options-url="{% url 'surveyhq:project_options' %}">
+    {% block surveyhq_content %}{% endblock %}
+  </main>
+{% endblock %}

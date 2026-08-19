@@ -1,0 +1,20 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header"><div><p class="svhq-eyebrow">{{ survey.get_status_display }} survey</p><h1>{{ survey.title }}</h1><p>{{ survey.display_identity }}</p></div><div class="svhq-actions"><a class="svhq-button" href="{% url 'surveyhq:survey_preview' survey.pk %}">Preview</a>{% if survey.status == 'draft' and perms.surveyhq.change_survey %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_builder' survey.pk %}">Open Builder</a>{% endif %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:dashboard' %}">All Surveys</a></div></header>
+<section class="svhq-detail-grid">
+  <article class="svhq-panel"><h2>Survey information</h2><dl class="svhq-definition"><div><dt>Client</dt><dd>{{ survey.identity_client_name }}</dd></div><div><dt>Project</dt><dd>{{ survey.project_name_snapshot|default:survey.project.name|default:"—" }}</dd></div><div><dt>Reporting period</dt><dd>{{ survey.reporting_month }}/{{ survey.reporting_year }}</dd></div><div><dt>Category</dt><dd>{{ survey.category|default:"—" }}</dd></div><div><dt>Responses</dt><dd>{{ response_count }}</dd></div><div><dt>Updated</dt><dd>{{ survey.updated_at|date:"M j, Y g:i A" }}</dd></div></dl>{% if survey.description %}<p>{{ survey.description|linebreaksbr }}</p>{% endif %}</article>
+  <aside class="svhq-panel"><h2>Participant code</h2><div class="svhq-code"><code>{{ survey.access_code }}</code><button type="button" data-copy-value="{{ survey.access_code }}">Copy</button></div><p class="svhq-muted">Administrative reference only. Participant entry arrives in Phase 3.</p><h2>Availability</h2><p>{{ survey.get_close_mode_display }}{% if survey.starts_at %}<br>Starts {{ survey.starts_at|date:"M j, Y g:i A" }}{% endif %}{% if survey.ends_at %}<br>Ends {{ survey.ends_at|date:"M j, Y g:i A" }}{% endif %}</p></aside>
+</section>
+<section class="svhq-panel"><h2>Management actions</h2><div class="svhq-actions">
+{% if survey.status == 'draft' and perms.surveyhq.change_survey %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_edit' survey.pk %}">Edit Metadata</a>{% endif %}
+{% if survey.status == 'draft' and perms.surveyhq.publish_survey %}<a class="svhq-button" href="{% url 'surveyhq:survey_publish' survey.pk %}">Publish</a>{% endif %}
+{% if perms.surveyhq.duplicate_survey %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_duplicate' survey.pk %}">Duplicate</a>{% endif %}
+{% if perms.surveyhq.manage_survey_templates %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:template_from_survey' survey.pk %}">Save as Template</a>{% endif %}
+{% if survey.status == 'open' or survey.status == 'scheduled' %}{% if perms.surveyhq.close_survey %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_close' survey.pk %}">Close</a>{% endif %}{% endif %}
+{% if survey.status == 'closed' and perms.surveyhq.reopen_survey %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_reopen' survey.pk %}">Reopen</a>{% endif %}
+{% if survey.status == 'closed' and perms.surveyhq.archive_survey %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_archive' survey.pk %}">Archive</a>{% endif %}
+{% if survey.status != 'draft' and survey.status != 'archived' and perms.surveyhq.rotate_survey_code %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_rotate_code' survey.pk %}">Rotate Code</a>{% endif %}
+{% if survey.status == 'draft' and perms.surveyhq.delete_eligible_survey %}<a class="svhq-button svhq-button--danger" href="{% url 'surveyhq:survey_delete' survey.pk %}">Delete Draft</a>{% endif %}
+{% if perms.surveyhq.view_surveyhq_audit %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_audit' survey.pk %}">Audit History</a>{% endif %}
+</div></section>
+{% endblock %}

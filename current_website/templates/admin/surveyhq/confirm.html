@@ -1,0 +1,4 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header svhq-header--compact"><div><p class="svhq-eyebrow">Confirmation required</p><h1>{{ title }}</h1><p>{{ description }}</p></div></header><section class="svhq-panel svhq-confirm">{% if warning %}<div class="svhq-warning"><strong>Please review:</strong> {{ warning }}</div>{% endif %}<form method="post">{% csrf_token %}{{ form.confirm.errors }}<label class="svhq-check">{{ form.confirm }} <span>{{ form.confirm.label }}</span></label><div class="svhq-actions"><button class="svhq-button svhq-button--danger" type="submit">{{ action_label }}</button><a class="svhq-button svhq-button--secondary" href="{{ back_url }}">Cancel</a></div></form></section>
+{% endblock %}

@@ -1,24 +1,31 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/surveyhq/base.html" %}
 
-{% block content %}
-  <div class="mx-auto max-w-5xl">
-    <div class="mb-8 rounded-default border border-base-200 bg-white p-6 shadow-xs dark:border-base-800 dark:bg-base-900">
-      <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-primary-600 dark:text-primary-400">Admin-only foundation</p>
-      <h1 class="mb-3 text-3xl font-semibold text-font-important-light dark:text-font-important-dark">SurveyHQ</h1>
-      <p class="max-w-3xl leading-7 text-font-subtle-light dark:text-font-subtle-dark">
-        This protected workspace establishes where Miranda Insights will manage SurveyHQ. Survey definitions, participant entry, responses, and reporting will be added only after the data architecture and permissions are approved.
-      </p>
+{% block surveyhq_content %}
+  <header class="svhq-header">
+    <div><p class="svhq-eyebrow">Admin workspace</p><h1>SurveyHQ</h1><p>Create, build, preview, template, publish, and manage Miranda Insights surveys.</p></div>
+    <div class="svhq-actions">
+      {% if perms.surveyhq.add_survey %}<a class="svhq-button" href="{% url 'surveyhq:survey_create' %}">Create Survey</a>{% endif %}
+      {% if perms.surveyhq.view_surveytemplate %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:template_list' %}">Templates</a>{% endif %}
+      {% if perms.surveyhq.view_surveyhq_audit %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:audit_log' %}">Audit Log</a>{% endif %}
     </div>
-
-    <div class="grid gap-6 md:grid-cols-2">
-      <section class="rounded-default border border-base-200 bg-white p-6 dark:border-base-800 dark:bg-base-900">
-        <h2 class="mb-3 text-lg font-semibold text-font-important-light dark:text-font-important-dark">Current phase</h2>
-        <p class="leading-7 text-font-subtle-light dark:text-font-subtle-dark">Administrative entry point and access control only. No survey data models or public survey routes are active.</p>
-      </section>
-      <section class="rounded-default border border-base-200 bg-white p-6 dark:border-base-800 dark:bg-base-900">
-        <h2 class="mb-3 text-lg font-semibold text-font-important-light dark:text-font-important-dark">Next architecture review</h2>
-        <p class="leading-7 text-font-subtle-light dark:text-font-subtle-dark">Survey lifecycle, ordered questions, response storage, templates, audit history, and staff roles will be reviewed before migrations are created.</p>
-      </section>
-    </div>
-  </div>
+  </header>
+  <section class="svhq-stat-grid" aria-label="Survey totals">
+    <article><span>Draft</span><strong>{{ counts.draft }}</strong></article><article><span>Scheduled</span><strong>{{ counts.scheduled }}</strong></article><article><span>Open</span><strong>{{ counts.open }}</strong></article><article><span>Closed</span><strong>{{ counts.closed }}</strong></article><article><span>Archived</span><strong>{{ counts.archived }}</strong></article><article><span>Responses</span><strong>{{ counts.responses }}</strong></article>
+  </section>
+  <aside class="svhq-notice"><strong>Participant access arrives in Phase 3.</strong> Codes are displayed for administrative reference only; no public SurveyHQ response route exists.</aside>
+  <section class="svhq-panel">
+    <form method="get" class="svhq-filter-grid" role="search">
+      <label>Search<input name="q" value="{{ filters.q|default:'' }}" placeholder="Title, client, or exact code"></label>
+      <label>Status<select name="status"><option value="">All statuses</option><option value="draft"{% if filters.status == 'draft' %} selected{% endif %}>Draft</option><option value="scheduled"{% if filters.status == 'scheduled' %} selected{% endif %}>Scheduled</option><option value="open"{% if filters.status == 'open' %} selected{% endif %}>Open</option><option value="closed"{% if filters.status == 'closed' %} selected{% endif %}>Closed</option><option value="archived"{% if filters.status == 'archived' %} selected{% endif %}>Archived</option></select></label>
+      <label>Client<select name="client"><option value="">All clients</option>{% for client in clients %}<option value="{{ client.pk }}"{% if filters.client == client.pk|stringformat:'s' %} selected{% endif %}>{{ client }}</option>{% endfor %}</select></label>
+      <label>Year<select name="year"><option value="">All years</option>{% for year in years %}<option value="{{ year }}"{% if filters.year == year|stringformat:'s' %} selected{% endif %}>{{ year }}</option>{% endfor %}</select></label>
+      <label>Month<select name="month"><option value="">All months</option>{% for value, label in months %}<option value="{{ value }}"{% if filters.month == value|stringformat:'s' %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <label>Category<select name="category"><option value="">All categories</option>{% for category in categories %}<option value="{{ category }}"{% if filters.category == category %} selected{% endif %}>{{ category }}</option>{% endfor %}</select></label>
+      <button class="svhq-button" type="submit">Apply Filters</button><a class="svhq-text-link" href="{% url 'surveyhq:dashboard' %}">Clear</a>
+    </form>
+    <div class="svhq-table-wrap"><table class="svhq-table"><thead><tr><th>Survey</th><th>Status</th><th>Code</th><th>Availability</th><th>Responses</th><th>Updated</th><th>Actions</th></tr></thead><tbody>
+      {% for survey in survey_page %}<tr><td><a href="{% url 'surveyhq:survey_detail' survey.pk %}"><strong>{{ survey.title }}</strong></a><small>{{ survey.display_identity }}</small></td><td><span class="svhq-status svhq-status--{{ survey.status }}">{{ survey.get_status_display }}</span></td><td><code>{{ survey.access_code }}</code></td><td>{{ survey.get_close_mode_display }}{% if survey.starts_at %}<small>Starts {{ survey.starts_at|date:"M j, Y g:i A" }}</small>{% endif %}</td><td>{{ survey.response_total }}</td><td>{{ survey.updated_at|date:"M j, Y" }}</td><td><div class="svhq-row-actions"><a href="{% url 'surveyhq:survey_detail' survey.pk %}">Detail</a><a href="{% url 'surveyhq:survey_preview' survey.pk %}">Preview</a>{% if survey.status == 'draft' and perms.surveyhq.change_survey %}<a href="{% url 'surveyhq:survey_edit' survey.pk %}">Edit</a><a href="{% url 'surveyhq:survey_builder' survey.pk %}">Builder</a>{% endif %}{% if survey.status == 'draft' and perms.surveyhq.publish_survey %}<a href="{% url 'surveyhq:survey_publish' survey.pk %}">Publish</a>{% endif %}{% if survey.status == 'open' or survey.status == 'scheduled' %}{% if perms.surveyhq.close_survey %}<a href="{% url 'surveyhq:survey_close' survey.pk %}">Close</a>{% endif %}{% endif %}{% if survey.status == 'closed' and perms.surveyhq.reopen_survey %}<a href="{% url 'surveyhq:survey_reopen' survey.pk %}">Reopen</a>{% endif %}{% if survey.status == 'closed' and perms.surveyhq.archive_survey %}<a href="{% url 'surveyhq:survey_archive' survey.pk %}">Archive</a>{% endif %}{% if perms.surveyhq.duplicate_survey %}<a href="{% url 'surveyhq:survey_duplicate' survey.pk %}">Duplicate</a>{% endif %}{% if survey.status == 'draft' and perms.surveyhq.delete_eligible_survey %}<a class="svhq-danger-link" href="{% url 'surveyhq:survey_delete' survey.pk %}">Delete</a>{% endif %}{% if perms.surveyhq.view_surveyhq_audit %}<a href="{% url 'surveyhq:survey_audit' survey.pk %}">Audit</a>{% endif %}</div></td></tr>{% empty %}<tr><td colspan="7" class="svhq-empty">No surveys match these filters.</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% include "admin/surveyhq/components/pagination.html" with page=survey_page %}
+  </section>
 {% endblock %}

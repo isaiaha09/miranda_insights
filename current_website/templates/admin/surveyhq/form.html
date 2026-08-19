@@ -1,0 +1,5 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header svhq-header--compact"><div><p class="svhq-eyebrow">SurveyHQ</p><h1>{{ title }}</h1>{% if intro %}<p>{{ intro }}</p>{% endif %}</div></header>
+<section class="svhq-panel svhq-form-panel"><form method="post" novalidate>{% csrf_token %}{{ form.media }}{% if form.non_field_errors %}<div class="svhq-errors">{{ form.non_field_errors }}</div>{% endif %}<div class="svhq-form-grid">{% for field in form %}<div class="svhq-field{% if field.errors %} svhq-field--error{% endif %}">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}</div>{% endfor %}</div><datalist id="surveyhq-category-suggestions"><option value="Education"><option value="Organizational"><option value="Program Evaluation"><option value="Staff Feedback"><option value="Student Voice"><option value="Custom"></datalist><div class="svhq-actions"><button class="svhq-button" type="submit">{{ submit_label }}</button><a class="svhq-button svhq-button--secondary" href="{{ back_url }}">Cancel</a></div></form></section>
+{% endblock %}
