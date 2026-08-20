@@ -11,6 +11,7 @@ from apps.clients.models import Client, Project
 
 from .builder import LIKERT_PRESETS
 from .configuration import normalize_question_configuration
+from .media import prepare_question_image
 from .models import Survey, SurveyQuestion
 
 
@@ -32,6 +33,11 @@ class SurveyMetadataForm(forms.Form):
     title = forms.CharField(max_length=240)
     description = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 4}))
     category = forms.CharField(max_length=120, required=False)
+    show_client_name_to_participants = forms.BooleanField(
+        required=False,
+        label="Show sponsoring Client to participants",
+        help_text="When enabled, the retained Client name appears after a participant enters a valid code.",
+    )
     start_mode = forms.ChoiceField(
         choices=[(START_IMMEDIATE, "Open immediately when published"), (START_SCHEDULED, "Scheduled start")]
     )
@@ -78,6 +84,7 @@ class SurveyMetadataForm(forms.Form):
                     "title": survey.title,
                     "description": survey.description,
                     "category": survey.category,
+                    "show_client_name_to_participants": survey.show_client_name_to_participants,
                     "start_mode": self.START_SCHEDULED if survey.starts_at else self.START_IMMEDIATE,
                     "starts_at": survey.starts_at,
                     "close_mode": survey.close_mode,
@@ -144,6 +151,7 @@ class SurveyMetadataForm(forms.Form):
                 "title",
                 "description",
                 "category",
+                "show_client_name_to_participants",
                 "starts_at",
                 "close_mode",
                 "ends_at",
@@ -168,6 +176,15 @@ class QuestionForm(forms.Form):
         choices=[("", "Custom / add options manually")]
         + [(key, "5-Point Agreement" if key == "five_agreement" else "7-Point Agreement") for key in LIKERT_PRESETS],
     )
+    question_image = forms.FileField(
+        required=False,
+        label="Question Image — Optional",
+        help_text="JPEG, PNG, or static WebP; maximum 8 MB.",
+        widget=forms.FileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
+    )
+    image_alt_text = forms.CharField(required=False, max_length=500, label="Alt Text")
+    image_is_decorative = forms.BooleanField(required=False, label="This image is decorative")
+    remove_image = forms.BooleanField(required=False, label="Remove current image")
 
     def __init__(self, *args, question=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -184,6 +201,8 @@ class QuestionForm(forms.Form):
                     "help_text": question.help_text,
                     "required": question.required,
                     **question.configuration,
+                    "image_alt_text": question.image_alt_text,
+                    "image_is_decorative": question.image_is_decorative,
                 }
             )
         if question:
@@ -191,6 +210,8 @@ class QuestionForm(forms.Form):
             self.fields["question_type"].required = False
             if question.question_type != SurveyQuestion.Type.LIKERT or question.choices.exists():
                 self.fields["likert_preset"].widget = forms.HiddenInput()
+            if not question.image:
+                self.fields["remove_image"].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned = super().clean()
@@ -222,6 +243,28 @@ class QuestionForm(forms.Form):
         except ValidationError as exc:
             self.add_error(None, exc)
         cleaned["question_type"] = question_type
+        upload = cleaned.get("question_image")
+        remove_image = bool(cleaned.get("remove_image"))
+        if question_type == SurveyQuestion.Type.PAGE_BREAK and (upload or (self.question and self.question.image)):
+            self.add_error("question_image", "Page Break records cannot include an image.")
+        if upload and remove_image:
+            self.add_error("remove_image", "Choose either a replacement image or Remove, not both.")
+        prepared = None
+        if upload:
+            try:
+                prepared = prepare_question_image(upload)
+            except ValidationError as exc:
+                self.add_error("question_image", exc)
+        has_image = bool(prepared or (self.question and self.question.image and not remove_image))
+        alt_text = (cleaned.get("image_alt_text") or "").strip()
+        decorative = bool(cleaned.get("image_is_decorative"))
+        if has_image and decorative and alt_text:
+            self.add_error("image_alt_text", "Decorative images must use empty alt text.")
+        elif has_image and not decorative and not alt_text:
+            self.add_error("image_alt_text", "Provide alt text or mark the image decorative.")
+        elif not has_image and (alt_text or decorative):
+            self.add_error("question_image", "Upload an image before configuring its accessibility text.")
+        cleaned["prepared_image"] = prepared
         return cleaned
 
 
@@ -245,6 +288,22 @@ class MatrixRowForm(forms.Form):
         self.fields["label"].widget.attrs["class"] = INPUT_CLASS
         if row and not self.is_bound:
             self.initial["label"] = row.label
+
+
+class ReportGenerationForm(forms.Form):
+    palette = forms.ChoiceField(label="Report Palette")
+    confirm = forms.BooleanField(
+        label="Generate an immutable official report using the current submitted responses"
+    )
+
+    def __init__(self, *args, **kwargs):
+        from .reports import REPORT_PALETTES
+
+        super().__init__(*args, **kwargs)
+        self.fields["palette"].choices = [
+            (key, values["label"]) for key, values in REPORT_PALETTES.items()
+        ]
+        self.fields["palette"].widget.attrs["class"] = SELECT_CLASS
 
 
 class SurveyDuplicateForm(SurveyMetadataForm):

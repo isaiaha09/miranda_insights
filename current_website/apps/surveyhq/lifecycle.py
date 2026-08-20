@@ -38,6 +38,7 @@ def create_draft(
     project=None,
     description="",
     category="",
+    show_client_name_to_participants=False,
     starts_at=None,
     close_mode=Survey.CloseMode.MANUAL,
     ends_at=None,
@@ -53,6 +54,7 @@ def create_draft(
         title=title,
         description=description,
         category=category,
+        show_client_name_to_participants=show_client_name_to_participants,
         reporting_month=reporting_month,
         reporting_year=reporting_year,
         starts_at=starts_at,
@@ -71,6 +73,7 @@ def create_draft(
         title=title,
         description=description,
         category=category,
+        show_client_name_to_participants=show_client_name_to_participants,
         reporting_month=reporting_month,
         reporting_year=reporting_year,
         starts_at=starts_at,
@@ -107,6 +110,7 @@ def update_draft_metadata(
     project=None,
     description="",
     category="",
+    show_client_name_to_participants=False,
     starts_at=None,
     close_mode=Survey.CloseMode.MANUAL,
     ends_at=None,
@@ -120,6 +124,7 @@ def update_draft_metadata(
     instance.title = title
     instance.description = description
     instance.category = category
+    instance.show_client_name_to_participants = show_client_name_to_participants
     instance.reporting_month = reporting_month
     instance.reporting_year = reporting_year
     instance.starts_at = starts_at
@@ -134,6 +139,7 @@ def update_draft_metadata(
             "title",
             "description",
             "category",
+            "show_client_name_to_participants",
             "reporting_month",
             "reporting_year",
             "starts_at",

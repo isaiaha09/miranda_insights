@@ -1,0 +1,29 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="same-origin">
+  <meta name="theme-color" content="#071a33">
+  <title>{% block title %}SurveyHQ{% endblock %} | Miranda Insights</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'pwa/icon-32.png' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/surveyhq-participant.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="surveyhq-participant">
+  <div class="participant-shell">
+    <header class="participant-brand" aria-label="Miranda Insights SurveyHQ">
+      <img src="{% static 'img/miranda-logo.png' %}" alt="" width="52" height="52">
+      <div><strong>Miranda Insights</strong><span>SurveyHQ</span></div>
+    </header>
+    <main id="main-content">{% block content %}{% endblock %}</main>
+    <footer><p>Survey responses are collected securely by Miranda Insights.</p></footer>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -13,7 +13,8 @@ from .permissions import require_permission
 from .publication import build_definition_snapshot, validate_survey_structure
 
 
-TEMPLATE_SCHEMA_VERSION = 1
+TEMPLATE_SCHEMA_VERSION = 2
+SUPPORTED_TEMPLATE_SCHEMA_VERSIONS = {1, TEMPLATE_SCHEMA_VERSION}
 
 
 def _definition_without_runtime_ids(snapshot):
@@ -28,6 +29,7 @@ def _definition_without_runtime_ids(snapshot):
                 "help_text": question.get("help_text", ""),
                 "required": bool(question.get("required")),
                 "configuration": copy.deepcopy(question.get("configuration") or {}),
+                "image": copy.deepcopy(question.get("image")),
                 "choices": [
                     {
                         "option_key": choice["option_key"],
@@ -171,7 +173,7 @@ def delete_eligible_template(template, *, actor):
 def _validate_template(template: SurveyTemplate):
     if template.status != SurveyTemplate.Status.ACTIVE:
         raise ValidationError("Only active templates can create surveys.")
-    if template.schema_version != TEMPLATE_SCHEMA_VERSION:
+    if template.schema_version not in SUPPORTED_TEMPLATE_SCHEMA_VERSIONS:
         raise ValidationError("This template schema version is not supported.")
     if checksum_json(template.definition) != template.definition_checksum:
         raise ValidationError("The template definition checksum does not match.")
@@ -189,6 +191,7 @@ def create_survey_from_template(
     project=None,
     description="",
     category="",
+    show_client_name_to_participants=False,
     starts_at=None,
     close_mode=Survey.CloseMode.MANUAL,
     ends_at=None,
@@ -204,6 +207,7 @@ def create_survey_from_template(
         title=title,
         description=description,
         category=category,
+        show_client_name_to_participants=show_client_name_to_participants,
         reporting_month=reporting_month,
         reporting_year=reporting_year,
         starts_at=starts_at,
@@ -222,6 +226,15 @@ def create_survey_from_template(
             help_text=question_data.get("help_text", ""),
             required=question_data.get("required", False),
             configuration=copy.deepcopy(question_data.get("configuration") or {}),
+            image=(question_data.get("image") or {}).get("file", ""),
+            image_original_name=(question_data.get("image") or {}).get("original_name", ""),
+            image_content_type=(question_data.get("image") or {}).get("content_type", ""),
+            image_checksum=(question_data.get("image") or {}).get("checksum", ""),
+            image_byte_size=(question_data.get("image") or {}).get("byte_size", 0),
+            image_width=(question_data.get("image") or {}).get("width", 0),
+            image_height=(question_data.get("image") or {}).get("height", 0),
+            image_alt_text=(question_data.get("image") or {}).get("alt_text", ""),
+            image_is_decorative=(question_data.get("image") or {}).get("decorative", False),
         )
         for choice_data in sorted(question_data.get("choices", []), key=lambda item: item["position"]):
             SurveyChoice.objects.create(

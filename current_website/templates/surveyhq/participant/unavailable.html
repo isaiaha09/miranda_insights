@@ -1,0 +1,3 @@
+{% extends "surveyhq/participant/base.html" %}
+{% block title %}Survey Unavailable{% endblock %}
+{% block content %}<section class="participant-card participant-card--entry"><p class="participant-eyebrow">SurveyHQ</p><h1>Survey unavailable</h1><p>{{ message|default:"This survey is no longer accepting responses." }}</p><a class="participant-button participant-button--secondary" href="{% url 'surveyhq_participant:entry' %}">Enter another code</a></section>{% endblock %}

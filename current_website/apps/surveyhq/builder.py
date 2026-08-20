@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Max
 
 from .audit import record_survey_event
+from .media import assign_question_image, clear_question_image
 from .models import Survey, SurveyChoice, SurveyMatrixRow, SurveyQuestion
 from .permissions import require_permission
 
@@ -92,7 +93,10 @@ def _move(queryset, object_id, direction):
 
 
 @transaction.atomic
-def create_question(*, survey, actor, question_type, prompt, help_text="", required=False, configuration=None, preset=""):
+def create_question(
+    *, survey, actor, question_type, prompt, help_text="", required=False, configuration=None,
+    preset="", prepared_image=None, image_alt_text="", image_is_decorative=False
+):
     require_permission(actor, "add_surveyquestion")
     instance = Survey.objects.select_for_update().get(pk=survey.pk if isinstance(survey, Survey) else survey)
     _require_draft(instance)
@@ -113,6 +117,14 @@ def create_question(*, survey, actor, question_type, prompt, help_text="", requi
         SurveyChoice.objects.create(question=question, option_key="no", label="No", position=2)
     elif question_type == SurveyQuestion.Type.LIKERT and preset in LIKERT_PRESETS:
         _create_likert_choices(question, preset)
+    if prepared_image:
+        assign_question_image(
+            question,
+            prepared_image,
+            alt_text=image_alt_text,
+            decorative=image_is_decorative,
+        )
+        question.save()
     return question
 
 
@@ -134,7 +146,10 @@ def apply_likert_preset(question, *, actor, preset):
 
 
 @transaction.atomic
-def update_question(*, question, actor, prompt, help_text="", required=False, configuration=None):
+def update_question(
+    *, question, actor, prompt, help_text="", required=False, configuration=None,
+    prepared_image=None, remove_image=False, image_alt_text="", image_is_decorative=False
+):
     require_permission(actor, "change_surveyquestion")
     question_id = question.pk if isinstance(question, SurveyQuestion) else question
     instance = SurveyQuestion.objects.select_for_update().select_related("survey").get(pk=question_id)
@@ -145,6 +160,18 @@ def update_question(*, question, actor, prompt, help_text="", required=False, co
     instance.help_text = help_text
     instance.required = required
     instance.configuration = configuration or {}
+    if remove_image:
+        clear_question_image(instance)
+    elif prepared_image:
+        assign_question_image(
+            instance,
+            prepared_image,
+            alt_text=image_alt_text,
+            decorative=image_is_decorative,
+        )
+    elif instance.image:
+        instance.image_alt_text = "" if image_is_decorative else image_alt_text.strip()
+        instance.image_is_decorative = image_is_decorative
     instance.save()
     return instance
 
@@ -171,6 +198,15 @@ def duplicate_question(question, *, actor):
         help_text=original.help_text,
         required=original.required,
         configuration=copy.deepcopy(original.configuration),
+        image=original.image.name,
+        image_original_name=original.image_original_name,
+        image_content_type=original.image_content_type,
+        image_checksum=original.image_checksum,
+        image_byte_size=original.image_byte_size,
+        image_width=original.image_width,
+        image_height=original.image_height,
+        image_alt_text=original.image_alt_text,
+        image_is_decorative=original.image_is_decorative,
     )
     for choice in original.choices.all():
         SurveyChoice.objects.create(

@@ -1,0 +1,12 @@
+{% extends "surveyhq/participant/base.html" %}
+{% block title %}{{ survey.title }}{% endblock %}
+{% block content %}
+<section class="participant-card participant-card--intro" aria-labelledby="survey-title">
+  <p class="participant-eyebrow">Survey introduction</p>
+  {% if survey.show_client_name_to_participants %}<p class="participant-sponsor">Presented for {{ survey.client_name_snapshot }}</p>{% endif %}
+  <h1 id="survey-title">{{ survey.title }}</h1>
+  {% if survey.description %}<div class="participant-description">{{ survey.description|linebreaksbr }}</div>{% endif %}
+  <div class="participant-intro-meta"><span>About {{ answerable_count }} question{{ answerable_count|pluralize }}</span><span>Required questions are clearly marked</span></div>
+  <form method="post">{% csrf_token %}<button class="participant-button" type="submit">Start Survey</button></form>
+</section>
+{% endblock %}

@@ -27,6 +27,7 @@ admin.site.site_title = "Miranda Insights Admin"
 admin.site.index_title = "Management Workspace"
 
 urlpatterns = [
+    path("surveyhq/participate/", include(("apps.surveyhq.participant_urls", "surveyhq_participant"), namespace="surveyhq_participant")),
     path(f"{settings.DJANGO_ADMIN_URL}/surveyhq/", include(("apps.surveyhq.urls", "surveyhq"), namespace="surveyhq")),
     path(f"{settings.DJANGO_ADMIN_URL}/", admin.site.urls),
     path("manifest.webmanifest", pwa.manifest, name="webmanifest"),

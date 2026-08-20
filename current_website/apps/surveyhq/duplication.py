@@ -55,6 +55,7 @@ def duplicate_survey(
         title=title or original.title,
         description=original.description,
         category=original.category,
+        show_client_name_to_participants=original.show_client_name_to_participants,
         reporting_month=month,
         reporting_year=year,
         starts_at=starts_at,
@@ -76,6 +77,15 @@ def duplicate_survey(
             help_text=question.help_text,
             required=question.required,
             configuration=question.configuration,
+            image=question.image.name,
+            image_original_name=question.image_original_name,
+            image_content_type=question.image_content_type,
+            image_checksum=question.image_checksum,
+            image_byte_size=question.image_byte_size,
+            image_width=question.image_width,
+            image_height=question.image_height,
+            image_alt_text=question.image_alt_text,
+            image_is_decorative=question.image_is_decorative,
         )
         for choice in question.choices.all():
             SurveyChoice.objects.create(

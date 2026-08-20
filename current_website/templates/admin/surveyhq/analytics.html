@@ -1,0 +1,103 @@
+{% extends "admin/surveyhq/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script defer src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
+  <script defer src="{% static 'js/surveyhq-analytics.js' %}"></script>
+{% endblock %}
+
+{% block surveyhq_content %}
+<div data-survey-analytics data-poll-url="{% url 'surveyhq:survey_analytics_data' survey.pk %}">
+  <header class="svhq-header">
+    <div>
+      <p class="svhq-eyebrow">Live descriptive analytics</p>
+      <h1>{{ survey.title }}</h1>
+      <p>{{ survey.display_identity }}</p>
+    </div>
+    <div class="svhq-actions svhq-context-nav" aria-label="Survey views">
+      <a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_detail' survey.pk %}">Overview</a>
+      {% if perms.surveyhq.view_surveyresponse %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:response_list' %}?survey={{ survey.pk }}">Responses</a>{% endif %}
+      {% if perms.surveyhq.export_survey_data %}<a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_responses_csv' survey.pk %}">Responses CSV</a><a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_analytical_csv' survey.pk %}">Analytical CSV</a>{% endif %}
+      <a class="svhq-button" aria-current="page" href="{% url 'surveyhq:survey_analytics' survey.pk %}">Analytics</a>
+    </div>
+  </header>
+
+  <section class="svhq-panel svhq-analytics-context" aria-label="Survey context">
+    <dl class="svhq-definition">
+      <div><dt>Client</dt><dd>{{ analytics.survey.client }}</dd></div>
+      <div><dt>Reporting period</dt><dd>{{ analytics.survey.reporting_month }}/{{ analytics.survey.reporting_year }}</dd></div>
+      <div><dt>Status</dt><dd><span class="svhq-status svhq-status--{{ analytics.survey.status }}">{{ analytics.survey.status_label }}</span></dd></div>
+      <div><dt>Opens</dt><dd>{{ analytics.survey.starts_at_display }}</dd></div>
+      <div><dt>Scheduled close</dt><dd>{{ analytics.survey.ends_at_display }}</dd></div>
+      <div><dt>Closed</dt><dd>{{ analytics.survey.closed_at_display }}</dd></div>
+    </dl>
+    <p class="svhq-live-state"><span aria-hidden="true"></span>Refreshes about every 20 seconds while this tab is visible. <small data-last-refresh>Current as of {{ analytics.generated_at }}</small></p>
+  </section>
+
+  <section class="svhq-stat-grid svhq-stat-grid--analytics" aria-label="Response summary">
+    <article><span>Total Submitted Responses</span><strong data-summary-key="total_responses">{{ analytics.summary.total_responses }}</strong></article>
+    <article><span>Responses Today</span><strong data-summary-key="responses_today">{{ analytics.summary.responses_today }}</strong></article>
+    <article><span>First Submission</span><strong class="svhq-stat-date" data-summary-key="first_submission_display">{{ analytics.summary.first_submission_display }}</strong></article>
+    <article><span>Last Submission</span><strong class="svhq-stat-date" data-summary-key="last_submission_display">{{ analytics.summary.last_submission_display }}</strong></article>
+  </section>
+
+  <section aria-labelledby="question-analytics-heading">
+    <header class="svhq-section-heading"><p class="svhq-eyebrow">Question analysis</p><h2 id="question-analytics-heading">Published Question Results</h2><p>Descriptive statistics use submitted responses only. Missing answers remain separate from valid responses.</p></header>
+    <div class="svhq-analytics-list">
+      {% for question in analytics.questions %}
+      <article class="svhq-panel svhq-analytics-card" data-question-id="{{ question.id }}" data-question-kind="{{ question.kind }}">
+        <header class="svhq-question-heading">
+          <div><p class="svhq-eyebrow">Question {{ question.number }} · {{ question.question_type_label }}</p><h3>{{ question.prompt }}</h3></div>
+          <dl class="svhq-question-counts">
+            <div><dt>Survey responses</dt><dd data-question-metric="total_responses">{{ question.total_responses }}</dd></div>
+            <div><dt>Question responses</dt><dd data-question-metric="response_count">{{ question.response_count }}</dd></div>
+            <div><dt>Missing / skipped</dt><dd data-question-metric="missing_count">{{ question.missing_count }}</dd></div>
+          </dl>
+        </header>
+
+        {% if question.kind == 'numeric' or question.kind == 'likert' and question.statistics or question.kind == 'date' %}
+        <dl class="svhq-mini-stats">
+          {% if question.kind == 'numeric' or question.kind == 'likert' %}<div><dt>Count</dt><dd data-stat-key="count">{{ question.statistics.count }}</dd></div><div><dt>Mean</dt><dd data-stat-key="mean">{{ question.statistics.mean|default_if_none:"—"|floatformat:2 }}</dd></div><div><dt>Median</dt><dd data-stat-key="median">{{ question.statistics.median|default_if_none:"—"|floatformat:2 }}</dd></div>{% endif %}
+          {% if question.kind == 'numeric' %}<div><dt>Minimum</dt><dd data-stat-key="minimum">{{ question.statistics.minimum|default_if_none:"—"|floatformat:2 }}</dd></div><div><dt>Maximum</dt><dd data-stat-key="maximum">{{ question.statistics.maximum|default_if_none:"—"|floatformat:2 }}</dd></div>{% if question.question_type == 'number' %}<div><dt>Standard deviation</dt><dd data-stat-key="standard_deviation">{{ question.statistics.standard_deviation|default_if_none:"—"|floatformat:2 }}</dd></div>{% endif %}{% endif %}
+          {% if question.kind == 'date' %}<div><dt>Earliest</dt><dd data-stat-key="earliest">{{ question.statistics.earliest|default_if_none:"—" }}</dd></div><div><dt>Latest</dt><dd data-stat-key="latest">{{ question.statistics.latest|default_if_none:"—" }}</dd></div>{% endif %}
+        </dl>
+        {% endif %}
+
+        {% if question.note %}<p class="svhq-analysis-note">{{ question.note }}</p>{% endif %}
+
+        {% if question.kind == 'text' %}
+          <details class="svhq-text-responses"{% if question.text_responses %} open{% endif %}>
+            <summary>Review submitted text ({{ question.text_response_total }})</summary>
+            <div class="svhq-text-response-list">
+              {% for item in question.text_responses %}<article><p>{{ item.value }}</p><small><a href="{% url 'surveyhq:response_detail' item.response_id %}">Response {{ item.response_id }}</a> · {{ item.submitted_at }}</small></article>{% empty %}<p class="svhq-muted">No submitted text responses.</p>{% endfor %}
+              {% if question.text_truncated %}<p class="svhq-muted">Showing the 50 most recent responses. Use Response Review for the complete record.</p>{% endif %}
+            </div>
+          </details>
+        {% else %}
+          <div class="svhq-analysis-grid">
+            <div class="svhq-chart-region"><canvas data-question-chart="{{ question.id }}" aria-label="Chart for Question {{ question.number }}" role="img">Use the adjacent table to review this question’s data.</canvas></div>
+            <div class="svhq-table-wrap">
+              {% if question.kind == 'matrix' %}
+              <table class="svhq-table"><thead><tr><th>Matrix row</th><th>Responses</th><th>Missing</th><th>Weighted mean</th><th>Distribution</th></tr></thead><tbody data-analytics-table>
+                {% for row in question.matrix_rows %}<tr><th>{{ row.label }}</th><td>{{ row.response_count }}</td><td>{{ row.missing_count }}</td><td>{{ row.weighted_mean|default_if_none:"—"|floatformat:2 }}</td><td>{% for option in row.distribution %}<span class="svhq-distribution-item">{{ option.label }}: {{ option.count }} ({{ option.percentage }}%)</span>{% endfor %}</td></tr>{% endfor %}
+              </tbody></table>
+              {% elif question.kind == 'ranking' %}
+              <table class="svhq-table"><thead><tr><th>Option</th><th>Average rank</th><th>First choice</th><th>Rank distribution</th></tr></thead><tbody data-analytics-table>
+                {% for row in question.rows %}<tr><th>{{ row.label }}</th><td>{{ row.average_rank|default:"—" }}</td><td>{{ row.first_choice_count }}</td><td>{% for rank in row.distribution %}<span class="svhq-distribution-item">{{ rank.rank }}: {{ rank.count }}</span>{% endfor %}</td></tr>{% endfor %}
+              </tbody></table>
+              {% else %}
+              <table class="svhq-table"><thead><tr><th>{% if question.kind == 'date' or question.kind == 'numeric' %}Value / range{% else %}Option{% endif %}</th><th>Count</th><th>Percentage</th></tr></thead><tbody data-analytics-table>
+                {% for row in question.rows %}<tr><th>{{ row.label }}</th><td>{{ row.count }}</td><td>{{ row.percentage }}%</td></tr>{% empty %}<tr><td colspan="3" class="svhq-empty">No submitted values.</td></tr>{% endfor %}
+              </tbody></table>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </article>
+      {% empty %}<div class="svhq-panel svhq-empty">This published survey has no answerable questions.</div>{% endfor %}
+    </div>
+  </section>
+  {{ analytics|json_script:"surveyhq-analytics-data" }}
+</div>
+{% endblock %}

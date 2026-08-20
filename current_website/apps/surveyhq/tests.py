@@ -8,7 +8,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.test import TestCase
-from django.urls import Resolver404, resolve, reverse
+from django.urls import resolve, reverse
 from django.utils import timezone
 
 from apps.clients.models import Client, Project
@@ -246,7 +246,7 @@ class PublicationAndLockingTests(SurveyHQTestMixin, TestCase):
         published = publish_survey(survey, actor=self.manager)
         self.assertEqual(published.status, Survey.Status.OPEN)
         self.assertEqual(len(published.definition_checksum), 64)
-        self.assertEqual(published.definition_snapshot["schema_version"], 1)
+        self.assertEqual(published.definition_snapshot["schema_version"], 2)
         self.assertTrue(definition_matches_snapshot(published))
         event = published.audit_events.get(event_type="survey_published")
         self.assertEqual(event.display_identity, published.display_identity)
@@ -264,7 +264,7 @@ class PublicationAndLockingTests(SurveyHQTestMixin, TestCase):
         with self.assertRaises(ValidationError):
             publish_survey(survey, actor=self.manager)
 
-    def test_likert_requires_numeric_choice_values(self):
+    def test_custom_likert_may_omit_numeric_choice_values(self):
         survey = self.create_survey()
         question = SurveyQuestion.objects.create(
             survey=survey,
@@ -281,8 +281,8 @@ class PublicationAndLockingTests(SurveyHQTestMixin, TestCase):
             numeric_value=Decimal("1"),
             position=2,
         )
-        with self.assertRaises(ValidationError):
-            publish_survey(survey, actor=self.manager)
+        published = publish_survey(survey, actor=self.manager)
+        self.assertEqual(published.status, Survey.Status.OPEN)
 
     def test_published_question_choice_and_matrix_structure_is_locked(self):
         survey = self.create_survey()
@@ -490,6 +490,7 @@ class PermissionAndShellTests(TestCase):
         self.assertContains(response, "Create, build, preview, template, publish, and manage")
         self.assertContains(self.client.get(reverse("admin:index")), reverse("surveyhq:dashboard"))
 
-    def test_no_public_participant_route_exists(self):
-        with self.assertRaises(Resolver404):
-            resolve("/surveyhq/participate/")
+    def test_participant_entry_is_isolated_from_admin_routes(self):
+        match = resolve("/surveyhq/participate/")
+        self.assertEqual(match.namespace, "surveyhq_participant")
+        self.assertNotIn("admin", match.namespaces)

@@ -1,0 +1,16 @@
+{% extends "surveyhq/participant/base.html" %}
+{% block title %}Enter Survey Code{% endblock %}
+{% block content %}
+<section class="participant-card participant-card--entry" aria-labelledby="entry-title">
+  <p class="participant-eyebrow">SurveyHQ</p>
+  <h1 id="entry-title">Enter your survey code.</h1>
+  <p>Enter the survey code provided by Miranda Insights.</p>
+  {% if error %}<div class="participant-alert" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" autocomplete="off">{% csrf_token %}
+    <label for="survey-code">Survey Code</label>
+    <input id="survey-code" name="survey_code" value="{{ survey_code|default:'' }}" maxlength="6" minlength="6" autocapitalize="none" autocorrect="off" spellcheck="false" required aria-describedby="code-help">
+    <small id="code-help">Survey codes are case-sensitive.</small>
+    <button class="participant-button" type="submit">Continue</button>
+  </form>
+</section>
+{% endblock %}

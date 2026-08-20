@@ -1,27 +1,40 @@
 from __future__ import annotations
 
+import csv
+import hashlib
 from calendar import month_name
+from io import BytesIO
+from uuid import UUID
 
+import qrcode
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.http import JsonResponse
+from django.db.models import Prefetch
+from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.views.decorators.http import require_POST
+from django.utils.dateparse import parse_date
+from django.utils import timezone
+from django.utils.text import slugify
+from django.views.decorators.http import require_GET, require_POST
 
 from apps.clients.models import Client, Project
 
 from . import builder
+from .analytics import build_survey_analytics
+from .audit import record_survey_event
 from .duplication import duplicate_survey
+from .exports import long_csv_rows, wide_csv_rows
 from .exceptions import SurveyHQError
 from .forms import (
     ChoiceForm,
     ConfirmationForm,
     MatrixRowForm,
     QuestionForm,
+    ReportGenerationForm,
     SurveyDuplicateForm,
     SurveyMetadataForm,
     TemplateMetadataForm,
@@ -36,8 +49,26 @@ from .lifecycle import (
     rotate_access_code,
     update_draft_metadata,
 )
-from .models import Survey, SurveyChoice, SurveyHQAuditEvent, SurveyMatrixRow, SurveyQuestion, SurveyTemplate
+from .media import mark_question_image_availability, read_verified_question_image
+from .models import (
+    Survey,
+    SurveyAnswer,
+    SurveyAnswerSelection,
+    SurveyChoice,
+    SurveyHQAuditEvent,
+    SurveyMatrixRow,
+    SurveyQuestion,
+    SurveyResponse,
+    SurveyReportArtifact,
+    SurveyTemplate,
+)
 from .selectors import dashboard_counts, dashboard_surveys
+from .reports import generate_survey_report
+from .participant_access import (
+    get_participant_access,
+    participant_entry_path,
+    rotate_participant_entry,
+)
 from .template_services import (
     archive_template,
     create_survey_from_template,
@@ -62,6 +93,13 @@ def _error_text(exc):
     if isinstance(exc, ValidationError):
         return " ".join(exc.messages)
     return str(exc)
+
+
+def _pagination_query(request):
+    parameters = request.GET.copy()
+    parameters.pop("page", None)
+    encoded = parameters.urlencode()
+    return f"{encoded}&" if encoded else ""
 
 
 def _survey(survey_id):
@@ -116,8 +154,219 @@ def surveyhq_dashboard(request):
         months=[(number, month_name[number]) for number in range(1, 13)],
         categories=Survey.objects.exclude(category="").order_by("category").values_list("category", flat=True).distinct(),
         filters=request.GET,
+        pagination_query=_pagination_query(request),
     )
     return TemplateResponse(request, "admin/surveyhq/dashboard.html", context)
+
+
+def participant_access(request):
+    _require(request, "manage_participant_access")
+    access = get_participant_access()
+    entry_url = request.build_absolute_uri(participant_entry_path(access))
+    return TemplateResponse(
+        request,
+        "admin/surveyhq/participant_access.html",
+        _context(request, "Participant Access", entry_url=entry_url, access=access),
+    )
+
+
+def participant_qr(request):
+    _require(request, "manage_participant_access")
+    entry_url = request.build_absolute_uri(participant_entry_path())
+    qr = qrcode.QRCode(version=None, box_size=12, border=4)
+    qr.add_data(entry_url)
+    qr.make(fit=True)
+    image = qr.make_image(fill_color="#07172d", back_color="#fffdf5")
+    output = BytesIO()
+    image.save(output, format="PNG")
+    response = HttpResponse(output.getvalue(), content_type="image/png")
+    response["Content-Disposition"] = 'attachment; filename="surveyhq-entry-qr.png"'
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+def participant_access_rotate(request):
+    _require(request, "manage_participant_access")
+    if request.method == "POST":
+        form = ConfirmationForm(request.POST)
+        if form.is_valid():
+            rotate_participant_entry(actor=request.user)
+            messages.success(request, "The Participant Entry URL was rotated successfully.")
+            return redirect("surveyhq:participant_access")
+    return _confirmation(
+        request,
+        title="Rotate Participant Entry URL",
+        description=(
+            "Create a new generic SurveyHQ entry address without changing Survey Codes or "
+            "active participant sessions."
+        ),
+        warning=(
+            "Rotating the Participant Entry URL immediately invalidates the previous SurveyHQ "
+            "entry link and QR. Survey Codes are not changed. Generate or distribute the new "
+            "entry URL and QR after rotation."
+        ),
+        back_url=reverse("surveyhq:participant_access"),
+        action_label="Rotate Entry URL",
+    )
+
+
+def response_list(request):
+    _require(request, "view_surveyresponse")
+    responses = SurveyResponse.objects.select_related("survey").order_by("-submitted_at")
+    survey_id = (request.GET.get("survey") or "").strip()
+    if survey_id:
+        try:
+            survey_uuid = UUID(survey_id)
+        except ValueError:
+            survey_id = ""
+        else:
+            responses = responses.filter(survey_id=survey_uuid)
+    sort = request.GET.get("sort")
+    if sort == "oldest":
+        responses = responses.order_by("submitted_at")
+    else:
+        sort = "newest"
+    date_from = parse_date(request.GET.get("date_from") or "")
+    date_to = parse_date(request.GET.get("date_to") or "")
+    if date_from:
+        responses = responses.filter(submitted_at__date__gte=date_from)
+    if date_to:
+        responses = responses.filter(submitted_at__date__lte=date_to)
+    page = Paginator(responses, 50).get_page(request.GET.get("page"))
+    return TemplateResponse(
+        request,
+        "admin/surveyhq/response_list.html",
+        _context(
+            request,
+            "SurveyHQ Responses",
+            response_page=page,
+            surveys=Survey.objects.order_by("-reporting_year", "-reporting_month", "title"),
+            selected_survey=survey_id or "",
+            selected_sort=sort,
+            selected_date_from=date_from.isoformat() if date_from else "",
+            selected_date_to=date_to.isoformat() if date_to else "",
+            pagination_query=_pagination_query(request),
+        ),
+    )
+
+
+def _answer_display(answer):
+    selections = list(answer.selections.all())
+    if selections:
+        if any(selection.rank is not None for selection in selections):
+            return "; ".join(
+                f"{selection.rank}. {selection.choice.label}"
+                for selection in sorted(selections, key=lambda item: item.rank or 0)
+            )
+        return "; ".join(selection.choice.label for selection in selections)
+    if answer.text_value:
+        return answer.text_value
+    if answer.numeric_value is not None:
+        return str(answer.numeric_value.normalize())
+    if answer.date_value is not None:
+        return answer.date_value.isoformat()
+    return "—"
+
+
+def response_detail(request, response_id):
+    _require(request, "view_surveyresponse")
+    response = get_object_or_404(SurveyResponse.objects.select_related("survey"), pk=response_id)
+    answers = SurveyAnswer.objects.filter(response=response).select_related(
+        "question", "matrix_row"
+    ).prefetch_related(
+        Prefetch(
+            "selections",
+            queryset=SurveyAnswerSelection.objects.select_related("choice").order_by(
+                "rank", "choice__position"
+            ),
+        )
+    ).order_by(
+        "question__position", "matrix_row__position", "id"
+    )
+    answer_rows = [
+        {
+            "question": answer.question.prompt,
+            "question_key": answer.question.export_key,
+            "matrix_row": answer.matrix_row.label if answer.matrix_row else "",
+            "value": _answer_display(answer),
+        }
+        for answer in answers
+    ]
+    return TemplateResponse(
+        request,
+        "admin/surveyhq/response_detail.html",
+        _context(request, f"Response {response.pk}", response=response, answer_rows=answer_rows),
+    )
+
+
+def survey_analytics(request, survey_id):
+    _require(request, "view_live_report")
+    survey = _survey(survey_id)
+    analytics = build_survey_analytics(survey, include_text_values=True)
+    return TemplateResponse(
+        request,
+        "admin/surveyhq/analytics.html",
+        _context(request, f"Analytics · {survey.display_identity}", survey=survey, analytics=analytics),
+    )
+
+
+@require_GET
+def survey_analytics_data(request, survey_id):
+    _require(request, "view_live_report")
+    survey = _survey(survey_id)
+    response = JsonResponse({"analytics": build_survey_analytics(survey, include_text_values=False)})
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+class _CsvEcho:
+    def write(self, value):
+        return value
+
+
+def _survey_csv_export(request, survey_id, *, export_format):
+    _require(request, "export_survey_data")
+    survey = _survey(survey_id)
+    if not survey.published_at:
+        raise Http404("Exports are available only for published surveys.")
+    cutoff = timezone.now()
+    response_count = survey.responses.filter(submitted_at__lte=cutoff).count()
+    rows = wide_csv_rows(survey, cutoff) if export_format == "responses" else long_csv_rows(survey, cutoff)
+    writer = csv.writer(_CsvEcho(), lineterminator="\r\n")
+
+    def stream():
+        yield "\ufeff"
+        for row in rows:
+            yield writer.writerow(row)
+
+    record_survey_event(
+        survey=survey,
+        actor=request.user,
+        event_type="survey_data_exported",
+        summary=f"Downloaded {export_format} CSV for {survey.display_identity}.",
+        metadata={
+            "format": export_format,
+            "response_cutoff_at": cutoff.isoformat(),
+            "response_count": response_count,
+        },
+    )
+    safe_title = slugify(survey.title)[:60] or "survey"
+    filename = f"{safe_title}-{survey.pk}-{export_format}-{cutoff.date().isoformat()}.csv"
+    response = StreamingHttpResponse(stream(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@require_GET
+def survey_responses_csv(request, survey_id):
+    return _survey_csv_export(request, survey_id, export_format="responses")
+
+
+@require_GET
+def survey_analytical_csv(request, survey_id):
+    return _survey_csv_export(request, survey_id, export_format="analytical")
 
 
 def project_options(request):
@@ -159,8 +408,70 @@ def survey_detail(request, survey_id):
     return TemplateResponse(
         request,
         "admin/surveyhq/survey_detail.html",
-        _context(request, survey.display_identity, survey=survey, response_count=survey.responses.count()),
+        _context(
+            request,
+            survey.display_identity,
+            survey=survey,
+            response_count=survey.responses.count(),
+            report_artifacts=survey.report_artifacts.select_related("generated_by").all(),
+        ),
     )
+
+
+def survey_report_generate(request, survey_id):
+    _require(request, "generate_survey_report")
+    survey = _survey(survey_id)
+    form = ReportGenerationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            artifact = generate_survey_report(
+                survey,
+                actor=request.user,
+                palette_key=form.cleaned_data["palette"],
+            )
+        except (ValidationError, SurveyHQError) as exc:
+            form.add_error(None, _error_text(exc))
+        else:
+            messages.success(
+                request,
+                f"Generated official report with {artifact.response_count} responses.",
+            )
+            return redirect("surveyhq:survey_detail", survey_id=survey.pk)
+    return TemplateResponse(
+        request,
+        "admin/surveyhq/report_generate.html",
+        _context(request, f"Generate Report · {survey.display_identity}", survey=survey, form=form),
+    )
+
+
+@require_GET
+def survey_report_download(request, artifact_id):
+    _require(request, "view_surveyreportartifact")
+    artifact = get_object_or_404(
+        SurveyReportArtifact.objects.select_related("survey", "generated_by"), pk=artifact_id
+    )
+    try:
+        with artifact.file.open("rb") as stored_file:
+            content = stored_file.read()
+    except (FileNotFoundError, OSError):
+        raise Http404("The retained report file is unavailable.")
+    if hashlib.sha256(content).hexdigest() != artifact.file_checksum:
+        raise Http404("The retained report file could not be verified.")
+    record_survey_event(
+        survey=artifact.survey,
+        actor=request.user,
+        event_type="survey_report_downloaded",
+        summary=f"Downloaded an official report for {artifact.survey.display_identity}.",
+        metadata={"artifact_id": str(artifact.pk), "file_checksum": artifact.file_checksum},
+    )
+    safe_title = slugify(artifact.survey.title)[:60] or "survey"
+    response = HttpResponse(content, content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{safe_title}-{artifact.pk}-official-report.pdf"'
+    )
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 def survey_edit(request, survey_id):
@@ -193,6 +504,7 @@ def survey_builder(request, survey_id):
     if survey.is_structure_locked:
         messages.info(request, "Published survey structure is read-only.")
         return redirect("surveyhq:survey_detail", survey_id=survey.pk)
+    mark_question_image_availability(survey.questions.all())
     return TemplateResponse(
         request,
         "admin/surveyhq/builder.html",
@@ -203,6 +515,7 @@ def survey_builder(request, survey_id):
 def survey_preview(request, survey_id):
     _require(request, "view_survey")
     survey = _survey(survey_id)
+    mark_question_image_availability(survey.questions.all())
     before = survey.responses.count()
     response = TemplateResponse(
         request,
@@ -215,12 +528,25 @@ def survey_preview(request, survey_id):
     return response
 
 
+def question_image(request, question_id):
+    _require(request, "view_survey")
+    question = get_object_or_404(SurveyQuestion, pk=question_id)
+    try:
+        content = read_verified_question_image(question)
+    except ValidationError as exc:
+        raise Http404("Question image unavailable.") from exc
+    response = HttpResponse(content, content_type=question.image_content_type)
+    response["Cache-Control"] = "private, no-store"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
 def question_create(request, survey_id):
     _require(request, "add_surveyquestion")
     survey = _survey(survey_id)
     if survey.is_structure_locked:
         raise PermissionDenied
-    form = QuestionForm(request.POST or None)
+    form = QuestionForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         try:
             question = builder.create_question(
@@ -232,6 +558,9 @@ def question_create(request, survey_id):
                 required=form.cleaned_data["required"],
                 configuration=form.cleaned_data["configuration"],
                 preset=form.cleaned_data.get("likert_preset", ""),
+                prepared_image=form.cleaned_data.get("prepared_image"),
+                image_alt_text=form.cleaned_data.get("image_alt_text", ""),
+                image_is_decorative=form.cleaned_data.get("image_is_decorative", False),
             )
         except (ValidationError, SurveyHQError) as exc:
             form.add_error(None, _error_text(exc))
@@ -252,7 +581,8 @@ def question_edit(request, question_id):
     )
     if question.survey.is_structure_locked:
         raise PermissionDenied
-    form = QuestionForm(request.POST or None, question=question)
+    mark_question_image_availability([question])
+    form = QuestionForm(request.POST or None, request.FILES or None, question=question)
     if request.method == "POST" and form.is_valid():
         try:
             with transaction.atomic():
@@ -263,6 +593,10 @@ def question_edit(request, question_id):
                     help_text=form.cleaned_data["help_text"],
                     required=form.cleaned_data["required"],
                     configuration=form.cleaned_data["configuration"],
+                    prepared_image=form.cleaned_data.get("prepared_image"),
+                    remove_image=form.cleaned_data.get("remove_image", False),
+                    image_alt_text=form.cleaned_data.get("image_alt_text", ""),
+                    image_is_decorative=form.cleaned_data.get("image_is_decorative", False),
                 )
                 preset = form.cleaned_data.get("likert_preset")
                 if preset:
@@ -300,6 +634,7 @@ def question_delete(request, question_id):
 def question_move(request, question_id, direction):
     question = get_object_or_404(SurveyQuestion.objects.select_related("survey"), pk=question_id)
     builder.move_question(question, actor=request.user, direction=direction)
+    messages.success(request, "Question order updated.")
     return redirect("surveyhq:survey_builder", survey_id=question.survey_id)
 
 
@@ -349,6 +684,7 @@ def choice_delete(request, choice_id):
     choice = get_object_or_404(SurveyChoice.objects.select_related("question"), pk=choice_id)
     question_id = choice.question_id
     builder.delete_choice(choice, actor=request.user)
+    messages.success(request, "Option deleted.")
     return redirect("surveyhq:question_edit", question_id=question_id)
 
 
@@ -356,6 +692,7 @@ def choice_delete(request, choice_id):
 def choice_move(request, choice_id, direction):
     choice = get_object_or_404(SurveyChoice.objects.select_related("question"), pk=choice_id)
     builder.move_choice(choice, actor=request.user, direction=direction)
+    messages.success(request, "Option order updated.")
     return redirect("surveyhq:question_edit", question_id=choice.question_id)
 
 
@@ -369,6 +706,7 @@ def matrix_row_create(request, question_id):
         except (ValidationError, SurveyHQError) as exc:
             form.add_error(None, _error_text(exc))
         else:
+            messages.success(request, "Matrix row added.")
             return redirect("surveyhq:question_edit", question_id=question.pk)
     return _render_form(
         request,
@@ -385,6 +723,7 @@ def matrix_row_edit(request, row_id):
     form = MatrixRowForm(request.POST or None, row=row)
     if request.method == "POST" and form.is_valid():
         builder.update_matrix_row(row=row, actor=request.user, **form.cleaned_data)
+        messages.success(request, "Matrix row updated.")
         return redirect("surveyhq:question_edit", question_id=row.question_id)
     return _render_form(
         request,
@@ -399,6 +738,7 @@ def matrix_row_delete(request, row_id):
     row = get_object_or_404(SurveyMatrixRow.objects.select_related("question"), pk=row_id)
     question_id = row.question_id
     builder.delete_matrix_row(row, actor=request.user)
+    messages.success(request, "Matrix row deleted.")
     return redirect("surveyhq:question_edit", question_id=question_id)
 
 
@@ -406,6 +746,7 @@ def matrix_row_delete(request, row_id):
 def matrix_row_move(request, row_id, direction):
     row = get_object_or_404(SurveyMatrixRow.objects.select_related("question"), pk=row_id)
     builder.move_matrix_row(row, actor=request.user, direction=direction)
+    messages.success(request, "Matrix row order updated.")
     return redirect("surveyhq:question_edit", question_id=row.question_id)
 
 
@@ -596,6 +937,7 @@ def audit_log(request):
             entity_types=SurveyHQAuditEvent.EntityType.choices,
             selected_event=event_type,
             selected_entity=entity_type,
+            pagination_query=_pagination_query(request),
         ),
     )
 
@@ -651,6 +993,7 @@ def template_edit(request, template_id):
         except ValidationError as exc:
             form.add_error(None, _error_text(exc))
         else:
+            messages.success(request, f"Updated template {template.name}.")
             return redirect("surveyhq:template_detail", template_id=template.pk)
     return _render_form(
         request,
@@ -670,6 +1013,7 @@ def template_duplicate(request, template_id):
         except ValidationError as exc:
             form.add_error(None, _error_text(exc))
         else:
+            messages.success(request, f"Duplicated template as {duplicate.name}.")
             return redirect("surveyhq:template_detail", template_id=duplicate.pk)
     return _render_form(
         request,
@@ -685,6 +1029,7 @@ def template_archive(request, template_id):
     template = get_object_or_404(SurveyTemplate, pk=template_id)
     if request.method == "POST" and ConfirmationForm(request.POST).is_valid():
         archive_template(template, actor=request.user)
+        messages.success(request, f"Archived template {template.name}.")
         return redirect("surveyhq:template_detail", template_id=template.pk)
     return _confirmation(
         request,
@@ -705,6 +1050,7 @@ def template_delete(request, template_id):
         except ValidationError as exc:
             messages.error(request, _error_text(exc))
             return redirect("surveyhq:template_detail", template_id=template.pk)
+        messages.success(request, f"Deleted template {template.name}.")
         return redirect("surveyhq:template_list")
     return _confirmation(
         request,

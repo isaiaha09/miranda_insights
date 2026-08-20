@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import TestCase
-from django.urls import Resolver404, resolve, reverse
+from django.urls import resolve, reverse
 from django.utils import timezone
 
 from apps.clients.models import Client, Project
@@ -80,7 +80,7 @@ class DashboardAndMetadataTests(PhaseTwoMixin, TestCase):
         response = self.client.get(reverse("surveyhq:dashboard"))
         self.assertEqual(len(response.context["survey_page"]), 25)
         self.assertEqual(response.context["counts"]["draft"], 27)
-        self.assertContains(response, "Participant access arrives in Phase 3")
+        self.assertContains(response, "Participant entry is available")
 
     def test_create_form_accepts_client_without_user_and_filters_projects(self):
         self.assertIsNone(self.client_record.user)
@@ -279,7 +279,7 @@ class LifecyclePermissionAndTemplateTests(PhaseTwoMixin, TestCase):
         self.assertContains(self.client.get(reverse("surveyhq:template_detail", args=[template.pk])), "Definition")
         self.assertEqual(self.client.get(reverse("surveyhq:audit_log")).status_code, 200)
 
-    def test_permission_aware_admin_views_and_no_participant_route(self):
+    def test_permission_aware_admin_views_and_isolated_participant_route(self):
         survey = self.draft()
         self.client.force_login(self.analyst)
         self.assertEqual(self.client.get(reverse("surveyhq:survey_detail", args=[survey.pk])).status_code, 200)
@@ -287,8 +287,7 @@ class LifecyclePermissionAndTemplateTests(PhaseTwoMixin, TestCase):
         self.client.force_login(self.author)
         self.assertEqual(self.client.get(reverse("surveyhq:survey_builder", args=[survey.pk])).status_code, 200)
         self.assertEqual(self.client.get(reverse("surveyhq:audit_log")).status_code, 403)
-        with self.assertRaises(Resolver404):
-            resolve("/surveyhq/participate/")
+        self.assertEqual(resolve("/surveyhq/participate/").namespace, "surveyhq_participant")
         self.assertFalse(any("participant" in str(pattern).lower() for pattern in resolve(reverse("surveyhq:dashboard")).route))
 
     def test_builder_mutations_emit_only_meaningful_duplication_audit(self):

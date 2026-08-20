@@ -1,0 +1,23 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header">
+  <div>
+    <p class="svhq-eyebrow">Immutable analytical snapshot</p>
+    <h1>Generate Official Report</h1>
+    <p>{{ survey.display_identity }}</p>
+  </div>
+  <a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_detail' survey.pk %}">Cancel</a>
+</header>
+<section class="svhq-panel svhq-report-confirmation">
+  <h2>Choose a presentation palette</h2>
+  <p>The report will retain the current response cutoff, response count, survey-definition checksum, generation time, and generating staff member. Later responses will not alter this artifact.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="svhq-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="svhq-form-grid">
+      {% for field in form %}<div class="svhq-field{% if field.errors %} svhq-field--error{% endif %}">{{ field.label_tag }}{{ field }}{% if field.help_text %}<p>{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>{% endfor %}
+    </div>
+    <button class="svhq-button" type="submit">Generate Official PDF</button>
+  </form>
+</section>
+{% endblock %}

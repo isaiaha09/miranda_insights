@@ -1,0 +1,18 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header">
+  <div><p class="svhq-eyebrow">Manager resource</p><h1>Participant Access</h1><p>Share one generic entry point. Give participants the separate six-character code for the survey they should complete.</p></div>
+  <div class="svhq-actions"><a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:dashboard' %}">SurveyHQ Dashboard</a></div>
+</header>
+<section class="svhq-panel svhq-participant-resource">
+  <h2>SurveyHQ Entry URL</h2>
+  <p class="svhq-muted">This URL and QR are generic. Neither includes a Survey Code or identifies a particular survey.</p>
+  <div class="svhq-code svhq-code--url"><code>{{ entry_url }}</code><button type="button" data-copy-value="{{ entry_url }}">Copy Entry URL</button></div>
+  <div class="svhq-actions">
+    <a class="svhq-button" href="{{ entry_url }}" target="_blank" rel="noopener noreferrer">Open Entry</a>
+    <a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:participant_qr' %}">Download SurveyHQ QR</a>
+    <a class="svhq-button svhq-button--danger" href="{% url 'surveyhq:participant_access_rotate' %}">Rotate Entry URL</a>
+  </div>
+  <p class="svhq-muted">Last rotated {{ access.rotated_at|date:"M j, Y g:i A" }}{% if access.rotated_by %} by {{ access.rotated_by }}{% endif %}. Rotating this address does not change any Survey Code or interrupt an already-authorized participant session.</p>
+</section>
+{% endblock %}

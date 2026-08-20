@@ -89,6 +89,11 @@ self.addEventListener('fetch', function (event) {
   const requestUrl = new URL(event.request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
 
+  if (isSameOrigin && requestUrl.pathname.indexOf('/surveyhq/participate/') === 0) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).then(function (response) {

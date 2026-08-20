@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import secrets
 import uuid
 from calendar import month_name
 
@@ -25,6 +27,15 @@ def canonical_json(value) -> str:
 
 def checksum_json(value) -> str:
     return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def survey_question_image_path(instance, filename):
+    extension = os.path.splitext(filename)[1].lower() or ".bin"
+    return f"surveyhq/question-images/{instance.survey_id}/{instance.pk}/{uuid.uuid4().hex}{extension}"
+
+
+def generate_participant_entry_token():
+    return secrets.token_urlsafe(32)
 
 
 class RetentionProtectedSurveyQuerySet(models.QuerySet):
@@ -71,6 +82,7 @@ class Survey(models.Model):
         "ends_at",
         "source_survey_id",
         "source_template_id",
+        "show_client_name_to_participants",
     }
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
@@ -104,6 +116,7 @@ class Survey(models.Model):
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True)
     category = models.CharField(max_length=120, blank=True)
+    show_client_name_to_participants = models.BooleanField(default=False)
     reporting_month = models.PositiveSmallIntegerField()
     reporting_year = models.PositiveSmallIntegerField()
     access_code = models.CharField(max_length=6, unique=True, default=generate_survey_code, editable=False)
@@ -166,6 +179,7 @@ class Survey(models.Model):
             ("export_survey_data", "Can export SurveyHQ data"),
             ("generate_survey_report", "Can generate official SurveyHQ reports"),
             ("rotate_survey_code", "Can rotate SurveyHQ survey codes"),
+            ("manage_participant_access", "Can manage SurveyHQ participant access resources"),
             ("manage_survey_templates", "Can manage SurveyHQ templates"),
             ("view_surveyhq_audit", "Can view SurveyHQ audit history"),
         ]
@@ -366,6 +380,15 @@ class SurveyQuestion(models.Model):
     help_text = models.TextField(blank=True)
     required = models.BooleanField(default=False)
     configuration = models.JSONField(default=dict, blank=True)
+    image = models.ImageField(upload_to=survey_question_image_path, blank=True, max_length=500)
+    image_original_name = models.CharField(max_length=255, blank=True)
+    image_content_type = models.CharField(max_length=40, blank=True)
+    image_checksum = models.CharField(max_length=64, blank=True)
+    image_byte_size = models.PositiveBigIntegerField(default=0)
+    image_width = models.PositiveIntegerField(default=0)
+    image_height = models.PositiveIntegerField(default=0)
+    image_alt_text = models.CharField(max_length=500, blank=True)
+    image_is_decorative = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     objects = SurveyQuestionQuerySet.as_manager()
@@ -378,6 +401,18 @@ class SurveyQuestion(models.Model):
             models.CheckConstraint(
                 condition=~Q(question_type__in=["heading", "description", "page_break"], required=True),
                 name="svhq_structural_not_required",
+            ),
+            models.CheckConstraint(
+                condition=~Q(question_type="page_break") | Q(image=""),
+                name="svhq_page_break_no_image",
+            ),
+            models.CheckConstraint(
+                condition=~Q(image_is_decorative=True) | Q(image_alt_text=""),
+                name="svhq_decorative_alt_empty",
+            ),
+            models.CheckConstraint(
+                condition=Q(image="") | Q(image_is_decorative=True) | ~Q(image_alt_text=""),
+                name="svhq_image_alt_required",
             ),
         ]
         indexes = [models.Index(fields=["survey", "position"], name="svhq_question_order_idx")]
@@ -392,6 +427,26 @@ class SurveyQuestion(models.Model):
             raise ValidationError({"configuration": exc.messages}) from exc
         if self.question_type in self.STRUCTURAL_TYPES and self.required:
             raise ValidationError({"required": "Structural content cannot require an answer."})
+        if self.question_type == self.Type.PAGE_BREAK and self.image:
+            raise ValidationError({"image": "Page Break records cannot include an image."})
+        if self.image:
+            if not self.image_is_decorative and not self.image_alt_text.strip():
+                raise ValidationError({"image_alt_text": "Provide alt text or mark the image decorative."})
+            if self.image_is_decorative and self.image_alt_text.strip():
+                raise ValidationError({"image_alt_text": "Decorative images must use empty alt text."})
+        elif any(
+            (
+                self.image_original_name,
+                self.image_content_type,
+                self.image_checksum,
+                self.image_byte_size,
+                self.image_width,
+                self.image_height,
+                self.image_alt_text,
+                self.image_is_decorative,
+            )
+        ):
+            raise ValidationError({"image": "Image metadata requires an image file."})
 
     def _assert_structure_editable(self):
         survey_ids = {self.survey_id}
@@ -766,13 +821,49 @@ class AppendOnlyAuditQuerySet(models.QuerySet):
         raise ValidationError("SurveyHQ audit events are append-only.")
 
 
+class SurveyHQParticipantAccess(models.Model):
+    SINGLETON_KEY = "global"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    singleton_key = models.CharField(max_length=16, default=SINGLETON_KEY, unique=True, editable=False)
+    active_entry_token = models.CharField(
+        max_length=64,
+        unique=True,
+        default=generate_participant_entry_token,
+        editable=False,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    rotated_at = models.DateTimeField(default=timezone.now)
+    rotated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="surveyhq_participant_access_rotations",
+        limit_choices_to={"is_staff": True},
+    )
+
+    class Meta:
+        verbose_name = "SurveyHQ participant access"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(singleton_key="global"),
+                name="svhq_participant_access_global_ck",
+            )
+        ]
+
+    def __str__(self):
+        return "SurveyHQ Participant Access"
+
+
 class SurveyHQAuditEvent(models.Model):
     class EntityType(models.TextChoices):
         SURVEY = "survey", "Survey"
         TEMPLATE = "template", "Template"
+        PARTICIPANT_ACCESS = "participant_access", "Participant Access"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    entity_type = models.CharField(max_length=16, choices=EntityType.choices)
+    entity_type = models.CharField(max_length=24, choices=EntityType.choices)
     entity_id = models.UUIDField()
     survey = models.ForeignKey(
         Survey,
