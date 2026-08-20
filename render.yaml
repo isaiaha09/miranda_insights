@@ -10,6 +10,22 @@ services:
         value: "true"
       - key: WEB_CONCURRENCY
         value: 1
+      - key: SUPABASE_STORAGE_ENABLED
+        sync: false
+      - key: SUPABASE_S3_BUCKET
+        sync: false
+      - key: SUPABASE_S3_ENDPOINT_URL
+        sync: false
+      - key: SUPABASE_S3_REGION
+        sync: false
+      - key: SUPABASE_S3_ACCESS_KEY_ID
+        sync: false
+      - key: SUPABASE_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: SUPABASE_S3_QUERYSTRING_EXPIRE
+        value: "604800"
+      - key: SURVEYHQ_DURABLE_STORAGE_READY
+        sync: false
     buildCommand: >-
       pip install -r requirements.txt
       && npm ci
@@ -34,5 +50,21 @@ services:
         value: 3.12.9
       - key: REQUIRE_DATABASE_URL
         value: "true"
+      - key: SUPABASE_STORAGE_ENABLED
+        sync: false
+      - key: SUPABASE_S3_BUCKET
+        sync: false
+      - key: SUPABASE_S3_ENDPOINT_URL
+        sync: false
+      - key: SUPABASE_S3_REGION
+        sync: false
+      - key: SUPABASE_S3_ACCESS_KEY_ID
+        sync: false
+      - key: SUPABASE_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: SUPABASE_S3_QUERYSTRING_EXPIRE
+        value: "604800"
+      - key: SURVEYHQ_DURABLE_STORAGE_READY
+        sync: false
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py process_outbound_jobs --loop --sleep 5

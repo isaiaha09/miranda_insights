@@ -28,7 +28,7 @@ This document tracks what is already implemented in the repo and what still need
 ## What Is Left Before First Production Launch
 
 1. Set the real Render environment variables.
-Use your private production env source such as `.env.prod` and copy the live values into Render. This includes `SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `SITE_URL`, `NEWSLETTER_SCHEDULER_TOKEN`, SMTP credentials, Turnstile keys, admin alert addresses, and optionally `SENTRY_DSN`.
+Use your private production env source such as `.env.prod` and copy the live values into Render. This includes `SECRET_KEY`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `SITE_URL`, `NEWSLETTER_SCHEDULER_TOKEN`, SMTP credentials, Turnstile keys, admin alert addresses, Supabase storage credentials, and optionally `SENTRY_DSN`.
 
 2. Deploy to Render and run the first production migration.
 This repo now includes a Render pre-deploy command in [render.yaml](render.yaml) that runs `python manage.py migrate` during deployment.
@@ -44,8 +44,8 @@ This is optional. If you want richer observability than email alerts, create a f
 
 6. Confirm the Render outbound worker service is created and healthy, then configure the UptimeRobot newsletter trigger described below. The worker must remain active while `OUTBOUND_DELIVERY_MODE=queue` because it delivers the queued email jobs.
 
-7. Configure persistent media storage before relying on Client Portal attachments.
-The current default storage writes chat attachments to `MEDIA_ROOT`, while [render.yaml](render.yaml) does not declare a persistent disk. Configure a Render persistent disk mounted at the deployed `MEDIA_ROOT` and verify that an authenticated attachment remains available after both a service restart and a deployment. Without this step, Render may remove an attachment before the intended seven-day chat-retention window ends.
+7. Configure and verify Supabase media storage before relying on uploaded files.
+Set `SUPABASE_STORAGE_ENABLED=true` and the Supabase S3 connection variables on both Render services, but leave `SURVEYHQ_DURABLE_STORAGE_READY=false` until the bucket is reachable and `migrate_media_to_supabase` has copied any existing local files. Then set the readiness flag to `true` and verify that survey images, reports, project attachments, and newsletter assets survive a restart and deployment. See [SURVEYHQ_STORAGE.md](current_website/docs/SURVEYHQ_STORAGE.md).
 
 8. Run the live production smoke test.
 After the site is live, manually verify the key flows listed below.
@@ -67,7 +67,7 @@ Run these checks on the live Render deployment:
 11. Trigger one real project/client notification flow and confirm the worker delivers it.
 12. Trigger one newsletter send and confirm the worker delivers it.
 13. Confirm the mobile app points to the production site URL before any production mobile build is distributed.
-14. Upload a test project-chat attachment and confirm its protected download survives a service restart and deployment.
+14. Upload a test project-chat attachment, question image, and official report; confirm their protected downloads survive a service restart and deployment.
 
 ## UptimeRobot Setup
 
@@ -112,8 +112,8 @@ These are valid later-phase items and are not required for the first launch base
 1. Redis-backed shared throttling and cache.
 The current local-memory cache is acceptable for a single web instance. Move to Redis when you scale horizontally.
 
-2. Object storage, backups, and malware inspection beyond the initial persistent Render disk.
-These become important if attachment volume, horizontal scaling, or retention requirements grow. They are not required for the current seven-day workflow once persistent media storage is verified.
+2. Independent object-storage backups and malware inspection beyond the current upload validation.
+These become important as attachment volume and retention requirements grow. Supabase object versioning is not available, so backups should be planned separately for important media.
 
 ## Recommendation
 
@@ -123,7 +123,7 @@ If launching now, the next concrete sequence is:
 2. Deploy.
 3. Confirm Render picks up the `preDeployCommand` in [render.yaml](render.yaml) and runs migrations successfully.
 4. Confirm the worker from [render.yaml](render.yaml) is running and verify the UptimeRobot newsletter scheduler monitor.
-5. Configure and verify the persistent media disk.
+5. Migrate and verify Supabase media storage as described in [SURVEYHQ_STORAGE.md](current_website/docs/SURVEYHQ_STORAGE.md).
 6. Create the first superuser.
 7. Set up UptimeRobot on `/health/` and `/newsletter/scheduler/` as described above.
 8. Optionally enable Sentry.
