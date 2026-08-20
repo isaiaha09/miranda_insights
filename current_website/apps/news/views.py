@@ -8,14 +8,17 @@ from django.core.mail import get_connection
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.crypto import constant_time_compare
+from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
 from landingpage.emailing import send_templated_email, smtp_runtime_summary
 from landingpage.throttling import apply_retry_after, check_request_throttle
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
 
 from .forms import NewsletterSubscribeForm, SupportContactForm
 from .models import NewsletterSubscriber
-from .services import get_unsubscribe_email
+from .services import get_unsubscribe_email, process_due_automated_campaigns
 
 
 logger = logging.getLogger(__name__)
@@ -209,6 +212,27 @@ def subscribe(request):
 		return _newsletter_response(request, "Welcome back. Your subscription has been reactivated.", level="success")
 
 	return _newsletter_response(request, "This email is already subscribed.", level="info")
+
+
+@never_cache
+@require_GET
+def newsletter_scheduler(request):
+	"""Run due automated campaigns from an external scheduler such as UptimeRobot."""
+	configured_token = getattr(settings, "NEWSLETTER_SCHEDULER_TOKEN", "")
+	if not configured_token:
+		logger.error("Newsletter scheduler request rejected because NEWSLETTER_SCHEDULER_TOKEN is not configured.")
+		return JsonResponse({"status": "not_configured"}, status=503)
+
+	provided_token = (
+		request.headers.get("X-Newsletter-Scheduler-Token")
+		or request.GET.get("token")
+		or ""
+	).strip()
+	if not provided_token or not constant_time_compare(provided_token, configured_token):
+		return JsonResponse({"status": "unauthorized"}, status=403)
+
+	processed = process_due_automated_campaigns()
+	return JsonResponse({"status": "ok", "processed": processed})
 
 
 @csrf_exempt

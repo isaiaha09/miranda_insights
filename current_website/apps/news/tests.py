@@ -1226,6 +1226,37 @@ class NewsletterSendCampaignTests(TestCase):
 		)
 
 
+@override_settings(NEWSLETTER_SCHEDULER_TOKEN="test-newsletter-scheduler-token")
+class NewsletterSchedulerTests(TestCase):
+	@patch("apps.news.views.process_due_automated_campaigns", return_value=2)
+	def test_scheduler_accepts_query_token_and_processes_due_campaigns(self, process_mock):
+		response = self.client.get(
+			reverse("newsletter_scheduler"),
+			{"token": "test-newsletter-scheduler-token"},
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json(), {"status": "ok", "processed": 2})
+		process_mock.assert_called_once_with()
+
+	@patch("apps.news.views.process_due_automated_campaigns")
+	def test_scheduler_rejects_invalid_token(self, process_mock):
+		response = self.client.get(reverse("newsletter_scheduler"), {"token": "wrong-token"})
+
+		self.assertEqual(response.status_code, 403)
+		self.assertEqual(response.json(), {"status": "unauthorized"})
+		process_mock.assert_not_called()
+
+	@override_settings(NEWSLETTER_SCHEDULER_TOKEN="")
+	@patch("apps.news.views.process_due_automated_campaigns")
+	def test_scheduler_fails_closed_when_token_is_not_configured(self, process_mock):
+		response = self.client.get(reverse("newsletter_scheduler"), {"token": "any-token"})
+
+		self.assertEqual(response.status_code, 503)
+		self.assertEqual(response.json(), {"status": "not_configured"})
+		process_mock.assert_not_called()
+
+
 class NewsletterSubscriberAdminTests(TestCase):
 	def setUp(self):
 		self.site = AdminSite()

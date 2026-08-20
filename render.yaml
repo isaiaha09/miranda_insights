@@ -36,15 +36,3 @@ services:
         value: "true"
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py process_outbound_jobs --loop --sleep 5
-  - type: cron
-    name: miranda-insights-newsletter-scheduler
-    runtime: python
-    rootDir: current_website
-    schedule: "*/5 * * * *"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.9
-      - key: REQUIRE_DATABASE_URL
-        value: "true"
-    buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py send_newsletters

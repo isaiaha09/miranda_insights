@@ -66,6 +66,7 @@ DJANGO_ADMIN_URL=admin
 
 DEFAULT_FROM_EMAIL=no-reply@example.com
 NEWSLETTER_FROM_EMAIL=news@example.com
+NEWSLETTER_SCHEDULER_TOKEN=replace-with-a-long-random-token
 CONTACT_RECIPIENT=support@mirandainsights.com
 SUPPORT_EMAIL=support@mirandainsights.com
 COMPANY_NOTIFICATION_EMAIL=company@mirandainsights.com

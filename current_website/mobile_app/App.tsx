@@ -1701,7 +1701,7 @@ export default function App() {
 
     return (
       <View style={wrapperStyle}>
-        <Image accessible={false} source={require('./assets/drawer-logo.png')} style={imageStyle} />
+        <Image accessible={false} source={require('./assets/icon.png')} style={imageStyle} />
       </View>
     );
   }
@@ -2075,26 +2075,28 @@ export default function App() {
 
       {nativeScreen === 'web' ? (
         <>
-          <SafeAreaView style={styles.appShell}>
-            <View style={styles.header}>
-              <Pressable onPress={() => setDrawerOpen(true)} style={styles.headerButton}>
-                {renderHamburgerIcon()}
-              </Pressable>
-
-              <View style={styles.headerCenter}>
-                <Text numberOfLines={1} style={styles.headerTitle}>{headerLabel}</Text>
-              </View>
-
-              <View style={styles.headerActionGroup}>
-                <Pressable onPress={reloadPage} style={styles.headerButton}>
-                  {renderRefreshIcon()}
+          <View style={styles.appShell}>
+            <SafeAreaView style={styles.headerSafeArea}>
+              <View style={styles.header}>
+                <Pressable onPress={() => setDrawerOpen(true)} style={styles.headerButton}>
+                  {renderHamburgerIcon()}
                 </Pressable>
 
-                <Pressable onPress={confirmLogoutFromMobileApp} style={styles.headerButton}>
-                  {renderLogoutIcon()}
-                </Pressable>
+                <View style={styles.headerCenter}>
+                  <Text numberOfLines={1} style={styles.headerTitle}>{headerLabel}</Text>
+                </View>
+
+                <View style={styles.headerActionGroup}>
+                  <Pressable onPress={reloadPage} style={styles.headerButton}>
+                    {renderRefreshIcon()}
+                  </Pressable>
+
+                  <Pressable onPress={confirmLogoutFromMobileApp} style={styles.headerButton}>
+                    {renderLogoutIcon()}
+                  </Pressable>
+                </View>
               </View>
-            </View>
+            </SafeAreaView>
 
             <View style={styles.webViewContainer}>
               <WebView
@@ -2155,7 +2157,7 @@ export default function App() {
             </View>
 
             {renderBottomNav()}
-          </SafeAreaView>
+          </View>
 
           {showWebLoader && !webError ? (
             <View pointerEvents="none" style={styles.loadingScreenOverlay}>
@@ -2211,7 +2213,7 @@ export default function App() {
                     <Ionicons color="#f8fafc" name="log-out-outline" size={18} />
                     <Text style={styles.drawerLogoutText}>Log Out</Text>
                   </Pressable>
-                  <Image source={require('./assets/drawer-logo.png')} style={styles.drawerFooterLogo} />
+                  <Image source={require('./assets/icon.png')} style={styles.drawerFooterLogo} />
                 </View>
               </View>
             </ScrollView>
@@ -2307,6 +2309,7 @@ const styles = StyleSheet.create({
     width: 132,
     height: 132,
     borderRadius: 32,
+    resizeMode: 'contain',
   },
   loadingIconWrap: {
     width: 74,
@@ -2322,6 +2325,7 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 17,
+    resizeMode: 'contain',
   },
   authBodySpacer: {
     flex: 1,
@@ -2461,6 +2465,10 @@ const styles = StyleSheet.create({
   },
   appShell: {
     flex: 1,
+    position: 'relative',
+    backgroundColor: '#0c111b',
+  },
+  headerSafeArea: {
     backgroundColor: '#0c111b',
   },
   header: {
@@ -2530,10 +2538,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   bottomNavWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
+    elevation: 20,
     paddingHorizontal: 14,
     paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: '#0c111b',
+    paddingBottom: 6,
+    backgroundColor: 'transparent',
   },
   bottomNavBar: {
     flexDirection: 'row',
@@ -2546,7 +2560,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(150, 180, 220, 0.18)',
     backgroundColor: Platform.select({
       ios: 'rgba(18, 31, 51, 0.72)',
-      default: 'rgba(14, 24, 40, 0.96)',
+      default: 'rgba(14, 24, 40, 0.72)',
     }),
     shadowColor: '#020617',
     shadowOpacity: 0.2,
@@ -2558,7 +2572,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     borderWidth: 1,
     borderColor: 'rgba(218, 230, 244, 0.18)',
-    backgroundColor: 'rgba(28, 41, 62, 0.78)',
+    backgroundColor: 'rgba(28, 41, 62, 0.62)',
     shadowColor: '#020617',
     shadowOpacity: 0.24,
     shadowRadius: 20,
@@ -2566,7 +2580,7 @@ const styles = StyleSheet.create({
   },
   bottomNavGlassTint: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(244, 248, 255, 0.08)',
+    backgroundColor: 'rgba(244, 248, 255, 0.06)',
   },
   bottomNavBarContent: {
     flexDirection: 'row',
@@ -2762,7 +2776,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: 68,
     paddingHorizontal: 18,
-    paddingBottom: 28,
+    // Keep the drawer footer above the overlaid bottom navigation bar.
+    paddingBottom: 116,
     gap: 22,
   },
   drawerHeader: {
@@ -2842,5 +2857,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    resizeMode: 'contain',
   },
 });
