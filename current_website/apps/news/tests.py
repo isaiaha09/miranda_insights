@@ -1239,6 +1239,15 @@ class NewsletterSchedulerTests(TestCase):
 		self.assertEqual(response.json(), {"status": "ok", "processed": 2})
 		process_mock.assert_called_once_with()
 
+	@patch("apps.news.views.process_due_automated_campaigns", return_value=1)
+	def test_scheduler_accepts_head_token_for_uptime_monitor(self, process_mock):
+		response = self.client.head(
+			f"{reverse('newsletter_scheduler')}?token=test-newsletter-scheduler-token"
+		)
+
+		self.assertEqual(response.status_code, 200)
+		process_mock.assert_called_once_with()
+
 	@patch("apps.news.views.process_due_automated_campaigns")
 	def test_scheduler_rejects_invalid_token(self, process_mock):
 		response = self.client.get(reverse("newsletter_scheduler"), {"token": "wrong-token"})

@@ -98,7 +98,7 @@ The Render cron service is not required. UptimeRobot can call the protected sche
 
 2. Add the generated value as the `NEWSLETTER_SCHEDULER_TOKEN` environment variable on the Render web service. Do not commit the token to the repository.
 3. Deploy or restart the web service so the environment variable is loaded.
-4. In UptimeRobot, add an `HTTP(s)` monitor with this URL:
+4. In UptimeRobot, add an `HTTP(s)` monitor with this URL. The endpoint accepts both `GET` and `HEAD` requests, including the Free-plan HTTP monitor behavior:
    `https://<your-live-domain>/newsletter/scheduler/?token=<your-token>`
 5. Set the interval to 5 minutes and leave the expected status as `200`.
 6. Confirm the monitor receives a JSON response with `"status": "ok"`.

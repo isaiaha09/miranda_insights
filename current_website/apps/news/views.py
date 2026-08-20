@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils.crypto import constant_time_compare
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_safe
 from landingpage.emailing import send_templated_email, smtp_runtime_summary
 from landingpage.throttling import apply_retry_after, check_request_throttle
 from landingpage.turnstile import is_mobile_app_request, is_turnstile_enabled_for_request, verify_turnstile_for_request
@@ -215,7 +215,7 @@ def subscribe(request):
 
 
 @never_cache
-@require_GET
+@require_safe
 def newsletter_scheduler(request):
 	"""Run due automated campaigns from an external scheduler such as UptimeRobot."""
 	configured_token = getattr(settings, "NEWSLETTER_SCHEDULER_TOKEN", "")
