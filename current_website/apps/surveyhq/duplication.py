@@ -28,7 +28,7 @@ def duplicate_survey(
     require_permission(actor, "duplicate_survey")
     source_id = source.pk if isinstance(source, Survey) else source
     original = (
-        Survey.objects.select_for_update()
+        Survey.objects.select_for_update(of=("self",))
         .select_related("client", "project", "source_template")
         .prefetch_related("questions__choices", "questions__matrix_rows")
         .get(pk=source_id)

@@ -264,7 +264,7 @@ def generate_survey_report(survey, *, actor, palette_key):
     require_durable_storage()
     if palette_key not in REPORT_PALETTES:
         raise ValidationError("Select a supported SurveyHQ report palette.")
-    instance = Survey.objects.select_for_update().select_related("client", "project").get(
+    instance = Survey.objects.select_for_update(of=("self",)).select_related("client", "project").get(
         pk=survey.pk if isinstance(survey, Survey) else survey
     )
     if not instance.published_at:

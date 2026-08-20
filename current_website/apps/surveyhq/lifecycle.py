@@ -95,7 +95,12 @@ def create_draft(
 
 def _locked_survey(survey) -> Survey:
     survey_id = survey.pk if isinstance(survey, Survey) else survey
-    return Survey.objects.select_for_update().select_related("client", "project").get(pk=survey_id)
+    # client and project are nullable; lock only the Survey row when joining them.
+    return (
+        Survey.objects.select_for_update(of=("self",))
+        .select_related("client", "project")
+        .get(pk=survey_id)
+    )
 
 
 @transaction.atomic
