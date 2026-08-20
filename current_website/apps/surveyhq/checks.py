@@ -10,8 +10,8 @@ def surveyhq_durable_storage_check(app_configs, **kwargs):
         Warning(
             "SurveyHQ durable media writes are disabled until persistent storage is confirmed.",
             hint=(
-                "Mount a persistent disk at MEDIA_ROOT, verify restart/deployment persistence, then set "
-                "SURVEYHQ_DURABLE_STORAGE_READY=true."
+                "Configure Supabase S3 storage or a Render persistent disk, verify restart/deployment "
+                "persistence, then set SURVEYHQ_DURABLE_STORAGE_READY=true."
             ),
             id="surveyhq.W001",
         )

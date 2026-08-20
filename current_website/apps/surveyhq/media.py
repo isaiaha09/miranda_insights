@@ -37,7 +37,7 @@ class PreparedQuestionImage:
 def require_durable_storage():
     if not settings.DEBUG and not settings.SURVEYHQ_DURABLE_STORAGE_READY:
         raise ValidationError(
-            "SurveyHQ durable storage is not configured. Attach persistent storage and set "
+            "SurveyHQ durable storage is not configured. Configure durable storage and set "
             "SURVEYHQ_DURABLE_STORAGE_READY before uploading images or generating reports."
         )
 

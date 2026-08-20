@@ -249,16 +249,65 @@ MEDIA_URL = '/media/'
 
 DJANGO_ADMIN_URL=os.getenv('DJANGO_ADMIN_URL')
 
+# Uploaded media storage. Keep static assets on WhiteNoise; this backend covers
+# user-uploaded files such as survey images, reports, chat attachments, and
+# newsletter assets.
+SUPABASE_STORAGE_ENABLED = env_bool('SUPABASE_STORAGE_ENABLED', False)
+SUPABASE_S3_BUCKET = (os.getenv('SUPABASE_S3_BUCKET') or '').strip()
+SUPABASE_S3_ENDPOINT_URL = (os.getenv('SUPABASE_S3_ENDPOINT_URL') or '').strip()
+SUPABASE_S3_REGION = (os.getenv('SUPABASE_S3_REGION') or '').strip()
+SUPABASE_S3_ACCESS_KEY_ID = (os.getenv('SUPABASE_S3_ACCESS_KEY_ID') or '').strip()
+SUPABASE_S3_SECRET_ACCESS_KEY = (os.getenv('SUPABASE_S3_SECRET_ACCESS_KEY') or '').strip()
+SUPABASE_S3_QUERYSTRING_EXPIRE = env_int('SUPABASE_S3_QUERYSTRING_EXPIRE', 60 * 60 * 24 * 7)
+
+if SUPABASE_STORAGE_ENABLED:
+    missing_supabase_storage_settings = [
+        name
+        for name, value in {
+            'SUPABASE_S3_BUCKET': SUPABASE_S3_BUCKET,
+            'SUPABASE_S3_ENDPOINT_URL': SUPABASE_S3_ENDPOINT_URL,
+            'SUPABASE_S3_REGION': SUPABASE_S3_REGION,
+            'SUPABASE_S3_ACCESS_KEY_ID': SUPABASE_S3_ACCESS_KEY_ID,
+            'SUPABASE_S3_SECRET_ACCESS_KEY': SUPABASE_S3_SECRET_ACCESS_KEY,
+        }.items()
+        if not value
+    ]
+    if missing_supabase_storage_settings:
+        raise ImproperlyConfigured(
+            'Supabase storage is enabled but missing: '
+            + ', '.join(missing_supabase_storage_settings)
+        )
+
 # Project-level static and template folders
 PROJECT_STATIC_DIR = BASE_DIR / 'static'
 STATICFILES_DIRS = [PROJECT_STATIC_DIR] if PROJECT_STATIC_DIR.exists() else []
 
 # Optional STATIC_ROOT for collectstatic (useful for deployments)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+default_storage_config = {
+    'BACKEND': (
+        'storages.backends.s3.S3Storage'
+        if SUPABASE_STORAGE_ENABLED
+        else 'django.core.files.storage.FileSystemStorage'
+    ),
+}
+if SUPABASE_STORAGE_ENABLED:
+    default_storage_config['OPTIONS'] = {
+        'access_key': SUPABASE_S3_ACCESS_KEY_ID,
+        'secret_key': SUPABASE_S3_SECRET_ACCESS_KEY,
+        'bucket_name': SUPABASE_S3_BUCKET,
+        'endpoint_url': SUPABASE_S3_ENDPOINT_URL,
+        'region_name': SUPABASE_S3_REGION,
+        'addressing_style': 'path',
+        'signature_version': 's3v4',
+        'default_acl': None,
+        'file_overwrite': False,
+        'querystring_auth': True,
+        'querystring_expire': SUPABASE_S3_QUERYSTRING_EXPIRE,
+    }
+
 STORAGES = {
-    'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    },
+    'default': default_storage_config,
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
