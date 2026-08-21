@@ -119,8 +119,8 @@ class NewsletterCampaign(models.Model):
 	MODE_CUSTOM = "custom"
 	MODE_AUTOMATED = "automated"
 	MODE_CHOICES = [
-		(MODE_CUSTOM, "Custom"),
 		(MODE_AUTOMATED, "Automated"),
+		(MODE_CUSTOM, "Custom"),
 	]
 
 	FREQ_DAILY = "daily"
@@ -150,7 +150,7 @@ class NewsletterCampaign(models.Model):
 		blank=True,
 		help_text="Legacy plain text fallback. Optional placeholder: {date}",
 	)
-	mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_CUSTOM)
+	mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_AUTOMATED)
 	include_subscribers = models.BooleanField(
 		default=True,
 		help_text="If enabled, send to all active newsletter subscribers.",

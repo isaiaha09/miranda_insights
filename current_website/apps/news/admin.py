@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Exists, OuterRef
 from django.http import HttpResponseRedirect
 from django.urls import path, reverse
-from django.utils.formats import date_format
+from django.utils.formats import date_format, time_format
 from django.utils.html import format_html
 
 from apps.operations.services import dispatch_newsletter_campaign, should_queue_outbound_delivery
@@ -104,14 +104,22 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 		"weekday",
 		"day_of_month",
 		"send_time",
+		"send_hour",
+		"send_minute",
+		"send_meridiem",
 	}
 
 	form = NewsletterCampaignAdminForm
+
+	class Media:
+		js = ("news/admin/newsletter-campaign.js",)
+
 	list_display = (
 		"name",
 		"mode",
 		"is_active",
 		"frequency",
+		"scheduled_send_time_display",
 		"next_send_at_display",
 		"last_sent_at_display",
 		"send_now_link",
@@ -136,25 +144,73 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 					"subject",
 					"preheader",
 					"content_blocks",
+				)
+			},
+		),
+		(
+			"Delivery",
+			{
+				"description": "Automated campaigns follow a schedule. Custom campaigns are sent only when you use Send now.",
+				"fields": (
 					"mode",
+				),
+			},
+		),
+		(
+			"Recipients",
+			{
+				"description": "Choose all active subscribers, specific email addresses, or both.",
+				"fields": (
 					"include_subscribers",
 					"direct_recipients",
-					"is_active",
-				)
+				),
 			},
 		),
 		(
 			"Automation Controls",
 			{
-				"description": "Configure for automated campaigns (daily/weekly/monthly/interval).",
+				"classes": ("newsletter-automated-settings",),
+				"description": "Set when an automated campaign should run. Custom campaigns do not use these settings. The time uses the newsletter time zone configured for this site.",
 				"fields": (
+					"is_active",
 					"frequency",
-					"interval_days",
-					"weekday",
-					"day_of_month",
-					"send_time",
+					"send_hour",
+					"send_minute",
+					"send_meridiem",
 					"next_send_at_display",
 				),
+			},
+		),
+		(
+			"Interval Schedule",
+			{
+				"classes": ("newsletter-automated-settings", "newsletter-frequency-interval"),
+				"description": "Choose how many days to wait between sends.",
+				"fields": ("interval_days",),
+			},
+		),
+		(
+			"Weekly Schedule",
+			{
+				"classes": ("newsletter-automated-settings", "newsletter-frequency-weekly"),
+				"description": "Choose the weekday for the recurring send.",
+				"fields": ("weekday",),
+			},
+		),
+		(
+			"Monthly Schedule",
+			{
+				"classes": ("newsletter-automated-settings", "newsletter-frequency-monthly"),
+				"description": "Choose the day of the month for the recurring send.",
+				"fields": ("day_of_month",),
+			},
+		),
+		(
+			"Manual Delivery",
+			{
+				"classes": ("newsletter-custom-settings",),
+				"description": "Custom campaigns do not run on a schedule. Save the campaign, then use Send now to deliver it.",
+				"fields": ("send_now_button",),
 			},
 		),
 		(
@@ -163,7 +219,6 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 				"fields": (
 					"created_by",
 					"last_sent_at_display",
-					"send_now_button",
 					"created_at",
 					"updated_at",
 				)
@@ -200,6 +255,14 @@ class NewsletterCampaignAdmin(StaffCreatedByAdminMixin, admin.ModelAdmin):
 		return self._format_newsletter_datetime(getattr(obj, "next_send_at", None))
 
 	next_send_at_display.short_description = "Next send at"
+
+	def scheduled_send_time_display(self, obj):
+		if obj.mode != NewsletterCampaign.MODE_AUTOMATED or not obj.send_time:
+			return "-"
+		return time_format(obj.send_time, "P")
+
+	scheduled_send_time_display.short_description = "Scheduled time"
+	scheduled_send_time_display.admin_order_field = "send_time"
 
 	def last_sent_at_display(self, obj):
 		return self._format_newsletter_datetime(getattr(obj, "last_sent_at", None))

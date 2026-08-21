@@ -16,6 +16,7 @@ from django.urls import reverse
 from django.templatetags.static import static
 
 from .admin import HasAccountListFilter, NewsletterCampaignAdmin, NewsletterSubscriberAdmin
+from .forms import NewsletterCampaignAdminForm
 from .newsletter_blocks import normalize_blocks
 from .models import NewsletterBlockTemplate, NewsletterCampaign, NewsletterImageAsset, NewsletterSendLog, NewsletterSubscriber
 from .services import process_due_automated_campaigns, send_campaign
@@ -1302,6 +1303,40 @@ class NewsletterSubscriberAdminTests(TestCase):
 		self.assertEqual(list(filtered.values_list("email", flat=True)), ["with-account@example.com"])
 
 
+class NewsletterCampaignAdminFormTests(TestCase):
+	def test_new_campaign_defaults_to_automated_all_subscribers_and_12_hour_time(self):
+		form = NewsletterCampaignAdminForm()
+
+		self.assertEqual(form.initial["mode"], NewsletterCampaign.MODE_AUTOMATED)
+		self.assertTrue(form.fields["include_subscribers"].initial)
+		self.assertEqual(form.initial["send_hour"], "9")
+		self.assertEqual(form.initial["send_minute"], "0")
+		self.assertEqual(form.initial["send_meridiem"], "AM")
+
+	def test_form_converts_12_hour_time_to_model_time(self):
+		form = NewsletterCampaignAdminForm(
+			data={
+				"name": "Test campaign",
+				"subject": "Hello from test",
+				"content_blocks": '[{"type":"paragraph","text":"Hello"}]',
+				"mode": NewsletterCampaign.MODE_AUTOMATED,
+				"include_subscribers": "on",
+				"direct_recipients": "",
+				"is_active": "on",
+				"frequency": NewsletterCampaign.FREQ_DAILY,
+				"interval_days": "1",
+				"weekday": "",
+				"day_of_month": "",
+				"send_hour": "3",
+				"send_minute": "05",
+				"send_meridiem": "PM",
+			}
+		)
+
+		self.assertTrue(form.is_valid(), form.errors)
+		self.assertEqual(form.cleaned_data["send_time"], time(15, 5))
+
+
 class NewsletterCampaignAdminTests(TestCase):
 	def setUp(self):
 		self.site = AdminSite()
@@ -1359,6 +1394,25 @@ class NewsletterCampaignAdminTests(TestCase):
 		display_value = self.admin.last_sent_at_display(campaign)
 
 		self.assertEqual(display_value, "May 1, 2026, noon")
+
+	def test_scheduled_send_time_display_is_only_shown_for_automated_campaigns(self):
+		automated_campaign = NewsletterCampaign.objects.create(
+			name="Automated campaign",
+			subject="Automated update",
+			body="Body text",
+			mode=NewsletterCampaign.MODE_AUTOMATED,
+			send_time=time(18, 0),
+		)
+		custom_campaign = NewsletterCampaign.objects.create(
+			name="Custom campaign",
+			subject="Custom update",
+			body="Body text",
+			mode=NewsletterCampaign.MODE_CUSTOM,
+			send_time=time(18, 0),
+		)
+
+		self.assertEqual(self.admin.scheduled_send_time_display(automated_campaign), "6 p.m.")
+		self.assertEqual(self.admin.scheduled_send_time_display(custom_campaign), "-")
 
 
 @override_settings(
