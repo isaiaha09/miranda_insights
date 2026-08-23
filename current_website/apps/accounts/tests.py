@@ -39,6 +39,26 @@ class LoginViewTests(TestCase):
 		self.assertContains(response, reverse("password_reset"))
 		self.assertContains(response, reverse("signup"))
 		self.assertContains(response, 'css/auth.css')
+		self.assertContains(
+			response,
+			"Miranda Insights clients and Operational Partnership members can log in to access project updates, shared records, messages, and scheduling.",
+		)
+
+	@override_settings(TURNSTILE_SITE_KEY="", TURNSTILE_SECRET_KEY="")
+	def test_signup_uses_current_client_portal_positioning_without_changing_fields(self):
+		response = self.client.get(reverse("signup"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(
+			response,
+			"Create a Miranda Insights account to access the Client Portal and information shared through your engagement.",
+		)
+		self.assertContains(response, "Business/Organization Name (Optional)")
+		self.assertContains(response, "Business/Organization Description (Optional)")
+		self.assertContains(response, "Send me practical insights and Miranda Insights updates.")
+		for field_name in ("organization_name", "organization_description", "username", "password1", "password2"):
+			self.assertContains(response, f'name="{field_name}"', html=False)
+		self.assertContains(response, 'name="csrfmiddlewaretoken"', html=False)
 
 	def test_admin_login_uses_portal_style_template(self):
 		response = self.client.get(reverse("admin:login"))
@@ -355,7 +375,7 @@ class MobileAuthApiTests(TestCase):
 
 
 class StaffUserAdminTests(TestCase):
-	def test_users_admin_only_lists_staff_accounts(self):
+	def test_users_admin_lists_staff_and_client_accounts_with_role_filters(self):
 		staff_user = User.objects.create_user(
 			username="staffuser",
 			email="staff@example.com",
@@ -374,7 +394,9 @@ class StaffUserAdminTests(TestCase):
 		queryset = admin_instance.get_queryset(request)
 
 		self.assertIn(staff_user, queryset)
-		self.assertNotIn(client_user, queryset)
+		self.assertIn(client_user, queryset)
+		self.assertIn("is_staff", admin_instance.list_filter)
+		self.assertIn("is_superuser", admin_instance.list_filter)
 
 	def test_account_profile_admin_shows_pending_deletion_state(self):
 		user = User.objects.create_user(username="pendingadmin", email="pending@example.com", password="test-pass-123")
@@ -387,11 +409,11 @@ class StaffUserAdminTests(TestCase):
 		self.assertEqual(admin_instance.account_deletion_scheduled_for(profile), deletion_request.scheduled_for)
 
 	@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-	def test_account_profile_admin_delete_removes_email_linked_data_and_preserves_subscriber(self):
+	def test_account_profile_admin_delete_removes_linked_data_and_preserves_unrelated_same_email_records(self):
 		user = User.objects.create_user(username="admindelete", email="admindelete@example.com", password="test-pass-123")
 		profile = AccountProfile.objects.create(user=user, industry_type=AccountProfile.INDUSTRY_OTHER, phone_number="555-0202")
 		linked_client = get_or_create_client_for_user(user)
-		Project.objects.create(client=linked_client, name="Main Portal Project", status=Project.STATUS_IN_PROGRESS)
+		linked_project = Project.objects.create(client=linked_client, name="Main Portal Project", status=Project.STATUS_IN_PROGRESS)
 		email_only_client = Client.objects.create(
 			contact_name="Same Email Client",
 			contact_email="admindelete@example.com",
@@ -407,7 +429,8 @@ class StaffUserAdminTests(TestCase):
 		self.assertFalse(User.objects.filter(pk=user.pk).exists())
 		self.assertFalse(AccountProfile.objects.filter(pk=profile.pk).exists())
 		self.assertFalse(Client.objects.filter(pk=linked_client.pk).exists())
-		self.assertFalse(Client.objects.filter(pk=email_only_client.pk).exists())
+		self.assertFalse(Project.objects.filter(pk=linked_project.pk).exists())
+		self.assertTrue(Client.objects.filter(pk=email_only_client.pk, user__isnull=True).exists())
 		self.assertTrue(NewsletterSubscriber.objects.filter(email="admindelete@example.com", is_active=True).exists())
 		self.assertEqual(len(mail.outbox), 1)
 		self.assertEqual(mail.outbox[0].to, ["admindelete@example.com"])

@@ -400,6 +400,70 @@ body.landing .site-header {
     min-height: 17.5rem;
 }
 
+/* Pathway cards intentionally stay compact rather than inheriting feature-card height. */
+.home-card-grid-pathways {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: auto;
+    align-items: start;
+}
+
+.home-card.home-card-pathway {
+    grid-column: auto;
+    align-self: start;
+    height: auto;
+    min-height: 0;
+    padding: clamp(1.1rem, 1.7vw, 1.4rem);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.home-card.home-card-pathway--centered {
+    grid-column: 1 / -1;
+    width: calc(50% - 0.5rem);
+    justify-self: center;
+}
+
+.home-card.home-card-pathway:focus-visible {
+    outline: 3px solid var(--home-gold-light);
+    outline-offset: 4px;
+}
+
+.home-pathway-group-label {
+    grid-column: 1 / -1;
+    margin: 0.75rem 0 -0.1rem;
+    color: var(--home-gold);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.home-pathway-group-label:first-child {
+    margin-top: 0;
+}
+
+.home-card-pathway__cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.85rem;
+    color: var(--home-gold-light);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.home-card-pathway__cue span {
+    transition: transform 180ms ease;
+}
+
+.home-card-pathway:hover .home-card-pathway__cue span,
+.home-card-pathway:focus-visible .home-card-pathway__cue span {
+    transform: translateX(0.2rem);
+}
+
 /* Final homepage call to action */
 .home-final-cta {
     padding-top: clamp(3rem, 6vw, 5rem);
@@ -787,6 +851,7 @@ body.landing .site-header {
     }
 
     .home-card-grid-pillars,
+    .home-card-grid-pathways,
     .home-card-grid-six {
         grid-template-columns: 1fr;
     }
@@ -797,6 +862,11 @@ body.landing .site-header {
     }
 
     .home-card-pillar:last-child {
+        width: 100%;
+    }
+
+    .home-card.home-card-pathway--centered {
+        grid-column: auto;
         width: 100%;
     }
 
@@ -829,5 +899,9 @@ body.landing .site-header {
 
     .home-card:hover {
         transform: none;
+    }
+
+    .home-card-pathway__cue span {
+        transition: none;
     }
 }

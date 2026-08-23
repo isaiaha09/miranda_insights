@@ -52,6 +52,10 @@ class PwaAssetTests(TestCase):
         self.assertEqual(manifest["name"], "Miranda Insights")
         self.assertEqual(manifest["short_name"], "Miranda Insights")
         self.assertEqual(
+            manifest["description"],
+            "Miranda Insights helps people and organizations understand problems, organize systems, build digital solutions, and move forward through project-based and ongoing support.",
+        )
+        self.assertEqual(
             [(icon["src"], icon["sizes"], icon["purpose"]) for icon in manifest["icons"]],
             [
                 (static("pwa/icon-192.png"), "192x192", "any"),

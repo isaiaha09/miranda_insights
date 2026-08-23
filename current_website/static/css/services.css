@@ -283,9 +283,34 @@ body.services-page {
     margin: 1rem 0 0;
 }
 
+.services-page .service-area-card > .service-area-card__slogan {
+    margin-top: 0.45rem;
+    color: var(--services-gold-light);
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.services-page .service-area-card__problem {
+    padding: 0.75rem 0.9rem;
+    border-left: 2px solid rgba(216, 164, 58, 0.58);
+    background: rgba(216, 164, 58, 0.045);
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.services-page .service-area-card__problem span {
+    display: block;
+    margin-bottom: 0.22rem;
+    color: var(--services-gold-light);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
 .services-page .service-area-card__details {
-    margin-top: 1.65rem;
-    padding-top: 1.4rem;
+    margin-top: 1.35rem;
+    padding-top: 1.15rem;
     border-top: 1px solid rgba(231, 211, 168, 0.15);
 }
 
@@ -334,6 +359,18 @@ body.services-page {
     margin: 0;
     color: var(--muted);
     line-height: 1.65;
+}
+
+.services-page .service-area-card__action {
+    margin-top: auto;
+    padding-top: 1.35rem;
+}
+
+.services-page .service-area-card__action .btn {
+    width: 100%;
+    min-height: 2.85rem;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
 }
 
 .services-page .services-process {

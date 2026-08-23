@@ -15,7 +15,7 @@
       <div class="auth-intro">
         <p class="auth-eyebrow">Account Access</p>
         <h1>Create Your Account</h1>
-        <p>Set up your Insights account to access your dashboard, reports, and client resources.</p>
+        <p>Create a Miranda Insights account to access the Client Portal and information shared through your engagement.</p>
       </div>
 
       {% if messages %}
@@ -51,16 +51,16 @@
           </div>
 
           <div class="field-row field-row-wide">
-            <label for="id_organization_name">Business/Organization Name</label>
+            <label for="id_organization_name">Business/Organization Name (Optional)</label>
             {{ form.organization_name }}
-            <p class="field-help">Share the name of your company, school, agency, or organization.</p>
+            <p class="field-help">If applicable, share the name of your company, school, agency, or organization.</p>
             {% if form.organization_name.errors %}<small class="field-error">{{ form.organization_name.errors|striptags }}</small>{% endif %}
           </div>
 
           <div class="field-row field-row-wide">
-            <label for="id_organization_description">Business/Organization Description</label>
+            <label for="id_organization_description">Business/Organization Description (Optional)</label>
             {{ form.organization_description }}
-            <p class="field-help">Give a short description so Miranda Insights has the right organizational context.</p>
+            <p class="field-help">If applicable, provide a short description so Miranda Insights has the right context.</p>
             {% if form.organization_description.errors %}<small class="field-error">{{ form.organization_description.errors|striptags }}</small>{% endif %}
           </div>
 
@@ -111,7 +111,7 @@
 
           <div class="checkbox-row">
             {{ form.subscribe_to_newsletter }}
-            <label for="id_subscribe_to_newsletter">Send me newsletter updates and product insights.</label>
+            <label for="id_subscribe_to_newsletter">Send me practical insights and Miranda Insights updates.</label>
           </div>
           {% if form.subscribe_to_newsletter.errors %}<small class="field-error auth-actions-error">{{ form.subscribe_to_newsletter.errors|striptags }}</small>{% endif %}
 

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Miranda Insights | Operational Intelligence{% endblock %}
+{% block title %}Miranda Insights | Practical Problem Solving &amp; Systems Development{% endblock %}
 
 {% block body_class %}landing{% endblock %}
 
@@ -14,9 +14,9 @@
     <section class="hero-landing" aria-labelledby="home-hero-heading">
       <div class="hero-inner">
         <div class="hero-left">
-          <h1 id="home-hero-heading">Operational Intelligence for People, Organizations, and Communities</h1>
+          <h1 id="home-hero-heading">Solve the problem. Build the system. Move forward.</h1>
           <div class="hero-summary">
-            <p class="hero-summary-copy">Miranda Insights helps individuals, organizations, and communities improve decision-making through operational services, data-informed solutions, digital systems, and long-term partnerships. We build practical solutions that create sustainable growth and continuous improvement.</p>
+            <p class="hero-summary-copy">Miranda Insights helps individuals and organizations understand problems, organize what already exists, build digital systems and tools, and create practical paths forward. Tell us what you&rsquo;re trying to solve, and we&rsquo;ll help determine the right structure, service, or support.</p>
           </div>
           <div class="hero-cta">
             <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
@@ -69,7 +69,7 @@
       <div class="home-section-shell">
         <div class="home-section-heading">
           <h2 id="who-we-work-with-heading">Who We Work With</h2>
-          <p>Miranda Insights partners with individuals, professionals, entrepreneurs, businesses, schools, nonprofits, and organizations that are committed to learning, improving, and leveraging data, technology, and operational systems to support meaningful growth.</p>
+          <p>Miranda Insights works with students, athletes, individuals, professionals, entrepreneurs, businesses, schools, nonprofits, and community organizations. The starting point is not the client category&mdash;it is the goal, problem, or change they are working toward.</p>
         </div>
         <div class="home-card-grid home-card-grid-six">
           <article class="home-card home-card-audience"><h3>Students &amp; Athletes</h3><p>Academic support, planning, organization, and personal development.</p></article>
@@ -85,33 +85,56 @@
     <section class="home-section home-section-why" aria-labelledby="why-miranda-insights-heading">
       <div class="home-section-shell">
         <div class="home-section-heading">
-          <h2 id="why-miranda-insights-heading">Why Miranda Insights</h2>
+          <p class="home-section-eyebrow">A Clear Starting Point</p>
+          <h2 id="why-miranda-insights-heading">What Do You Need Help With?</h2>
+          <p>Start with what you are trying to solve. Miranda Insights will help determine the right path.</p>
         </div>
-        <div class="home-card-grid home-card-grid-six">
-          <article class="home-card home-card-feature">
+        <div class="home-card-grid home-card-grid-pathways">
+          <p class="home-pathway-group-label">Operational Services</p>
+          <a class="home-card home-card-feature home-card-pathway" href="{% url 'services' %}">
             <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></svg></span>
-            <h3>Personalized Solutions</h3><p>Every client has unique goals. Our services are designed around your needs rather than forcing you into a predefined process.</p>
-          </article>
-          <article class="home-card home-card-feature">
+            <h3>We figure it out.</h3><p>Research, analysis, planning, evaluation, surveys, reports, recommendations, frameworks, and program development that turn questions and information into practical next steps.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+          <a class="home-card home-card-feature home-card-pathway" href="{% url 'services' %}">
             <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 7h16M7 3v4m10-4v4M5 11h4v4H5zm6 0h4v4h-4zm6 0h2v4h-2zM5 17h4v2H5zm6 0h8v2h-8z" /></svg></span>
-            <h3>Practical Systems</h3><p>We focus on building solutions that are simple, sustainable, and easy to maintain long after implementation.</p>
-          </article>
-          <article class="home-card home-card-feature">
+            <h3>We organize it.</h3><p>Schedules, workflows, task systems, documentation, file organization, administrative processes, and recurring operations that make responsibilities easier to manage.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+          <a class="home-card home-card-feature home-card-pathway" href="{% url 'services' %}">
             <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 12h10M12 7v10M4 4h16v16H4z" /></svg></span>
-            <h3>Collaborative Approach</h3><p>We work alongside our clients throughout the project, emphasizing communication, transparency, and shared problem-solving.</p>
-          </article>
-          <article class="home-card home-card-feature">
+            <h3>We put it online.</h3><p>Professional websites, landing pages, responsive content, inquiry systems, integrations, and public-facing digital experiences people can understand and use.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+          <a class="home-card home-card-feature home-card-pathway" href="{% url 'services' %}">
             <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 20h18M5 17l4-5 3 2 6-8 2 2" /></svg></span>
-            <h3>Data-Informed Decisions</h3><p>We combine operational experience with thoughtful analysis to support informed decision-making rather than relying on assumptions.</p>
-          </article>
-          <article class="home-card home-card-feature">
+            <h3>We build the tool.</h3><p>Custom applications, portals, databases, automation, dashboards, integrations, and functional software designed around a defined operational need.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+
+          <p class="home-pathway-group-label">Operational Partnership</p>
+          <a class="home-card home-card-feature home-card-pathway home-card-pathway--centered" href="{% url 'operational_partnership' %}">
             <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 19 10 13l4 3 6-9M15 7h5v5" /></svg></span>
-            <h3>Long-Term Growth</h3><p>Whether through projects or ongoing partnerships, our goal is to help clients continue improving over time.</p>
-          </article>
-          <article class="home-card home-card-feature">
-            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7l-8-4Z" /><path d="m8.5 12 2.2 2.2 4.8-4.8" /></svg></span>
-            <h3>Professional &amp; Transparent</h3><p>Clear communication, defined expectations, and organized project management remain central to every engagement.</p>
-          </article>
+            <h3>We help you move forward.</h3><p>Ongoing guidance, planning, accountability, decision support, implementation support, progress tracking, and personalized resources that help you keep moving forward as priorities evolve.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+
+          <p class="home-pathway-group-label">Individual Services</p>
+          <a class="home-card home-card-feature home-card-pathway" href="{% url 'individual_services' %}">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3.5 5.25h5.75A2.75 2.75 0 0 1 12 8v11.5a2.75 2.75 0 0 0-2.75-2.75H3.5z" /><path d="M20.5 5.25h-5.75A2.75 2.75 0 0 0 12 8v11.5a2.75 2.75 0 0 1 2.75-2.75h5.75z" /></svg></span>
+            <h3>We help you learn it.</h3><p>Individualized tutoring, concept review, study strategies, academic planning, skill development, test preparation, and learning guidance.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+          <a class="home-card home-card-feature home-card-pathway" href="{% url 'individual_services' %}">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M3 9.5v5M5.5 7.5v9M8 10v4M16 10v4M18.5 7.5v9M21 9.5v5M8 12h8" /></svg></span>
+            <h3>We help you train for it.</h3><p>Structured fitness coaching, exercise instruction, strength and conditioning, athletic development, fitness programming, progress tracking, and accountability.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
+          <a class="home-card home-card-feature home-card-pathway home-card-pathway--centered" href="{% url 'individual_services' %}">
+            <span class="home-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="5" /><path d="m14.5 9.5-1.5 3.5-3.5 1.5L11 11z" /></svg></span>
+            <h3>We help you follow through on it.</h3><p>Goal setting, planning, organization, accountability, progress reviews, decision support, habit development, and practical problem-solving.</p>
+            <span class="home-card-pathway__cue" aria-hidden="true">Explore <span>&rarr;</span></span>
+          </a>
         </div>
       </div>
     </section>
@@ -119,8 +142,8 @@
     <section class="home-section home-final-cta" aria-labelledby="get-started-heading">
       <div class="home-final-cta-panel">
         <p class="home-section-eyebrow">Ready to Get Started?</p>
-        <h2 id="get-started-heading">Let&rsquo;s Build Something Better Together</h2>
-        <p>Whether you&rsquo;re looking to improve operations, organize your systems, develop a digital solution, or simply explore what&rsquo;s possible, we&rsquo;d love to learn more about your goals.</p>
+        <h2 id="get-started-heading">Tell Us What You&rsquo;re Trying to Solve</h2>
+        <p>Whether you need to understand a question, organize a system, establish a digital presence, build a functional tool, or create consistent progress, the conversation can start with the problem.</p>
         <div class="home-final-cta-actions">
           <a class="btn btn-primary" href="https://calendar.notion.so/meet/mirandalegacy/discovery" target="_blank" rel="noopener noreferrer">Schedule a Discovery Session</a>
           <a class="btn btn-ghost" href="{% url 'contact_support' %}">Contact Miranda Insights</a>
@@ -133,7 +156,7 @@
       <div class="subscribe-shell container">
         <div class="subscribe-inner">
           <h2>Subscribe to Miranda Insights Newsletter</h2>
-          <p>Get monthly insights and product updates delivered to your inbox.</p>
+          <p>Get practical insights, service updates, and Miranda Insights news delivered to your inbox.</p>
           <div class="subscribe-messages" aria-live="polite" data-subscribe-messages {% if not messages %}hidden{% endif %}>
             {% for message in messages %}
               <p class="subscribe-message subscribe-message-{{ message.tags|default:'info' }}">{{ message }}</p>

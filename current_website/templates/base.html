@@ -9,7 +9,7 @@
     <meta name="msapplication-navbutton-color" content="#0c111b" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Miranda Insights" />
-    <meta name="description" content="Miranda Insights provides operational intelligence, project-based services, individual support, and ongoing partnerships for people and organizations." />
+    <meta name="description" content="Miranda Insights helps people and organizations understand problems, organize systems, build digital solutions, and move forward through project-based and ongoing support." />
     <meta name="theme-color" content="#0c111b" />
 
     <title>{% block title %}Miranda Insights{% endblock %}</title>
@@ -129,7 +129,11 @@
       </div>
 
       <div class="container footer-bottom">
-        <p>&copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC. All rights reserved.</p>
+        <p>
+          <span>&copy; <span id="site-year">{{ now|date:"Y" }}</span> Miranda Insights LLC. All rights reserved.</span>
+          <span class="footer-bottom__separator" aria-hidden="true">&bull;</span>
+          <span class="footer-bottom__tagline">Learn. Build. Grow.</span>
+        </p>
       </div>
     </footer>
 

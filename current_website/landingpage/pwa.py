@@ -12,7 +12,7 @@ def manifest(request):
     data = {
         "name": "Miranda Insights",
         "short_name": "Miranda Insights",
-        "description": "Miranda Insights provides operational intelligence, project-based services, individual support, and ongoing partnerships for people and organizations.",
+        "description": "Miranda Insights helps people and organizations understand problems, organize systems, build digital solutions, and move forward through project-based and ongoing support.",
         "start_url": reverse("home"),
         "scope": "/",
         "display": "standalone",

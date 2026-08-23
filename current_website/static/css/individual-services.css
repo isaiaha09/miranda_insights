@@ -363,8 +363,33 @@ body.individual-services-page .site-main {
     margin: 1rem 0 0;
 }
 
+.individual-services-page .individual-service-card__overview > .individual-service-card__slogan {
+    margin-top: 0.45rem;
+    color: var(--individual-gold-light);
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.individual-services-page .individual-service-card__problem {
+    padding: 0.72rem 0.85rem;
+    border-left: 2px solid rgba(216, 164, 58, 0.58);
+    background: rgba(216, 164, 58, 0.045);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.individual-services-page .individual-service-card__problem span {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--individual-gold-light);
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
 .individual-services-page .individual-service-card__note {
-    padding-top: 1rem;
+    padding-top: 0.8rem;
     border-top: 1px solid rgba(231, 211, 168, 0.14);
     font-size: 0.9rem;
 }

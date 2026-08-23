@@ -49,11 +49,11 @@ class PublicPageTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		content = response.content.decode()
 		section_headings = [
-			"Operational Intelligence for People, Organizations, and Communities",
+			"Solve the problem. Build the system. Move forward.",
 			"Our Five Pillars",
 			"Who We Work With",
-			"Why Miranda Insights",
-			"Let&rsquo;s Build Something Better Together",
+			"What Do You Need Help With?",
+			"Tell Us What You&rsquo;re Trying to Solve",
 			"Subscribe to Miranda Insights Newsletter",
 		]
 		section_positions = [content.index(heading) for heading in section_headings]
@@ -71,11 +71,76 @@ class PublicPageTests(TestCase):
 		self.assertContains(response, "Building stronger habits, organization, accountability, confidence")
 		self.assertContains(response, "Improving the systems, processes, technology, data, documentation")
 		self.assertContains(response, "Students &amp; Athletes", html=False)
-		self.assertContains(response, "Professional &amp; Transparent", html=False)
-		self.assertNotContains(response, ">Operational Services<", html=False)
+		pathway_start = content.index('<div class="home-card-grid home-card-grid-pathways">')
+		pathway_end = content.index('<section class="home-section home-final-cta"', pathway_start)
+		pathway_content = content[pathway_start:pathway_end]
+		pathways = (
+			(
+				"We figure it out.",
+				"Research, analysis, planning, evaluation, surveys, reports, recommendations, frameworks, and program development that turn questions and information into practical next steps.",
+			),
+			(
+				"We organize it.",
+				"Schedules, workflows, task systems, documentation, file organization, administrative processes, and recurring operations that make responsibilities easier to manage.",
+			),
+			(
+				"We put it online.",
+				"Professional websites, landing pages, responsive content, inquiry systems, integrations, and public-facing digital experiences people can understand and use.",
+			),
+			(
+				"We build the tool.",
+				"Custom applications, portals, databases, automation, dashboards, integrations, and functional software designed around a defined operational need.",
+			),
+			(
+				"We help you move forward.",
+				"Ongoing guidance, planning, accountability, decision support, implementation support, progress tracking, and personalized resources that help you keep moving forward as priorities evolve.",
+			),
+			(
+				"We help you learn it.",
+				"Individualized tutoring, concept review, study strategies, academic planning, skill development, test preparation, and learning guidance.",
+			),
+			(
+				"We help you train for it.",
+				"Structured fitness coaching, exercise instruction, strength and conditioning, athletic development, fitness programming, progress tracking, and accountability.",
+			),
+			(
+				"We help you follow through on it.",
+				"Goal setting, planning, organization, accountability, progress reviews, decision support, habit development, and practical problem-solving.",
+			),
+		)
+		pathway_positions = []
+		for title, description in pathways:
+			self.assertContains(response, title)
+			self.assertContains(response, description)
+			pathway_positions.append(pathway_content.index(f">{title}</h3>"))
+		self.assertEqual(pathway_positions, sorted(pathway_positions))
+		self.assertEqual(pathway_content.count('<a class="home-card home-card-feature home-card-pathway'), 8)
+		self.assertEqual(pathway_content.count(f'href="{reverse("services")}"'), 4)
+		self.assertEqual(pathway_content.count(f'href="{reverse("operational_partnership")}"'), 1)
+		self.assertEqual(pathway_content.count(f'href="{reverse("individual_services")}"'), 3)
+		group_positions = [
+			pathway_content.index(f">{label}</p>")
+			for label in ("Operational Services", "Operational Partnership", "Individual Services")
+		]
+		self.assertEqual(group_positions, sorted(group_positions))
+		architecture_markers = (
+			">Operational Services</p>",
+			">We figure it out.</h3>",
+			">We organize it.</h3>",
+			">We put it online.</h3>",
+			">We build the tool.</h3>",
+			">Operational Partnership</p>",
+			">We help you move forward.</h3>",
+			">Individual Services</p>",
+			">We help you learn it.</h3>",
+			">We help you train for it.</h3>",
+			">We help you follow through on it.</h3>",
+		)
+		marker_positions = [pathway_content.index(marker) for marker in architecture_markers]
+		self.assertEqual(marker_positions, sorted(marker_positions))
+		self.assertNotIn("SurveyHQ", pathway_content)
 		self.assertNotContains(response, ">Digital Presence<", html=False)
 		self.assertNotContains(response, ">Intelligence Application Development<", html=False)
-		self.assertNotContains(response, ">Operational Partnership<", html=False)
 
 	def test_homepage_uses_existing_routes_and_approved_discovery_link(self):
 		response = self.client.get(reverse("home"))
@@ -235,8 +300,10 @@ class PublicPageTests(TestCase):
 		self.assertEqual(section_positions, sorted(section_positions))
 		self.assertContains(
 			response,
-			"Miranda Insights is a purpose-driven Operational Intelligence and Systems Development firm focused on creating practical, sustainable solutions that help individuals and organizations learn, build, and grow.",
+			"Miranda Insights is a purpose-driven problem-solving and systems-development firm that helps individuals and organizations understand challenges, build practical solutions, and move forward with greater clarity and ownership.",
 		)
+		self.assertContains(response, "The work is collaborative and built for ownership.")
+		self.assertContains(response, "without unnecessary dependence")
 
 	def test_about_page_contains_approved_content_and_founder_profile(self):
 		response = self.client.get(reverse("about"))
@@ -293,7 +360,7 @@ class PublicPageTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		content = response.content.decode()
 		section_headings = [
-			"Build better systems through an ongoing partnership.",
+			"We help you move forward.",
 			"What is an Operational Partnership?",
 			"Who Can Benefit?",
 			"What Your Partnership May Include",
@@ -304,6 +371,11 @@ class PublicPageTests(TestCase):
 		]
 		section_positions = [content.index(heading) for heading in section_headings]
 		self.assertEqual(section_positions, sorted(section_positions))
+		self.assertContains(
+			response,
+			"I have goals, responsibilities, projects, or changes I want to make, but I need consistent guidance, structure, accountability, and someone to help me keep moving forward.",
+		)
+		self.assertContains(response, "the Member remains responsible for decisions, actions, and long-term development.")
 
 	def test_operational_partnership_renders_approved_cards_and_benefits(self):
 		response = self.client.get(reverse("operational_partnership"))
@@ -350,11 +422,13 @@ class PublicPageTests(TestCase):
 			"Consistent Accountability",
 			"Trusted Guidance",
 			"Flexible Support",
-			"Continued Improvement",
+			"Practical Problem Solving",
 			"Organized Progress",
-			"Long-Term Relationship",
+			"Greater Ownership",
 		):
 			self.assertContains(response, reason)
+		self.assertContains(response, "approximately 0&ndash;2 client-specific deliverables per month", html=False)
+		self.assertContains(response, "The objective is not dependence.")
 
 	def test_operational_partnership_presents_two_flexible_paths(self):
 		response = self.client.get(reverse("operational_partnership"))
@@ -381,6 +455,7 @@ class PublicPageTests(TestCase):
 		)
 		self.assertContains(response, "<details", count=4, html=False)
 		self.assertContains(response, "Operational Partnership Agreement")
+		self.assertContains(response, "Will Miranda Insights make decisions or complete every responsibility for me?")
 		self.assertNotContains(response, "retainer")
 		self.assertNotContains(response, "subscription")
 
@@ -401,7 +476,7 @@ class PublicPageTests(TestCase):
 		response = self.client.get(reverse("operational_partnership"), {"mobile_app": "1"})
 
 		self.assertEqual(response.status_code, 200)
-		self.assertContains(response, "Build better systems through an ongoing partnership.")
+		self.assertContains(response, "We help you move forward.")
 		self.assertContains(response, static("css/operational-partnership.css"))
 
 	def test_services_page_route_and_sections_render_in_order(self):
@@ -424,36 +499,63 @@ class PublicPageTests(TestCase):
 		self.assertContains(response, "Project-Based Professional Services")
 		self.assertContains(
 			response,
-			"Miranda Insights provides professional consulting and systems development services designed to help individuals, businesses, schools, nonprofits, and community organizations operate more effectively.",
+			"Operational Services are customized, project-based engagements for people and organizations that need to understand something, organize something, establish a professional digital presence, or build a functional tool.",
 		)
 		self.assertContains(
 			response,
-			"Whether you’re looking to organize operations, analyze information, improve digital infrastructure, or develop a custom solution",
+			"Every project begins with the client&rsquo;s actual question, problem, or objective.",
+			html=False,
 		)
 
 	def test_services_page_renders_four_formal_service_areas(self):
 		response = self.client.get(reverse("services"))
 
 		for service_code, service_name in (
-			("INT-001", "Operational Intelligence"),
-			("INT-002", "Operational Services"),
-			("DGT-001", "Digital Presence Systems"),
+			("INT-001", "Intelligence Project"),
+			("INT-002", "Organizational Service"),
+			("DGT-001", "Digital Presence System"),
 			("DGT-002", "Intelligence Application Development"),
 		):
 			self.assertContains(response, service_code)
 			self.assertContains(response, service_name)
 
 		for example_service in (
-			"Research &amp; Analysis",
-			"Standard Operating Procedures (SOPs)",
-			"Cloud Storage Organization",
-			"Professional Websites",
-			"Business Information Systems",
-			"Custom Web Applications",
+			"Research, Surveys &amp; Analysis",
+			"Schedules, Workflows &amp; Task Systems",
+			"File &amp; Cloud Organization",
+			"Professional Websites &amp; Landing Pages",
+			"Authenticated Client &amp; Admin Portals",
 			"API Integrations",
 		):
 			self.assertContains(response, example_service, html=False)
-		self.assertContains(response, "Ideal For", count=4)
+		for slogan in ("We figure it out.", "We organize it.", "We put it online.", "We build the tool."):
+			self.assertContains(response, slogan)
+		for client_problem in (
+			"I need to understand, research, analyze, plan, or develop something.",
+			"I know what I&rsquo;m trying to do, but everything around it is disorganized or inefficient.",
+			"I need a professional website or digital presence people can actually use.",
+			"I need software or an application that actually does something.",
+		):
+			self.assertContains(response, client_problem, html=False)
+		for description in (
+			"A customized problem-solving and analytical engagement for individuals or organizations that need to understand, evaluate, research, plan, or develop something.",
+			"A systems and organization engagement for people or organizations that need a better way to manage responsibilities, projects, information, time, and recurring operations.",
+			"Website development for individuals and organizations that need a professional, functional, and maintainable public presence online.",
+			"Custom software development for organizations that need technology to perform a function rather than simply present information.",
+		):
+			self.assertContains(response, description)
+		for cta_label in (
+			"Discuss an Intelligence Project",
+			"Discuss an Organizational Service",
+			"Discuss a Digital Presence System",
+			"Discuss an Application",
+		):
+			self.assertContains(response, cta_label)
+		self.assertContains(response, "Client Problem", count=4)
+		self.assertNotContains(response, "In Plain English")
+		self.assertContains(response, "Possible Solutions", count=4)
+		self.assertNotContains(response, "Client Portals</li>", html=False)
+		self.assertNotContains(response, "Business Information Systems")
 
 	def test_services_page_renders_approved_process_and_partnership_path(self):
 		response = self.client.get(reverse("services"))
@@ -518,9 +620,9 @@ class PublicPageTests(TestCase):
 			"Do you provide ongoing support?",
 		):
 			self.assertContains(response, question)
-		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=3, html=False)
-		self.assertContains(response, 'target="_blank"', count=11, html=False)
-		self.assertContains(response, 'rel="noopener noreferrer"', count=11, html=False)
+		self.assertContains(response, f'href="{self.DISCOVERY_URL}"', count=7, html=False)
+		self.assertContains(response, 'target="_blank"', count=15, html=False)
+		self.assertContains(response, 'rel="noopener noreferrer"', count=15, html=False)
 		self.assertContains(response, 'href="#service-areas"', html=False)
 		self.assertContains(response, ">Learn About Operational Partnership</a>", html=False)
 
@@ -562,7 +664,7 @@ class PublicPageTests(TestCase):
 		self.assertNotContains(products_response, services_stylesheet)
 		self.assertNotContains(partnership_response, services_stylesheet)
 		self.assertContains(products_response, "Current assessment and framework IDs")
-		self.assertContains(partnership_response, "Build better systems through an ongoing partnership.")
+		self.assertContains(partnership_response, "We help you move forward.")
 
 	def test_individual_services_route_and_sections_render_in_order(self):
 		self.assertEqual(reverse("individual_services"), "/individual-services/")
@@ -598,23 +700,37 @@ class PublicPageTests(TestCase):
 			(
 				"Academic Tutoring",
 				"Academic Development",
-				"Personalized academic support designed to strengthen understanding, organization, confidence, and independent learning.",
+				"Individualized educational support designed to help students understand academic material, strengthen foundational skills, and develop more effective approaches to learning.",
 			),
 			(
 				"Fitness Coaching",
 				"Physical Development",
-				"Structured fitness support designed around consistency, performance, sustainable habits, and individual goals.",
+				"Individualized physical-development support designed around strength, conditioning, athletic ability, movement quality, sustainable fitness habits, and consistency.",
 			),
 			(
 				"Mentorship &amp; Accountability",
 				"Personal · Professional · Operational",
-				"Practical guidance and accountability for people working toward goals that benefit from greater structure, organization, and consistent follow-through.",
+				"Individualized support designed to help people turn goals and intentions into consistent action through structure, planning, accountability, problem-solving, and recurring guidance.",
 			),
 		):
 			self.assertContains(response, service, html=False)
 			self.assertContains(response, area, html=False)
 			self.assertContains(response, description)
 		self.assertContains(response, "Direction · Structure · Accountability")
+		for slogan in (
+			"We help you learn it.",
+			"We help you train for it.",
+			"We help you follow through on it.",
+		):
+			self.assertContains(response, slogan)
+		for client_problem in (
+			"I&rsquo;m struggling to understand something, keep up with school, or develop the skills I need to succeed academically.",
+			"I want to become stronger, healthier, more athletic, or more consistent, but I need structure and guidance.",
+			"I know what I want to accomplish, but I&rsquo;m struggling with direction, consistency, organization, or accountability.",
+		):
+			self.assertContains(response, client_problem, html=False)
+		self.assertContains(response, "Client Problem", count=3)
+		self.assertNotContains(response, "In Plain English")
 
 	def test_individual_services_renders_approved_support_areas_and_audiences(self):
 		response = self.client.get(reverse("individual_services"))
@@ -622,17 +738,16 @@ class PublicPageTests(TestCase):
 		for support_area in (
 			"Mathematics &amp; Quantitative Subjects",
 			"Homework &amp; Assignment Support within Agreed Subject Areas",
-			"Study Planning",
+			"Concept Review &amp; Guided Practice",
 			"Test Preparation",
-			"Training Structure",
-			"Strength Development",
-			"Performance Development",
+			"Exercise Instruction",
+			"Strength &amp; Conditioning",
+			"Athletic &amp; Cardiovascular Development",
 			"Progress Tracking",
 			"Personal Organization",
-			"Professional Development",
-			"Routine Development",
-			"Resource Organization",
-			"Digital Organization",
+			"Academic or Professional Planning",
+			"Resource Identification",
+			"Practical Problem-Solving",
 		):
 			self.assertContains(response, support_area, html=False)
 		self.assertContains(response, "Subject availability is confirmed during Discovery")
@@ -690,17 +805,16 @@ class PublicPageTests(TestCase):
 			"A-002",
 			"F-001",
 			"F-002",
-			"Therapy",
-			"Medical Advice",
-			"Physical Therapy",
-			"Injury Diagnosis",
-			"Financial Advising",
-			"Nutrition Treatment",
-			"Clinical Services",
+			"therapy services",
+			"financial advice services",
+			"nutrition treatment plan",
 			"Add to Cart",
 			"Checkout",
 		):
 			self.assertNotContains(response, excluded_text)
+		self.assertContains(response, "Fitness Coaching is educational and developmental in nature.")
+		self.assertContains(response, "It is not medical care, physical therapy, rehabilitation, nutritional treatment, or another licensed healthcare service.")
+		self.assertNotContains(response, "Individualized workouts, exercise instruction, fitness programming", html=False)
 
 	def test_individual_services_stylesheet_is_isolated_and_mobile_context_renders(self):
 		individual_response = self.client.get(reverse("individual_services"), {"mobile_app": "1"})
@@ -776,12 +890,19 @@ class PublicPageTests(TestCase):
 			"What types of clients do you work with?",
 			"How do I get started?",
 			"Are services customized?",
-			"What is the difference between Operational Services, Individual Services, and Operational Partnership?",
+			"How do I know which Miranda Insights option fits my need?",
 			"Can multiple services be combined?",
 			"Where will I track my project?",
 			"How is pricing determined?",
 		):
 			self.assertContains(response, question)
+		for service_name in (
+			"Intelligence Project",
+			"Organizational Service",
+			"Digital Presence System",
+			"Intelligence Application Development",
+		):
+			self.assertContains(response, service_name)
 		for retired_text in ("R-001", "Retainer Agreement", "InsightSurveys"):
 			self.assertNotContains(response, retired_text)
 
@@ -1328,7 +1449,7 @@ class NewsletterCampaignAdminFormTests(TestCase):
 				"weekday": "",
 				"day_of_month": "",
 				"send_hour": "3",
-				"send_minute": "05",
+				"send_minute": "5",
 				"send_meridiem": "PM",
 			}
 		)
