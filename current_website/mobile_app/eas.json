@@ -7,7 +7,7 @@
     "base": {
       "node": "20.19.4",
       "ios": {
-        "image": "macos-sequoia-15.6-xcode-16.4"
+        "image": "sdk-54"
       }
     },
     "development": {
