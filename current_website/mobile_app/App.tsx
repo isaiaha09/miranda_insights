@@ -45,6 +45,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const AUTH_ACCENT_COLOR = '#6797ea';
 const WEB_LOADER_MIN_DURATION_MS = 2500;
+const MOBILE_BOTTOM_NAV_OCCUPIED_SPACE = 108;
 const MOBILE_LOGIN_PATH = '/mobile-api/login/';
 const MOBILE_USERNAME_RECOVERY_PATH = '/mobile-api/recover-username/';
 const MOBILE_PASSWORD_RESET_PATH = '/mobile-api/password-reset/';
@@ -354,7 +355,7 @@ const MOBILE_WEBVIEW_CLEANUP_SCRIPT = `
       if (!style) {
         style = document.createElement('style');
         style.id = 'insights-mobile-webview-style';
-        style.textContent = '.site-header, .nav-overlay, .site-footer, footer.site-footer, .pwa-install-banner, .turnstile-wrap, .cf-turnstile, iframe[src*="challenges.cloudflare.com"]{display:none !important;visibility:hidden !important;height:0 !important;min-height:0 !important;overflow:hidden !important;} html, body{padding-top:0 !important;overscroll-behavior:none !important;background:#0c111b !important;} .site-main{padding-top:0 !important;} .container{width:95% !important;max-width:none !important;margin-left:auto !important;margin-right:auto !important;padding-left:0 !important;padding-right:0 !important;}';
+        style.textContent = '.site-header, .nav-overlay, .site-footer, footer.site-footer, .pwa-install-banner, .turnstile-wrap, .cf-turnstile, iframe[src*="challenges.cloudflare.com"]{display:none !important;visibility:hidden !important;height:0 !important;min-height:0 !important;overflow:hidden !important;} html, body{padding-top:0 !important;overscroll-behavior:none !important;background:#0c111b !important;} .site-main{padding-top:0 !important;} .container{width:95% !important;max-width:none !important;margin-left:auto !important;margin-right:auto !important;padding-left:0 !important;padding-right:0 !important;} .project-chat-widget-mobile-expanded .project-chat-widget__controls{box-sizing:border-box !important;padding-bottom:calc(1rem + env(safe-area-inset-bottom) + var(--project-chat-keyboard-inset) + ${MOBILE_BOTTOM_NAV_OCCUPIED_SPACE}px) !important;}';
         (document.head || document.documentElement).appendChild(style);
       }
 
@@ -387,6 +388,7 @@ const MOBILE_WEBVIEW_CLEANUP_SCRIPT = `
       var siteMain = document.querySelector('.site-main');
       if (siteMain) {
         siteMain.style.paddingTop = '0';
+        siteMain.style.paddingBottom = 'calc(${MOBILE_BOTTOM_NAV_OCCUPIED_SPACE}px + env(safe-area-inset-bottom))';
       }
     }
 
@@ -691,7 +693,7 @@ export default function App() {
       return left.route.label.localeCompare(right.route.label);
     });
 
-  const searchSheetBottom = keyboardHeight > 0 ? keyboardHeight + 16 : 108;
+  const searchSheetBottom = keyboardHeight > 0 ? keyboardHeight + 16 : MOBILE_BOTTOM_NAV_OCCUPIED_SPACE;
   const searchSheetMaxHeight = keyboardHeight > 0 ? Math.max(220, SCREEN_HEIGHT - keyboardHeight - 120) : SCREEN_HEIGHT * 0.56;
 
   useEffect(() => {
@@ -2647,7 +2649,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 108,
+    bottom: MOBILE_BOTTOM_NAV_OCCUPIED_SPACE,
     maxHeight: '56%',
     borderRadius: 28,
     padding: 18,
