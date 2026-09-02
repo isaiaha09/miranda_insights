@@ -23,6 +23,14 @@ def validate_survey_structure(survey: Survey, *, verify_image_files=True):
     for question in questions:
         choices = list(question.choices.all())
         rows = list(question.matrix_rows.all())
+        if (
+            survey.collection_mode == Survey.CollectionMode.ANONYMOUS
+            and question.question_type == SurveyQuestion.Type.EMAIL
+        ):
+            errors.append(
+                f"{question.export_key} ({question.prompt}) uses the Email question type. "
+                "Anonymous surveys cannot request email addresses; remove or replace this question before publication."
+            )
         if question.question_type in SurveyQuestion.STRUCTURAL_TYPES:
             if question.required:
                 errors.append(f"{question.export_key} is structural and cannot be required.")

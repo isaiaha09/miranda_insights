@@ -75,6 +75,7 @@ class Survey(models.Model):
         "title",
         "description",
         "category",
+        "collection_mode",
         "reporting_month",
         "reporting_year",
         "starts_at",
@@ -96,6 +97,9 @@ class Survey(models.Model):
         SCHEDULED = "scheduled", "Scheduled"
         INDEFINITE = "indefinite", "Indefinite"
 
+    class CollectionMode(models.TextChoices):
+        ANONYMOUS = "anonymous", "Anonymous"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     client = models.ForeignKey(
         Client,
@@ -116,6 +120,13 @@ class Survey(models.Model):
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True)
     category = models.CharField(max_length=120, blank=True)
+    collection_mode = models.CharField(
+        max_length=24,
+        choices=CollectionMode.choices,
+        default=CollectionMode.ANONYMOUS,
+        null=True,
+        blank=True,
+    )
     show_client_name_to_participants = models.BooleanField(default=False)
     reporting_month = models.PositiveSmallIntegerField()
     reporting_year = models.PositiveSmallIntegerField()

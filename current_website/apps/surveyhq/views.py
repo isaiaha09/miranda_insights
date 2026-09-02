@@ -546,7 +546,7 @@ def question_create(request, survey_id):
     survey = _survey(survey_id)
     if survey.is_structure_locked:
         raise PermissionDenied
-    form = QuestionForm(request.POST or None, request.FILES or None)
+    form = QuestionForm(request.POST or None, request.FILES or None, survey=survey)
     if request.method == "POST" and form.is_valid():
         try:
             question = builder.create_question(
@@ -792,6 +792,7 @@ def survey_duplicate(request, survey_id):
                 reporting_month=values["reporting_month"],
                 reporting_year=values["reporting_year"],
                 copy_schedule=values["copy_availability"],
+                collection_mode=values["collection_mode"],
             )
         except (ValidationError, SurveyHQError) as exc:
             form.add_error(None, _error_text(exc))

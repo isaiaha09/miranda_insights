@@ -33,6 +33,16 @@ class SurveyMetadataForm(forms.Form):
     title = forms.CharField(max_length=240)
     description = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 4}))
     category = forms.CharField(max_length=120, required=False)
+    collection_mode = forms.ChoiceField(
+        choices=Survey.CollectionMode.choices,
+        initial=Survey.CollectionMode.ANONYMOUS,
+        required=False,
+        label="Collection Mode",
+        help_text=(
+            "Anonymous mode prohibits Email-type questions and requires administrators to avoid "
+            "requesting direct identifiers in any prompt."
+        ),
+    )
     show_client_name_to_participants = forms.BooleanField(
         required=False,
         label="Show sponsoring Client to participants",
@@ -62,6 +72,7 @@ class SurveyMetadataForm(forms.Form):
         self.fields["client"].widget.attrs.update({"class": SELECT_CLASS, "data-surveyhq-client": ""})
         self.fields["project"].widget.attrs.update({"class": SELECT_CLASS, "data-surveyhq-project": ""})
         self.fields["reporting_month"].widget.attrs["class"] = SELECT_CLASS
+        self.fields["collection_mode"].widget.attrs["class"] = SELECT_CLASS
         self.fields["start_mode"].widget.attrs["class"] = SELECT_CLASS
         self.fields["close_mode"].widget.attrs["class"] = SELECT_CLASS
         self.fields["category"].widget.attrs["list"] = "surveyhq-category-suggestions"
@@ -84,6 +95,7 @@ class SurveyMetadataForm(forms.Form):
                     "title": survey.title,
                     "description": survey.description,
                     "category": survey.category,
+                    "collection_mode": survey.collection_mode or Survey.CollectionMode.ANONYMOUS,
                     "show_client_name_to_participants": survey.show_client_name_to_participants,
                     "start_mode": self.START_SCHEDULED if survey.starts_at else self.START_IMMEDIATE,
                     "starts_at": survey.starts_at,
@@ -97,6 +109,7 @@ class SurveyMetadataForm(forms.Form):
             self.initial.setdefault("reporting_year", now.year)
             self.initial.setdefault("start_mode", self.START_IMMEDIATE)
             self.initial.setdefault("close_mode", Survey.CloseMode.MANUAL)
+            self.initial.setdefault("collection_mode", Survey.CollectionMode.ANONYMOUS)
 
         if request is not None:
             relation = Survey._meta.get_field("client").remote_field
@@ -112,6 +125,9 @@ class SurveyMetadataForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
+        cleaned["collection_mode"] = (
+            cleaned.get("collection_mode") or Survey.CollectionMode.ANONYMOUS
+        )
         client = cleaned.get("client")
         project = cleaned.get("project")
         if project and client and project.client_id != client.pk:
@@ -151,6 +167,7 @@ class SurveyMetadataForm(forms.Form):
                 "title",
                 "description",
                 "category",
+                "collection_mode",
                 "show_client_name_to_participants",
                 "starts_at",
                 "close_mode",
@@ -186,9 +203,10 @@ class QuestionForm(forms.Form):
     image_is_decorative = forms.BooleanField(required=False, label="This image is decorative")
     remove_image = forms.BooleanField(required=False, label="Remove current image")
 
-    def __init__(self, *args, question=None, **kwargs):
+    def __init__(self, *args, question=None, survey=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.question = question
+        self.survey = survey or (question.survey if question else None)
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", TEXTAREA_CLASS if isinstance(field.widget, forms.Textarea) else INPUT_CLASS)
         self.fields["question_type"].widget.attrs.update({"class": SELECT_CLASS, "data-question-type": ""})
@@ -212,6 +230,12 @@ class QuestionForm(forms.Form):
                 self.fields["likert_preset"].widget = forms.HiddenInput()
             if not question.image:
                 self.fields["remove_image"].widget = forms.HiddenInput()
+        elif self.survey and self.survey.collection_mode == Survey.CollectionMode.ANONYMOUS:
+            self.fields["question_type"].choices = [
+                choice
+                for choice in SurveyQuestion.Type.choices
+                if choice[0] != SurveyQuestion.Type.EMAIL
+            ]
 
     def clean(self):
         cleaned = super().clean()

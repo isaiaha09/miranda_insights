@@ -245,7 +245,7 @@ class AnalyticsAdminTests(PhaseFourMixin, TestCase):
         self.populate()
         url = reverse("surveyhq:survey_analytics", args=[self.survey.pk])
         data_url = reverse("surveyhq:survey_analytics_data", args=[self.survey.pk])
-        self.assertIn("/admin/surveyhq/", url)
+        self.assertTrue(url.startswith(f"{reverse('admin:index')}surveyhq/"))
         self.assertRedirects(self.client.get(url), f"{reverse('admin:login')}?next={url}")
         for user in (self.manager, self.analyst, self.superuser):
             self.client.force_login(user)

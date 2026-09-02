@@ -198,7 +198,10 @@ class ParticipantFormAndSubmissionTests(PhaseThreeMixin, TestCase):
         return [builder.add_choice(question=question, actor=self.manager, label=label) for label in labels]
 
     def build_all_types(self):
-        survey = self.draft(show_client_name_to_participants=True)
+        survey = self.draft(
+            show_client_name_to_participants=True,
+            collection_mode=None,
+        )
         questions = {}
 
         def add(question_type, prompt, **kwargs):

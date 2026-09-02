@@ -29,6 +29,9 @@ input[type="radio"], input[type="checkbox"] { accent-color: #d6a43d; height: 1.2
 .participant-intro-meta { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.3rem 0; }
 .participant-intro-meta span { background: rgba(255,255,255,.055); border-radius: 999px; color: #cbd3dd; font-size: .82rem; padding: .48rem .7rem; }
 .participant-sponsor { color: #d7bc7a; font-weight: 600; }
+.participant-privacy-notice { background: rgba(213,163,68,.08); border: 1px solid rgba(213,163,68,.32); border-radius: .75rem; margin: 1.25rem 0; padding: 1rem; }
+.participant-privacy-notice strong { color: #f7f3e9; display: block; }
+.participant-privacy-notice p { font-size: .9rem; margin: .35rem 0 0; }
 .participant-survey-header { margin-bottom: 1rem; padding: 1.4rem; }
 .participant-survey-header h1 { font-size: clamp(1.8rem, 5vw, 2.7rem); margin-bottom: .45rem; }
 .participant-error-summary h2 { margin-top: 0; }
