@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.views.decorators.debug import sensitive_variables
 
 from landingpage.turnstile import is_mobile_app_request
 
@@ -58,6 +59,7 @@ def _from_epoch(value) -> datetime:
     return datetime.fromtimestamp(int(value), tz=UTC)
 
 
+@sensitive_variables()
 def issue_participant_grant(request, survey: Survey, *, at=None) -> ParticipantGrant:
     now = at or timezone.now()
     grant = ParticipantGrant(
@@ -79,6 +81,7 @@ def issue_participant_grant(request, survey: Survey, *, at=None) -> ParticipantG
     return grant
 
 
+@sensitive_variables()
 def get_participant_grant(request, *, at=None) -> ParticipantGrant:
     payload = request.session.get(GRANT_SESSION_KEY)
     if not isinstance(payload, dict):
@@ -161,6 +164,7 @@ def _grant_submission_deadline(survey: Survey, grant: ParticipantGrant):
     return deadline
 
 
+@sensitive_variables()
 def validate_granted_survey(grant: ParticipantGrant, *, for_submission=False, at=None) -> Survey:
     now = at or timezone.now()
     try:
@@ -335,6 +339,7 @@ class ParticipantSurveyForm(forms.Form):
         for spec in self.specs:
             spec["bound_fields"] = [(item, self[field_name]) for item, field_name in spec["fields"]]
 
+    @sensitive_variables()
     def clean(self):
         cleaned = super().clean()
         for spec in self.specs:
@@ -361,6 +366,7 @@ def _choice_map(question):
 
 
 @transaction.atomic
+@sensitive_variables()
 def submit_participant_response(*, grant: ParticipantGrant, form: ParticipantSurveyForm, request, at=None):
     now = at or timezone.now()
     if str(form.survey.pk) != grant.survey_id or not form.is_bound or not form.is_valid():

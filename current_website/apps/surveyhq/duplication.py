@@ -24,6 +24,7 @@ def duplicate_survey(
     reporting_month=None,
     reporting_year=None,
     copy_schedule=False,
+    collection_mode=Survey.CollectionMode.ANONYMOUS,
 ) -> Survey:
     require_permission(actor, "duplicate_survey")
     source_id = source.pk if isinstance(source, Survey) else source
@@ -55,6 +56,7 @@ def duplicate_survey(
         title=title or original.title,
         description=original.description,
         category=original.category,
+        collection_mode=collection_mode,
         show_client_name_to_participants=original.show_client_name_to_participants,
         reporting_month=month,
         reporting_year=year,

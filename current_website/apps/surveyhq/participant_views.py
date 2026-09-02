@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_http_methods
 
 from landingpage.throttling import apply_retry_after, check_request_throttle
@@ -62,6 +63,8 @@ def participant_entry_base(request):
 
 @participant_security
 @require_http_methods(["GET", "POST"])
+@sensitive_post_parameters()
+@sensitive_variables()
 def participant_entry(request, entry_token):
     if not participant_entry_token_is_active(entry_token):
         return HttpResponse("Not Found", status=404, content_type="text/plain")
@@ -71,13 +74,19 @@ def participant_entry(request, entry_token):
     code = request.POST.get("survey_code", "")
     code_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
     ip_result = check_request_throttle(
-        request, "surveyhq-entry-ip", settings.SURVEYHQ_ENTRY_IP_RATE_LIMIT
+        request,
+        "surveyhq-entry-ip",
+        settings.SURVEYHQ_ENTRY_IP_RATE_LIMIT,
+        pseudonymize_log_identity=True,
+        include_request_path_in_log=False,
     )
     code_result = check_request_throttle(
         request,
         "surveyhq-entry-code",
         settings.SURVEYHQ_ENTRY_CODE_RATE_LIMIT,
         code_hash,
+        pseudonymize_log_identity=True,
+        include_request_path_in_log=False,
     )
     if ip_result.limited or code_result.limited:
         return _unavailable(
@@ -94,6 +103,7 @@ def participant_entry(request, entry_token):
     return redirect("surveyhq_participant:introduction")
 
 
+@sensitive_variables()
 def _granted_context(request):
     grant = get_participant_grant(request)
     survey = validate_granted_survey(grant)
@@ -102,6 +112,7 @@ def _granted_context(request):
 
 @participant_security
 @require_http_methods(["GET", "POST"])
+@sensitive_variables()
 def participant_introduction(request):
     try:
         _grant, survey = _granted_context(request)
@@ -124,6 +135,8 @@ def participant_introduction(request):
 
 @participant_security
 @require_http_methods(["GET", "POST"])
+@sensitive_post_parameters()
+@sensitive_variables()
 def participant_survey(request):
     try:
         grant, survey = _granted_context(request)
@@ -159,6 +172,7 @@ def participant_survey(request):
 
 @participant_security
 @require_http_methods(["GET"])
+@sensitive_variables()
 def participant_question_image(request, question_id):
     try:
         grant, survey = _granted_context(request)

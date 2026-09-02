@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.core.cache import caches
+from django.utils.crypto import salted_hmac
 
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,14 @@ def apply_retry_after(response, retry_after: int):
     return response
 
 
-def check_request_throttle(request, scope: str, rate: str, *identity_parts: object) -> ThrottleResult:
+def check_request_throttle(
+    request,
+    scope: str,
+    rate: str,
+    *identity_parts: object,
+    pseudonymize_log_identity: bool = False,
+    include_request_path_in_log: bool = True,
+) -> ThrottleResult:
     if not getattr(settings, "THROTTLE_ENABLED", True):
         return ThrottleResult(limited=False, retry_after=0, count=0, limit=0)
 
@@ -97,15 +105,23 @@ def check_request_throttle(request, scope: str, rate: str, *identity_parts: obje
 
     limited = count > limit
     if limited:
+        client_ip = get_client_ip(request)
+        log_context = {
+            "scope": scope,
+            "rate": rate,
+            "count": count,
+            "limit": limit,
+        }
+        if pseudonymize_log_identity:
+            log_context["client_identifier"] = salted_hmac(
+                f"throttle:{scope}", client_ip
+            ).hexdigest()[:16]
+        else:
+            log_context["client_ip"] = client_ip
+        if include_request_path_in_log:
+            log_context["path"] = request.path
         logger.warning(
             "Rate limit exceeded",
-            extra={
-                "scope": scope,
-                "rate": rate,
-                "client_ip": get_client_ip(request),
-                "path": request.path,
-                "count": count,
-                "limit": limit,
-            },
+            extra=log_context,
         )
     return ThrottleResult(limited=limited, retry_after=retry_after, count=count, limit=limit)
