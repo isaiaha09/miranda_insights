@@ -6,7 +6,7 @@
   {% if survey.show_client_name_to_participants %}<p class="participant-sponsor">Presented for {{ survey.client_name_snapshot }}</p>{% endif %}
   <h1 id="survey-title">{{ survey.title }}</h1>
   {% if survey.description %}<div class="participant-description">{{ survey.description|linebreaksbr }}</div>{% endif %}
-  {% if survey.collection_mode == 'anonymous' %}<aside class="participant-privacy-notice"><strong>Responses are intended to be anonymous.</strong><p>Do not include your name, email address, student/staff ID, or other information that directly identifies you in written responses.</p></aside>{% endif %}
+  {% if survey.collection_mode == 'anonymous' %}<aside class="participant-privacy-notice"><strong>Responses are intended to be anonymous.</strong><p>Do not include your name, email address, student/staff ID, or other information that directly identifies you in written responses.</p></aside>{% elif survey.collection_mode == 'identifiable' %}<aside class="participant-privacy-notice"><strong>This survey may request identifying information.</strong><p>This survey may request information that identifies you, such as your name, email address, or other contact information. Information you choose to provide will be associated with your submitted response for the stated purpose of this survey.</p></aside>{% endif %}
   <div class="participant-intro-meta"><span>About {{ answerable_count }} question{{ answerable_count|pluralize }}</span><span>Required questions are clearly marked</span></div>
   <form method="post">{% csrf_token %}<button class="participant-button" type="submit">Start Survey</button></form>
 </section>

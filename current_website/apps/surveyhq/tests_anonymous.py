@@ -18,6 +18,7 @@ from landingpage.throttling import check_request_throttle
 from . import builder
 from .duplication import duplicate_survey
 from .exceptions import SurveyStructureLocked
+from .forms import QuestionForm
 from .lifecycle import create_draft, publish_survey
 from .models import Survey, SurveyQuestion, SurveyResponse
 from .template_services import create_survey_from_template, create_template_from_survey
@@ -30,6 +31,7 @@ User = get_user_model()
 class AnonymousModeMigrationTests(TransactionTestCase):
     migrate_from = [("surveyhq", "0006_participant_entry_rotation")]
     migrate_to = [("surveyhq", "0007_survey_collection_mode")]
+    restore_to = [("surveyhq", "0008_identifiable_mode_and_permanent_delete")]
 
     def setUp(self):
         super().setUp()
@@ -64,7 +66,7 @@ class AnonymousModeMigrationTests(TransactionTestCase):
         ).pk
 
     def tearDown(self):
-        MigrationExecutor(connection).migrate(self.migrate_to)
+        MigrationExecutor(connection).migrate(self.restore_to)
         super().tearDown()
 
     def test_existing_drafts_become_anonymous_and_published_surveys_remain_unclassified(self):
@@ -78,6 +80,62 @@ class AnonymousModeMigrationTests(TransactionTestCase):
         )
         self.assertIsNone(
             MigratedSurvey.objects.get(pk=self.open_id).collection_mode
+        )
+
+
+class IdentifiableModeMigrationTests(TransactionTestCase):
+    migrate_from = [("surveyhq", "0007_survey_collection_mode")]
+    migrate_to = [("surveyhq", "0008_identifiable_mode_and_permanent_delete")]
+
+    def setUp(self):
+        super().setUp()
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_from)
+        old_apps = executor.loader.project_state(self.migrate_from).apps
+        OldClient = old_apps.get_model("clients", "Client")
+        OldSurvey = old_apps.get_model("surveyhq", "Survey")
+        client = OldClient.objects.create(
+            organization_name="Migration Client",
+            contact_name="Jordan Lee",
+            contact_email="migration-identifiable@example.com",
+        )
+        self.anonymous_id = OldSurvey.objects.create(
+            client=client,
+            title="Anonymous Draft",
+            reporting_month=9,
+            reporting_year=2026,
+            access_code="Ano123",
+            collection_mode="anonymous",
+        ).pk
+        self.legacy_id = OldSurvey.objects.create(
+            client=client,
+            title="Legacy Published",
+            reporting_month=9,
+            reporting_year=2026,
+            access_code="Leg123",
+            status="open",
+            collection_mode=None,
+            published_at=timezone.now(),
+            opened_at=timezone.now(),
+            definition_checksum="a" * 64,
+        ).pk
+
+    def tearDown(self):
+        MigrationExecutor(connection).migrate(self.migrate_to)
+        super().tearDown()
+
+    def test_choice_and_permission_migration_preserves_existing_classification(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(self.migrate_to)
+        apps = executor.loader.project_state(self.migrate_to).apps
+        MigratedSurvey = apps.get_model("surveyhq", "Survey")
+        Group = apps.get_model("auth", "Group")
+        self.assertEqual(MigratedSurvey.objects.get(pk=self.anonymous_id).collection_mode, "anonymous")
+        self.assertIsNone(MigratedSurvey.objects.get(pk=self.legacy_id).collection_mode)
+        self.assertTrue(
+            Group.objects.get(name="SurveyHQ Managers").permissions.filter(
+                codename="permanently_delete_survey"
+            ).exists()
         )
 
 
@@ -123,6 +181,49 @@ class AnonymousModeLifecycleTests(PhaseThreeMixin, TestCase):
         self.assertEqual(duplicate.collection_mode, Survey.CollectionMode.ANONYMOUS)
         self.assertEqual(from_template.collection_mode, Survey.CollectionMode.ANONYMOUS)
 
+    def test_duplication_and_template_materialization_require_explicit_identifiable_mode(self):
+        source = self.draft(collection_mode=Survey.CollectionMode.IDENTIFIABLE)
+        builder.create_question(
+            survey=source,
+            actor=self.manager,
+            question_type=SurveyQuestion.Type.EMAIL,
+            prompt="Contact email",
+        )
+        template = create_template_from_survey(
+            survey=source,
+            actor=self.manager,
+            name="Contact Structure",
+        )
+        anonymous_duplicate = duplicate_survey(source, actor=self.manager, copy_client=True)
+        identifiable_duplicate = duplicate_survey(
+            source,
+            actor=self.manager,
+            copy_client=True,
+            collection_mode=Survey.CollectionMode.IDENTIFIABLE,
+        )
+        anonymous_from_template = create_survey_from_template(
+            template=template,
+            actor=self.author,
+            client=self.client_record,
+            title="Anonymous From Contact Template",
+            reporting_month=10,
+            reporting_year=2026,
+        )
+        identifiable_from_template = create_survey_from_template(
+            template=template,
+            actor=self.author,
+            client=self.client_record,
+            title="Identifiable From Contact Template",
+            reporting_month=10,
+            reporting_year=2026,
+            collection_mode=Survey.CollectionMode.IDENTIFIABLE,
+        )
+        self.assertEqual(anonymous_duplicate.collection_mode, Survey.CollectionMode.ANONYMOUS)
+        self.assertEqual(anonymous_duplicate.questions.get().question_type, SurveyQuestion.Type.EMAIL)
+        self.assertEqual(identifiable_duplicate.collection_mode, Survey.CollectionMode.IDENTIFIABLE)
+        self.assertEqual(anonymous_from_template.collection_mode, Survey.CollectionMode.ANONYMOUS)
+        self.assertEqual(identifiable_from_template.collection_mode, Survey.CollectionMode.IDENTIFIABLE)
+
     def test_anonymous_publication_rejects_email_question_with_clear_message(self):
         survey = self.draft()
         question = builder.create_question(
@@ -137,6 +238,19 @@ class AnonymousModeLifecycleTests(PhaseThreeMixin, TestCase):
         self.assertEqual(survey.status, Survey.Status.DRAFT)
         self.assertIn("Anonymous surveys cannot request email addresses", str(raised.exception))
         self.assertIn(question.export_key, str(raised.exception))
+
+    def test_identifiable_survey_can_publish_email_question(self):
+        survey = self.draft(collection_mode=Survey.CollectionMode.IDENTIFIABLE)
+        builder.create_question(
+            survey=survey,
+            actor=self.manager,
+            question_type=SurveyQuestion.Type.EMAIL,
+            prompt="What email address should we associate with this response?",
+            required=True,
+        )
+        published = publish_survey(survey, actor=self.manager)
+        self.assertEqual(published.status, Survey.Status.OPEN)
+        self.assertEqual(published.collection_mode, Survey.CollectionMode.IDENTIFIABLE)
 
     def test_all_approved_non_email_question_types_can_publish_anonymously(self):
         survey = self.draft(title="Approved Anonymous Types")
@@ -244,6 +358,44 @@ class AnonymousModePresentationTests(PhaseThreeMixin, TestCase):
         self.grant(legacy)
         legacy_intro = self.client.get(reverse("surveyhq_participant:introduction"))
         self.assertNotContains(legacy_intro, "Responses are intended to be anonymous.")
+
+    def test_identifiable_selector_disclosure_and_anonymous_switch_warning(self):
+        survey = self.draft(collection_mode=Survey.CollectionMode.IDENTIFIABLE)
+        identifiable_form = QuestionForm(survey=survey)
+        self.assertIn(
+            SurveyQuestion.Type.EMAIL,
+            {value for value, _label in identifiable_form.fields["question_type"].choices},
+        )
+        email_question = builder.create_question(
+            survey=survey,
+            actor=self.manager,
+            question_type=SurveyQuestion.Type.EMAIL,
+            prompt="Your contact email",
+        )
+        survey.collection_mode = Survey.CollectionMode.ANONYMOUS
+        survey.save(update_fields=["collection_mode", "updated_at"])
+        self.assertTrue(SurveyQuestion.objects.filter(pk=email_question.pk).exists())
+        anonymous_form = QuestionForm(survey=survey)
+        self.assertNotIn(
+            SurveyQuestion.Type.EMAIL,
+            {value for value, _label in anonymous_form.fields["question_type"].choices},
+        )
+        self.client.force_login(self.manager)
+        builder_page = self.client.get(reverse("surveyhq:survey_builder", args=[survey.pk]))
+        self.assertContains(builder_page, "Publication is blocked.")
+        self.assertContains(builder_page, email_question.export_key)
+        with self.assertRaises(ValidationError):
+            publish_survey(survey, actor=self.manager)
+
+        identifiable = self.publish_simple(
+            title="Identifiable Survey",
+            collection_mode=Survey.CollectionMode.IDENTIFIABLE,
+        )
+        self.grant(identifiable)
+        introduction = self.client.get(reverse("surveyhq_participant:introduction"))
+        self.assertContains(introduction, "This survey may request identifying information.")
+        self.assertContains(introduction, "Information you choose to provide will be associated")
+        self.assertNotContains(introduction, "Responses are intended to be anonymous.")
 
     def test_response_schema_has_no_direct_identity_or_detailed_device_fields(self):
         field_names = {field.name for field in SurveyResponse._meta.get_fields()}
@@ -387,6 +539,7 @@ class ClientPortalSurveyHQAuthorizationTests(PhaseThreeMixin, TestCase):
             reverse("surveyhq:survey_responses_csv", args=[survey.pk]),
             reverse("surveyhq:survey_analytical_csv", args=[survey.pk]),
             reverse("surveyhq:survey_report_download", args=[uuid.uuid4()]),
+            reverse("surveyhq:survey_delete_permanently", args=[survey.pk]),
             reverse("surveyhq:survey_audit", args=[survey.pk]),
             reverse("surveyhq:audit_log"),
         )

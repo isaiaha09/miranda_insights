@@ -39,8 +39,8 @@ class SurveyMetadataForm(forms.Form):
         required=False,
         label="Collection Mode",
         help_text=(
-            "Anonymous mode prohibits Email-type questions and requires administrators to avoid "
-            "requesting direct identifiers in any prompt."
+            "Anonymous is the safe default and prohibits Email-type questions. Identifiable mode "
+            "may intentionally request respondent-provided identifying information."
         ),
     )
     show_client_name_to_participants = forms.BooleanField(
@@ -53,12 +53,16 @@ class SurveyMetadataForm(forms.Form):
     )
     starts_at = forms.DateTimeField(
         required=False,
+        label="Scheduled start (Pacific Time)",
+        help_text="Enter the intended America/Los_Angeles date and time. Daylight-saving rules apply automatically.",
         input_formats=["%Y-%m-%dT%H:%M"],
         widget=forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
     )
     close_mode = forms.ChoiceField(choices=Survey.CloseMode.choices)
     ends_at = forms.DateTimeField(
         required=False,
+        label="Scheduled end (Pacific Time)",
+        help_text="Enter the intended America/Los_Angeles date and time. Daylight-saving rules apply automatically.",
         input_formats=["%Y-%m-%dT%H:%M"],
         widget=forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}),
     )
@@ -372,3 +376,36 @@ class TemplateMetadataForm(forms.Form):
 
 class ConfirmationForm(forms.Form):
     confirm = forms.BooleanField(required=True, label="I understand and confirm this action")
+
+
+class PermanentSurveyDeletionForm(forms.Form):
+    confirm = forms.BooleanField(
+        required=True,
+        label="I understand that this Survey and its associated SurveyHQ data will be permanently deleted",
+    )
+    confirmation_text = forms.CharField(
+        max_length=6,
+        label='Type "DELETE" to confirm',
+    )
+    reason = forms.CharField(
+        max_length=1000,
+        widget=forms.Textarea(attrs={"rows": 4}),
+        help_text="Required for the surviving audit record. Do not include respondent names, answers, or other participant data.",
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["confirmation_text"].widget.attrs["class"] = INPUT_CLASS
+        self.fields["reason"].widget.attrs["class"] = TEXTAREA_CLASS
+
+    def clean_confirmation_text(self):
+        value = self.cleaned_data["confirmation_text"]
+        if value != "DELETE":
+            raise ValidationError('Type "DELETE" exactly to confirm permanent deletion.')
+        return value
+
+    def clean_reason(self):
+        value = self.cleaned_data["reason"].strip()
+        if not value:
+            raise ValidationError("Provide a reason for this exceptional deletion.")
+        return value

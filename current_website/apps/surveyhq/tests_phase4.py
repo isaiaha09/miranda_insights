@@ -323,7 +323,7 @@ class AnalyticsAdminTests(PhaseFourMixin, TestCase):
         self.client.force_login(self.analyst)
         response = self.client.get(
             reverse("surveyhq:response_list"),
-            {"survey": self.survey.pk, "sort": "oldest", "date_from": first.submitted_at.date()},
+            {"survey": self.survey.pk, "sort": "oldest", "date_from": timezone.localdate(first.submitted_at)},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["response_page"][0].pk, first.pk)
