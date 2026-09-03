@@ -1,13 +1,18 @@
-from datetime import timedelta
+import hashlib
+import tempfile
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import resolve, reverse
 from django.utils import timezone
 
@@ -21,6 +26,7 @@ from .codes import (
     is_valid_survey_code,
 )
 from .duplication import duplicate_survey
+from .deletion import permanently_delete_survey
 from .exceptions import InvalidLifecycleTransition, SurveyRetentionProtected, SurveyStructureLocked
 from .lifecycle import (
     archive_survey,
@@ -32,6 +38,7 @@ from .lifecycle import (
     reopen_survey,
     synchronize_due_surveys,
 )
+from .forms import SurveyMetadataForm
 from .models import (
     Survey,
     SurveyAnswer,
@@ -413,6 +420,354 @@ class LifecycleTests(SurveyHQTestMixin, TestCase):
             event.delete()
 
 
+class PacificTimezoneTests(SurveyHQTestMixin, TestCase):
+    def tearDown(self):
+        timezone.deactivate()
+        super().tearDown()
+
+    def _metadata_form(self, starts_at, ends_at):
+        timezone.deactivate()
+        return SurveyMetadataForm(
+            data={
+                "client": self.client_record.pk,
+                "project": "",
+                "reporting_month": "9",
+                "reporting_year": str(timezone.localdate().year + 2),
+                "title": "Pacific Schedule",
+                "description": "",
+                "category": "",
+                "collection_mode": Survey.CollectionMode.ANONYMOUS,
+                "show_client_name_to_participants": "",
+                "start_mode": SurveyMetadataForm.START_SCHEDULED,
+                "starts_at": starts_at,
+                "close_mode": Survey.CloseMode.SCHEDULED,
+                "ends_at": ends_at,
+            }
+        )
+
+    def test_application_uses_pacific_time_with_timezone_awareness(self):
+        self.assertEqual(settings.TIME_ZONE, "America/Los_Angeles")
+        self.assertTrue(settings.USE_TZ)
+        self.assertEqual(str(timezone.get_default_timezone()), "America/Los_Angeles")
+
+    def test_datetime_local_input_uses_pacific_dst_rules(self):
+        year = timezone.localdate().year + 2
+        winter = self._metadata_form(f"{year}-01-15T08:00", f"{year}-01-15T09:00")
+        self.assertTrue(winter.is_valid(), winter.errors)
+        summer = self._metadata_form(f"{year}-07-15T08:00", f"{year}-07-15T09:00")
+        self.assertTrue(summer.is_valid(), summer.errors)
+        self.assertEqual(winter.cleaned_data["starts_at"].astimezone(UTC).hour, 16)
+        self.assertEqual(summer.cleaned_data["starts_at"].astimezone(UTC).hour, 15)
+        self.assertEqual(winter.cleaned_data["starts_at"].tzinfo, ZoneInfo("America/Los_Angeles"))
+        self.assertEqual(summer.cleaned_data["starts_at"].tzinfo, ZoneInfo("America/Los_Angeles"))
+
+    def test_scheduled_lifecycle_uses_aware_instants(self):
+        pacific = ZoneInfo("America/Los_Angeles")
+        year = timezone.localdate().year + 2
+        starts_at = datetime(year, 9, 15, 8, 0, tzinfo=pacific)
+        ends_at = datetime(year, 9, 15, 10, 0, tzinfo=pacific)
+        survey = self.create_survey(
+            starts_at=starts_at,
+            close_mode=Survey.CloseMode.SCHEDULED,
+            ends_at=ends_at,
+        )
+        self.add_short_text_question(survey)
+        survey = publish_survey(survey, actor=self.manager, at=starts_at - timedelta(minutes=1))
+        self.assertEqual(survey.status, Survey.Status.SCHEDULED)
+        self.assertEqual(synchronize_due_surveys(at=starts_at - timedelta(seconds=1))["opened"], 0)
+        self.assertEqual(synchronize_due_surveys(at=starts_at)["opened"], 1)
+        self.assertEqual(synchronize_due_surveys(at=ends_at)["closed"], 1)
+
+    def test_existing_utc_response_instant_is_not_mutated_by_local_display(self):
+        survey = self.create_survey()
+        self.add_short_text_question(survey)
+        survey = publish_survey(survey, actor=self.manager)
+        submitted = datetime(2026, 9, 15, 15, 0, tzinfo=UTC)
+        response = SurveyResponse.objects.create(
+            survey=survey,
+            started_at=submitted - timedelta(minutes=2),
+            submitted_at=submitted,
+            access_nonce_hash="f" * 64,
+            definition_checksum=survey.definition_checksum,
+            source=SurveyResponse.Source.BROWSER,
+        )
+        response.refresh_from_db()
+        self.assertEqual(response.submitted_at.astimezone(UTC), submitted)
+        localized = timezone.localtime(response.submitted_at)
+        self.assertEqual((localized.hour, localized.minute), (8, 0))
+        self.assertEqual(str(localized.tzinfo), "America/Los_Angeles")
+
+
+class PermanentSurveyDeletionTests(SurveyHQTestMixin, TestCase):
+    def setUp(self):
+        self.media_directory = tempfile.TemporaryDirectory()
+        self.storage_override = override_settings(MEDIA_ROOT=self.media_directory.name)
+        self.storage_override.enable()
+        super().setUp()
+        self.staff_manager = User.objects.create_user(
+            username="permanent-delete-manager",
+            password="test-pass-123",
+            is_staff=True,
+        )
+        self.staff_manager.groups.add(Group.objects.get(name=MANAGERS_GROUP))
+        self.author = User.objects.create_user(username="delete-author", password="pass", is_staff=True)
+        self.author.groups.add(Group.objects.get(name=AUTHORS_GROUP))
+        self.analyst = User.objects.create_user(username="delete-analyst", password="pass", is_staff=True)
+        self.analyst.groups.add(Group.objects.get(name=ANALYSTS_GROUP))
+
+    def tearDown(self):
+        self.storage_override.disable()
+        self.media_directory.cleanup()
+        super().tearDown()
+
+    def _publish(self, **overrides):
+        survey = self.create_survey(**overrides)
+        self.add_short_text_question(survey)
+        return publish_survey(survey, actor=self.manager)
+
+    def _published_with_data(self):
+        survey = self.create_survey(title="Permanent Deletion Dataset")
+        text_question = self.add_short_text_question(survey)
+        matrix = SurveyQuestion.objects.create(
+            survey=survey,
+            export_key="q002",
+            position=2,
+            question_type=SurveyQuestion.Type.MATRIX,
+            prompt="Choose a rating",
+        )
+        first = SurveyChoice.objects.create(
+            question=matrix,
+            option_key="first",
+            label="First",
+            position=1,
+        )
+        SurveyChoice.objects.create(
+            question=matrix,
+            option_key="second",
+            label="Second",
+            position=2,
+        )
+        row = SurveyMatrixRow.objects.create(
+            question=matrix,
+            row_key="row001",
+            label="Program",
+            position=1,
+        )
+        survey = publish_survey(survey, actor=self.manager)
+        submitted = timezone.now()
+        response = SurveyResponse.objects.create(
+            survey=survey,
+            started_at=submitted - timedelta(minutes=1),
+            submitted_at=submitted,
+            access_nonce_hash=hashlib.sha256(str(survey.pk).encode()).hexdigest(),
+            definition_checksum=survey.definition_checksum,
+            source=SurveyResponse.Source.BROWSER,
+        )
+        SurveyAnswer.objects.create(
+            response=response,
+            question=text_question,
+            text_value="private participant wording",
+        )
+        matrix_answer = SurveyAnswer.objects.create(
+            response=response,
+            question=matrix,
+            matrix_row=row,
+        )
+        selection = SurveyAnswerSelection.objects.create(answer=matrix_answer, choice=first)
+        artifact = SurveyReportArtifact.objects.create(
+            survey=survey,
+            file=ContentFile(b"%PDF-1.4 test report", name="official-report.pdf"),
+            palette_key="miranda_navy_gold",
+            response_count=1,
+            response_cutoff_at=submitted,
+            definition_checksum=survey.definition_checksum,
+            file_checksum=hashlib.sha256(b"%PDF-1.4 test report").hexdigest(),
+            generated_by=self.manager,
+        )
+        return survey, response, matrix_answer, selection, artifact
+
+    def test_permission_boundaries_and_admin_confirmation_contract(self):
+        survey = self._publish()
+        route = reverse("surveyhq:survey_delete_permanently", args=[survey.pk])
+        for user in (self.author, self.analyst):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(route).status_code, 403)
+        self.client.force_login(self.staff_manager)
+        page = self.client.get(route)
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "cannot be undone")
+        self.assertContains(page, str(survey.pk))
+        self.assertContains(page, 'Type &quot;DELETE&quot; to confirm')
+        invalid = self.client.post(route, {"confirm": "on", "confirmation_text": "delete", "reason": "Test"})
+        self.assertEqual(invalid.status_code, 200)
+        self.assertTrue(Survey.objects.filter(pk=survey.pk).exists())
+
+    def test_manager_can_delete_each_published_lifecycle_state(self):
+        pacific = ZoneInfo("America/Los_Angeles")
+        future = datetime(timezone.localdate().year + 2, 1, 15, 8, 0, tzinfo=pacific)
+        surveys = [
+            self._publish(title="Open deletion"),
+            self._publish(title="Scheduled deletion", starts_at=future),
+        ]
+        closed = close_survey(self._publish(title="Closed deletion"), actor=self.manager)
+        surveys.append(closed)
+        surveys.append(archive_survey(close_survey(self._publish(title="Archived deletion"), actor=self.manager), actor=self.manager))
+        for survey in surveys:
+            with self.subTest(status=survey.status):
+                permanently_delete_survey(
+                    survey,
+                    actor=self.staff_manager,
+                    confirmation="DELETE",
+                    reason="Approved test-data cleanup.",
+                )
+                self.assertFalse(Survey.objects.filter(pk=survey.pk).exists())
+
+    def test_full_cleanup_surviving_audit_and_retention_warning(self):
+        survey, response, answer, selection, artifact = self._published_with_data()
+        survey = close_survey(survey, actor=self.manager)
+        survey_id = survey.pk
+        question_ids = list(survey.questions.values_list("pk", flat=True))
+        artifact_name = artifact.file.name
+        storage = artifact.file.storage
+        self.assertTrue(storage.exists(artifact_name))
+        self.client.force_login(self.staff_manager)
+        route = reverse("surveyhq:survey_delete_permanently", args=[survey.pk])
+        self.assertContains(self.client.get(route), "Active retention period.")
+        with self.captureOnCommitCallbacks(execute=True):
+            result = permanently_delete_survey(
+                survey,
+                actor=self.staff_manager,
+                confirmation="DELETE",
+                reason="Authorized removal of a development survey.",
+            )
+        self.assertEqual(result["deleted_counts"]["responses"], 1)
+        self.assertFalse(Survey.objects.filter(pk=survey_id).exists())
+        self.assertFalse(SurveyResponse.objects.filter(pk=response.pk).exists())
+        self.assertFalse(SurveyAnswer.objects.filter(pk=answer.pk).exists())
+        self.assertFalse(SurveyAnswerSelection.objects.filter(pk=selection.pk).exists())
+        self.assertFalse(SurveyQuestion._base_manager.filter(pk__in=question_ids).exists())
+        self.assertFalse(SurveyReportArtifact._base_manager.filter(pk=artifact.pk).exists())
+        self.assertFalse(storage.exists(artifact_name))
+        event = SurveyHQAuditEvent.objects.get(
+            entity_id=survey_id,
+            event_type="survey_permanently_deleted",
+        )
+        self.assertIsNone(event.survey)
+        self.assertEqual(event.metadata["status"], Survey.Status.CLOSED)
+        self.assertEqual(event.metadata["deleted_counts"]["responses"], 1)
+        self.assertNotIn("private participant wording", str(event.metadata))
+
+    def test_deletion_preserves_related_business_records_and_shared_question_image(self):
+        image_content = b"surveyhq-shared-image"
+        source = self.create_survey(title="Shared image source")
+        question = self.add_short_text_question(source)
+        question.image.save("shared.png", ContentFile(image_content), save=False)
+        question.image_original_name = "shared.png"
+        question.image_content_type = "image/png"
+        question.image_checksum = hashlib.sha256(image_content).hexdigest()
+        question.image_byte_size = len(image_content)
+        question.image_width = 1
+        question.image_height = 1
+        question.image_alt_text = "Test image"
+        question.save()
+        source = publish_survey(source, actor=self.manager)
+        duplicate = duplicate_survey(source, actor=self.manager, copy_client=True)
+        duplicate = publish_survey(duplicate, actor=self.manager)
+        template = SurveyTemplate.objects.create(
+            name="Shared Image Template",
+            definition={
+                "schema_version": 2,
+                "questions": [{"image": {"file": question.image.name}}],
+            },
+            source_survey=source,
+            created_by=self.manager,
+            updated_by=self.manager,
+        )
+        image_name = question.image.name
+        storage = question.image.storage
+        with self.captureOnCommitCallbacks(execute=True):
+            permanently_delete_survey(
+                source,
+                actor=self.staff_manager,
+                confirmation="DELETE",
+                reason="Remove source while preserving shared assets.",
+            )
+        duplicate.refresh_from_db()
+        template.refresh_from_db()
+        self.client_record.refresh_from_db()
+        self.assertIsNone(duplicate.source_survey)
+        self.assertIsNone(template.source_survey)
+        self.assertTrue(storage.exists(image_name))
+        self.assertTrue(Client.objects.filter(pk=self.client_record.pk).exists())
+
+    def test_exclusive_question_image_is_deleted_after_database_commit(self):
+        image_content = b"surveyhq-exclusive-image"
+        survey = self.create_survey(title="Exclusive image survey")
+        question = self.add_short_text_question(survey)
+        question.image.save("exclusive.png", ContentFile(image_content), save=False)
+        question.image_original_name = "exclusive.png"
+        question.image_content_type = "image/png"
+        question.image_checksum = hashlib.sha256(image_content).hexdigest()
+        question.image_byte_size = len(image_content)
+        question.image_width = 1
+        question.image_height = 1
+        question.image_alt_text = "Exclusive test image"
+        question.save()
+        survey = publish_survey(survey, actor=self.manager)
+        image_name = question.image.name
+        storage = question.image.storage
+        self.assertTrue(storage.exists(image_name))
+        with self.captureOnCommitCallbacks(execute=True):
+            permanently_delete_survey(
+                survey,
+                actor=self.staff_manager,
+                confirmation="DELETE",
+                reason="Remove exclusive media test survey.",
+            )
+        self.assertFalse(storage.exists(image_name))
+
+    def test_post_commit_storage_failure_leaves_audited_database_deletion(self):
+        survey, _response, _answer, _selection, artifact = self._published_with_data()
+        survey_id = survey.pk
+        storage = artifact.file.storage
+        with patch.object(storage, "delete", side_effect=OSError("storage unavailable")), patch(
+            "apps.surveyhq.deletion.logger.exception"
+        ) as logged, self.captureOnCommitCallbacks(execute=True):
+            permanently_delete_survey(
+                survey,
+                actor=self.staff_manager,
+                confirmation="DELETE",
+                reason="Storage failure behavior test.",
+            )
+        self.assertFalse(Survey.objects.filter(pk=survey_id).exists())
+        self.assertTrue(
+            SurveyHQAuditEvent.objects.filter(
+                entity_id=survey_id,
+                event_type="survey_permanently_deleted",
+            ).exists()
+        )
+        logged.assert_called_once()
+
+    def test_database_failure_rolls_back_survey_children_and_audit_event(self):
+        survey, response, _answer, _selection, _artifact = self._published_with_data()
+        with patch("apps.surveyhq.deletion._delete_database_records", side_effect=RuntimeError("db failure")):
+            with self.assertRaises(RuntimeError):
+                permanently_delete_survey(
+                    survey,
+                    actor=self.staff_manager,
+                    confirmation="DELETE",
+                    reason="Rollback test.",
+                )
+        self.assertTrue(Survey.objects.filter(pk=survey.pk).exists())
+        self.assertTrue(SurveyResponse.objects.filter(pk=response.pk).exists())
+        self.assertFalse(
+            SurveyHQAuditEvent.objects.filter(
+                entity_id=survey.pk,
+                event_type="survey_permanently_deleted",
+            ).exists()
+        )
+
+
 class DuplicationTests(SurveyHQTestMixin, TestCase):
     def test_duplication_copies_structure_but_not_runtime_or_responses(self):
         survey = self.create_survey()
@@ -463,11 +818,14 @@ class PermissionAndShellTests(TestCase):
         analysts = Group.objects.get(name=ANALYSTS_GROUP)
         self.assertTrue(managers.permissions.filter(codename="reopen_survey").exists())
         self.assertTrue(managers.permissions.filter(codename="rotate_survey_code").exists())
+        self.assertTrue(managers.permissions.filter(codename="permanently_delete_survey").exists())
         self.assertTrue(authors.permissions.filter(codename="duplicate_survey").exists())
         self.assertFalse(authors.permissions.filter(codename="publish_survey").exists())
         self.assertFalse(authors.permissions.filter(codename="rotate_survey_code").exists())
+        self.assertFalse(authors.permissions.filter(codename="permanently_delete_survey").exists())
         self.assertTrue(analysts.permissions.filter(codename="export_survey_data").exists())
         self.assertFalse(analysts.permissions.filter(codename="change_survey").exists())
+        self.assertFalse(analysts.permissions.filter(codename="permanently_delete_survey").exists())
 
     def test_anonymous_access_uses_existing_admin_login(self):
         response = self.client.get(reverse("surveyhq:dashboard"))

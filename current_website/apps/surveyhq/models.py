@@ -99,6 +99,7 @@ class Survey(models.Model):
 
     class CollectionMode(models.TextChoices):
         ANONYMOUS = "anonymous", "Anonymous"
+        IDENTIFIABLE = "identifiable", "Identifiable"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     client = models.ForeignKey(
@@ -186,6 +187,7 @@ class Survey(models.Model):
             ("archive_survey", "Can archive SurveyHQ surveys"),
             ("duplicate_survey", "Can duplicate SurveyHQ surveys"),
             ("delete_eligible_survey", "Can delete eligible draft SurveyHQ surveys"),
+            ("permanently_delete_survey", "Can permanently delete published SurveyHQ surveys"),
             ("view_live_report", "Can view live SurveyHQ reports"),
             ("export_survey_data", "Can export SurveyHQ data"),
             ("generate_survey_report", "Can generate official SurveyHQ reports"),

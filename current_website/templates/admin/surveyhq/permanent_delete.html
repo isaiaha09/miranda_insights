@@ -1,0 +1,26 @@
+{% extends "admin/surveyhq/base.html" %}
+{% block surveyhq_content %}
+<header class="svhq-header svhq-header--compact"><div><p class="svhq-eyebrow">Exceptional destructive action</p><h1>Delete permanently</h1><p>{{ survey.display_identity }}</p></div></header>
+<section class="svhq-panel svhq-confirm">
+  <div class="svhq-warning"><strong>This action permanently deletes this survey and its associated SurveyHQ data and cannot be undone.</strong></div>
+  {% if retention_warning %}<div class="svhq-warning"><strong>Active retention period.</strong> This survey contains submitted responses and its retention date has not passed. Continue only when Miranda Insights has an authorized reason for early disposition.</div>{% endif %}
+  <dl class="svhq-definition">
+    <div><dt>Survey title</dt><dd>{{ survey.title }}</dd></div>
+    <div><dt>Survey UUID</dt><dd><code>{{ survey.pk }}</code></dd></div>
+    <div><dt>Status</dt><dd>{{ survey.get_status_display }}</dd></div>
+    <div><dt>Client</dt><dd>{{ survey.identity_client_name }}</dd></div>
+    <div><dt>Completed responses</dt><dd>{{ response_count }}</dd></div>
+    <div><dt>Official reports</dt><dd>{{ report_count }}</dd></div>
+    {% if survey.retention_until %}<div><dt>Retention date</dt><dd>{{ survey.retention_until|date:"M j, Y g:i A" }} Pacific Time</dd></div>{% endif %}
+  </dl>
+  <form method="post" novalidate>{% csrf_token %}
+    {% if form.non_field_errors %}<div class="svhq-errors">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="svhq-form-grid">
+      <div class="svhq-field{% if form.confirmation_text.errors %} svhq-field--error{% endif %}">{{ form.confirmation_text.label_tag }}{{ form.confirmation_text }}{{ form.confirmation_text.errors }}</div>
+      <div class="svhq-field{% if form.reason.errors %} svhq-field--error{% endif %}">{{ form.reason.label_tag }}{{ form.reason }}<small>{{ form.reason.help_text }}</small>{{ form.reason.errors }}</div>
+    </div>
+    {{ form.confirm.errors }}<label class="svhq-check">{{ form.confirm }} <span>{{ form.confirm.label }}</span></label>
+    <div class="svhq-actions"><button class="svhq-button svhq-button--danger" type="submit">Delete permanently</button><a class="svhq-button svhq-button--secondary" href="{% url 'surveyhq:survey_detail' survey.pk %}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

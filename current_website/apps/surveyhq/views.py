@@ -27,12 +27,14 @@ from . import builder
 from .analytics import build_survey_analytics
 from .audit import record_survey_event
 from .duplication import duplicate_survey
+from .deletion import permanently_delete_survey
 from .exports import long_csv_rows, wide_csv_rows
 from .exceptions import SurveyHQError
 from .forms import (
     ChoiceForm,
     ConfirmationForm,
     MatrixRowForm,
+    PermanentSurveyDeletionForm,
     QuestionForm,
     ReportGenerationForm,
     SurveyDuplicateForm,
@@ -505,10 +507,20 @@ def survey_builder(request, survey_id):
         messages.info(request, "Published survey structure is read-only.")
         return redirect("surveyhq:survey_detail", survey_id=survey.pk)
     mark_question_image_availability(survey.questions.all())
+    anonymous_email_questions = []
+    if survey.collection_mode == Survey.CollectionMode.ANONYMOUS:
+        anonymous_email_questions = list(
+            survey.questions.filter(question_type=SurveyQuestion.Type.EMAIL).order_by("position")
+        )
     return TemplateResponse(
         request,
         "admin/surveyhq/builder.html",
-        _context(request, f"Builder · {survey.display_identity}", survey=survey),
+        _context(
+            request,
+            f"Builder · {survey.display_identity}",
+            survey=survey,
+            anonymous_email_questions=anonymous_email_questions,
+        ),
     )
 
 
@@ -903,6 +915,49 @@ def survey_delete(request, survey_id):
         warning="This action cannot be undone. Published surveys cannot be deleted.",
         back_url=reverse("surveyhq:survey_detail", args=[survey.pk]),
         action_label="Permanently Delete Draft",
+    )
+
+
+def survey_delete_permanently(request, survey_id):
+    _require(request, "permanently_delete_survey")
+    survey = _survey(survey_id)
+    if survey.status == Survey.Status.DRAFT and not survey.published_at:
+        messages.info(request, "Use the eligible Draft deletion workflow for unpublished Drafts.")
+        return redirect("surveyhq:survey_detail", survey_id=survey.pk)
+
+    form = PermanentSurveyDeletionForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            permanently_delete_survey(
+                survey,
+                actor=request.user,
+                confirmation=form.cleaned_data["confirmation_text"],
+                reason=form.cleaned_data["reason"],
+            )
+        except (ValidationError, SurveyHQError) as exc:
+            form.add_error(None, _error_text(exc))
+        else:
+            messages.success(request, "Survey and associated SurveyHQ data permanently deleted.")
+            return redirect("surveyhq:dashboard")
+
+    response_count = survey.responses.count()
+    report_count = survey.report_artifacts.count()
+    return TemplateResponse(
+        request,
+        "admin/surveyhq/permanent_delete.html",
+        _context(
+            request,
+            f"Delete permanently · {survey.display_identity}",
+            survey=survey,
+            form=form,
+            response_count=response_count,
+            report_count=report_count,
+            retention_warning=bool(
+                response_count
+                and survey.retention_until
+                and survey.retention_until > timezone.now()
+            ),
+        ),
     )
 
 

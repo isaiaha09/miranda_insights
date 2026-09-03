@@ -35,6 +35,11 @@ urlpatterns = [
     path("surveys/<uuid:survey_id>/archive/", protected(views.survey_archive), name="survey_archive"),
     path("surveys/<uuid:survey_id>/rotate-code/", protected(views.survey_rotate_code), name="survey_rotate_code"),
     path("surveys/<uuid:survey_id>/delete/", protected(views.survey_delete), name="survey_delete"),
+    path(
+        "surveys/<uuid:survey_id>/delete-permanently/",
+        protected(views.survey_delete_permanently),
+        name="survey_delete_permanently",
+    ),
     path("surveys/<uuid:survey_id>/audit/", protected(views.survey_audit), name="survey_audit"),
     path("surveys/<uuid:survey_id>/questions/new/", protected(views.question_create), name="question_create"),
     path("questions/<uuid:question_id>/edit/", protected(views.question_edit), name="question_edit"),
