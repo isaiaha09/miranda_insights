@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
@@ -45,6 +46,7 @@ User = get_user_model()
 class PhaseThreeMixin:
     def setUp(self):
         super().setUp()
+        cache.clear()
         self.manager = User.objects.create_user(username="phase3-manager", password="pass", is_staff=True)
         self.manager.groups.add(Group.objects.get(name=MANAGERS_GROUP))
         self.author = User.objects.create_user(username="phase3-author", password="pass", is_staff=True)
@@ -283,6 +285,48 @@ class ParticipantFormAndSubmissionTests(PhaseThreeMixin, TestCase):
         self.assertContains(response, "First option")
         self.assertLess(html.index("First option"), html.index("Second option"))
 
+    def test_matrix_renders_as_an_ordered_accessible_table_with_existing_bound_fields(self):
+        survey, _questions = self.build_all_types()
+        matrix = survey.questions.get(prompt="Matrix")
+        self.grant(survey)
+
+        response = self.client.get(reverse("surveyhq_participant:survey"))
+        html = response.content.decode()
+        matrix_html = html[html.index('<div class="participant-matrix"'):html.index("</table>")]
+
+        self.assertContains(response, '<table class="participant-matrix-table">')
+        self.assertIn('<th class="participant-matrix-statement" scope="col">Statement</th>', matrix_html)
+        self.assertLess(matrix_html.index("Low"), matrix_html.index("High"))
+        self.assertLess(matrix_html.index("Quality"), matrix_html.index("Clarity"))
+        for row_key, row_label in (("row001", "Quality"), ("row002", "Clarity")):
+            field_name = f"{matrix.export_key}__{row_key}"
+            self.assertEqual(matrix_html.count(f'name="{field_name}"'), 2)
+            self.assertIn('value="opt001"', matrix_html)
+            self.assertIn('value="opt002"', matrix_html)
+            self.assertIn(f"{row_label}: Low", matrix_html)
+            self.assertIn(f"{row_label}: High", matrix_html)
+
+    def test_matrix_bound_selection_and_required_row_error_render_in_table(self):
+        survey, _questions = self.build_all_types()
+        matrix = survey.questions.get(prompt="Matrix")
+        self.grant(survey)
+        payload = self.valid_payload(survey)
+        selected_field = f"{matrix.export_key}__row001"
+        missing_field = f"{matrix.export_key}__row002"
+        payload.pop(missing_field)
+
+        response = self.client.post(reverse("surveyhq_participant:survey"), payload)
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(
+            html,
+            rf'<input[^>]+name="{re.escape(selected_field)}"[^>]+value="opt001"[^>]+checked',
+        )
+        self.assertContains(response, f'id="id_{missing_field}_errors"', html=False)
+        self.assertContains(response, "This field is required.")
+        self.assertFalse(SurveyResponse.objects.exists())
+
     def test_invalid_submission_preserves_values_and_creates_nothing(self):
         survey, _questions = self.build_all_types()
         self.grant(survey)
@@ -311,6 +355,15 @@ class ParticipantFormAndSubmissionTests(PhaseThreeMixin, TestCase):
         self.assertEqual(saved.source, SurveyResponse.Source.WEBVIEW)
         self.assertNotEqual(saved.access_nonce_hash, self.client.session.get(GRANT_SESSION_KEY, ""))
         self.assertGreater(SurveyAnswer.objects.filter(response=saved).count(), 10)
+        matrix_selections = list(
+            SurveyAnswerSelection.objects.filter(
+                answer__response=saved,
+                answer__question__question_type=SurveyQuestion.Type.MATRIX,
+            )
+            .order_by("answer__matrix_row__position")
+            .values_list("answer__matrix_row__row_key", "choice__option_key")
+        )
+        self.assertEqual(matrix_selections, [("row001", "opt001"), ("row002", "opt002")])
         ranks = list(
             SurveyAnswerSelection.objects.filter(answer__response=saved, rank__isnull=False)
             .order_by("rank")

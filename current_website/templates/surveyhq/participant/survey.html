@@ -15,7 +15,36 @@
         {% if question.image_available %}<img class="participant-question-image" src="{% url 'surveyhq_participant:question_image' question.pk %}" alt="{{ question.image_alt_text }}" loading="lazy" width="{{ question.image_width }}" height="{{ question.image_height }}">{% endif %}
         {% if question.help_text %}<p class="participant-help">{{ question.help_text }}</p>{% endif %}
         {% if spec.anchors.0 or spec.anchors.1 %}<div class="participant-anchors"><span>{{ spec.anchors.0 }}</span><span>{{ spec.anchors.1 }}</span></div>{% endif %}
-        {% if question.question_type == 'matrix' %}<div class="participant-matrix">{% for row, field in spec.bound_fields %}<div class="participant-matrix-row"><h3>{{ row.label }}</h3>{{ field }}{% if field.errors %}<div class="participant-field-error">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div>
+        {% if question.question_type == 'matrix' %}
+          <div class="participant-matrix" role="region" aria-label="{{ question.prompt }} response matrix" tabindex="0">
+            <table class="participant-matrix-table">
+              <caption class="participant-sr-only">{{ question.prompt }} response matrix</caption>
+              <thead>
+                <tr>
+                  <th class="participant-matrix-statement" scope="col">Statement</th>
+                  {% for choice in question.choices.all %}<th scope="col">{{ choice.label }}</th>{% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row, field in spec.bound_fields %}
+                  <tr id="{{ field.auto_id }}"{% if field.errors %} class="participant-matrix-row--error" aria-invalid="true" aria-describedby="{{ field.auto_id }}_errors"{% endif %}>
+                    <th class="participant-matrix-statement" scope="row">
+                      {{ row.label }}
+                      {% if field.errors %}<div class="participant-field-error" id="{{ field.auto_id }}_errors">{{ field.errors }}</div>{% endif %}
+                    </th>
+                    {% for option in field %}
+                      <td>
+                        <label class="participant-matrix-option" for="{{ option.id_for_label }}">
+                          {{ option.tag }}
+                          <span class="participant-sr-only">{{ row.label }}: {{ option.choice_label }}</span>
+                        </label>
+                      </td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         {% elif question.question_type == 'linear_scale' %}{% for unused, field in spec.bound_fields %}{{ field }}<div class="participant-linear-scale{% if spec.linear_scale.answered %} participant-linear-scale--answered{% endif %}" data-linear-scale data-answer-id="{{ field.id_for_label }}"><label class="participant-sr-only" for="{{ field.id_for_label }}_range">{{ question.prompt }}</label><input id="{{ field.id_for_label }}_range" type="range" min="{{ spec.linear_scale.minimum }}" max="{{ spec.linear_scale.maximum }}" step="{{ spec.linear_scale.step }}" value="{{ spec.linear_scale.initial }}" data-linear-range aria-describedby="{{ field.id_for_label }}_value"><div class="participant-linear-value"><output id="{{ field.id_for_label }}_value" data-linear-output>{% if spec.linear_scale.answered %}{{ spec.linear_scale.initial }}{% else %}Not answered{% endif %}</output><button type="button" data-linear-clear>Clear selection</button></div><noscript><label for="{{ field.id_for_label }}_fallback">Enter a value</label><input id="{{ field.id_for_label }}_fallback" type="number" name="{{ field.html_name }}" min="{{ spec.linear_scale.minimum }}" max="{{ spec.linear_scale.maximum }}" step="{{ spec.linear_scale.step }}"{% if question.required %} required{% endif %}></noscript></div>{% if field.errors %}<div class="participant-field-error">{{ field.errors }}</div>{% endif %}{% endfor %}
         {% elif question.question_type == 'ranking' %}<p class="participant-help">Choose every option to build your ranking, then reorder the list as needed.</p><div class="participant-ranking" data-ranking><div class="participant-ranking-fallback" data-ranking-fallback><p>This numbered control works without JavaScript:</p>{% for choice, field in spec.bound_fields %}<div class="participant-ranking-row" data-ranking-field data-choice-key="{{ choice.option_key }}" data-choice-label="{{ choice.label }}">{{ field.label_tag }}{{ field }}{% if field.errors %}<div class="participant-field-error">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div><div class="participant-ranking-enhanced" data-ranking-enhanced hidden><div><h3>Available</h3><div class="participant-ranking-available" data-ranking-available>{% for choice, field in spec.bound_fields %}<button type="button" data-ranking-add="{{ choice.option_key }}">{{ choice.label }}</button>{% endfor %}</div></div><div><div class="participant-ranking-heading"><h3>Your Ranking</h3><button type="button" data-ranking-reset>Reset</button></div><ol class="participant-ranked-list" data-ranked-list></ol></div><p class="participant-sr-only" aria-live="polite" data-ranking-status></p></div></div>
         {% else %}{% for unused, field in spec.bound_fields %}<div class="participant-control">{{ field }}{% if field.errors %}<div class="participant-field-error">{{ field.errors }}</div>{% endif %}</div>{% endfor %}{% endif %}
